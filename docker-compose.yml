@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./Database.db:/app/Database.db
+    environment:
+      - TZ=Europe/Samara
+    container_name: domashkatgbot
+    image: domashkatgbot

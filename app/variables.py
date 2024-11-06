@@ -1,0 +1,57 @@
+from datetime import datetime, timedelta
+import asyncio
+
+allowed_subjects = ["Математика", "Информатика", "Физика", "Химия", "Биология", "География", "История", "Обществознание","Литература", "Русский язык", "Иностранный язык- 1 п/г", "	Иностранный язык- 2 п/г", "ОБЗР"]
+# , "Иностранный язык- 1 п/г", "	Иностранный язык- 2 п/г", "Основы безопасности и защиты Родины"
+cur_month = datetime.now()
+
+yesterday_midnight = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+yesterday_ts = int(yesterday_midnight.timestamp())
+
+today_midnight = (datetime.now()).replace(hour=0,minute=0,second=0,microsecond=0)
+today_ts = int(today_midnight.timestamp())
+
+tomorrow_midnight = (datetime.now() + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+tomorrow_ts = int(tomorrow_midnight.timestamp())
+
+after_tomorrow_midnight = (datetime.now() + timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+after_tomorrow_ts = int(after_tomorrow_midnight.timestamp())
+
+
+# Convert the datetime object to a timestamp
+
+# print(yesterday)
+cur_year = datetime.now()
+
+months_words = {
+  1: "января",
+  2: "февраля",
+  3: "марта",
+  4: "апреля",
+  5: "мая",
+  6: "июня",
+  7: "июля",
+  8: "августа",
+  9: "сентября",
+  10: "октября",
+  11: "ноября",
+  12: "декабря"
+}
+
+
+async def get_day_month(timestamp):
+  date = datetime.fromtimestamp(timestamp)
+  return f"{date.strftime('%d')} {months_words[int(date.strftime('%m'))]}"
+
+# print(asyncio.run(get_day_month(yesterday)))
+
+
+# yesterday_date = datetime.fromtimestamp(int(yesterday))
+# today_date = datetime.fromtimestamp(int(today))
+# tomorrow_date = datetime.fromtimestamp(int(tomorrow))
+# after_tommorow_date = datetime.fromtimestamp(int(after_tommorow))
+
+# print(yesterday_date)
+# print(today_date)
+# print(tomorrow_date)
+# print(after_tommorow_date)
