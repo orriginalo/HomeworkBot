@@ -3,7 +3,7 @@ from app.database.requests import *
 import app.variables as var
 import app.keyboards as kb
 from app.backuper import create_backups
-from app.middlewares import AlbumMiddleware
+from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware
 import os
 import sys
 import time
@@ -59,6 +59,20 @@ class adding_new_week(StatesGroup):
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
+dp.message.middleware(AntiFloodMiddleware(0.3))
+# dp.message.middleware(TestMiddleware())
+
+
+
+# @dp.message(F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT, CT.TEXT]))
+# async def any_text_handler(message: Message, album: list = None, album_caption: str = None):
+#   print("ANY TEXT DETECTED")
+#   print(album)
+#   print(album_caption)
+#   await message.answer(f"Album caption: {album_caption}")
+
+
+
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -71,7 +85,7 @@ async def start(message: Message):
     else:
       await add_new_user(message.from_user.id, 0)
 
-@dp.message(F.text == "😈 Админ-панель 😈")
+@dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):
   if await get_user_role(message.from_user.id) == 3:
     await message.answer("Админ-панель:", reply_markup=kb.adminka_keyboard)
@@ -138,10 +152,15 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
   await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
   admins = await get_admins_chatid()
   for admin_id in admins:
-    if admin_id != call.from_user.id:
+    if admin_id[0] != call.from_user.id:
       if data.get("media_group") is not None:
-        await call.bot.send_media_group(admin_id[0], data.get("media_group"))
-        await call.bot.send_message(admin_id[0], f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*", parse_mode="Markdown")
+        media_group = data.get("media_group")
+        
+        media_group[0].caption = f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*"
+        media_group[0].parse_mode = "Markdown"
+
+        await call.bot.send_media_group(admin_id[0], media_group)
+        # await call.bot.send_message(admin_id[0], f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*", parse_mode="Markdown")
       else:
         await call.bot.send_message(admin_id[0], f"🔔 Добавлено домашнее задание по\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*", parse_mode="Markdown")
 
@@ -367,7 +386,7 @@ async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
   except aiogram.exceptions.TelegramBadRequest:
     await call.message.answer("Произошла ошибка. Попробуйте снова.")
 
-@dp.message(F.text == '👀 Посмотреть Д/З 👀')
+@dp.message(F.text == '👀 Посмотреть Д/З')
 async def show_homework_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.day)
   await message.answer("В каком форматике?", reply_markup=kb.v_kakom_formatike_keyboard)
@@ -389,7 +408,6 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
     # print(tasks)
     for task in tasks:
-      await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b>\n\n{str(task[1]).capitalize()}", parse_mode="html")
       if await get_all_media_by_id(task[2]) is not None:
           media_group_data = await get_all_media_by_id(task[2])
           media_group = []
@@ -402,7 +420,13 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
               media_group.append(InputMediaAudio(media=media_data[0]))
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
+
+          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime('%d.%m.%Y')}</b>\n\n{str(task[1]).capitalize()}"
+          media_group[0].parse_mode = "html"
+
           await call.message.answer_media_group(media_group)
+      else:
+        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b>\n\n{str(task[1]).capitalize()}", parse_mode="html")
   else:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
 
@@ -448,7 +472,6 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
-        await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -461,7 +484,13 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
               media_group.append(InputMediaAudio(media=media_data[0]))
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
+
+          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].parse_mode = "html"
+
           await message.answer_media_group(media_group)
+        else:
+          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day, F.text == "На завтра")
@@ -477,7 +506,6 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
-        await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -490,7 +518,13 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
               media_group.append(InputMediaAudio(media=media_data[0]))
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
+
+          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].parse_mode = "html"
+
           await message.answer_media_group(media_group)
+        else:
+          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day, F.text == "На послезавтра")
@@ -519,7 +553,13 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
               media_group.append(InputMediaAudio(media=media_data[0]))
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
+
+          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].parse_mode = "html"
+
           await message.answer_media_group(media_group)
+        else:
+          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day, F.text == "🗓 По дате")
@@ -557,7 +597,6 @@ async def show_hw_by_date(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
-        await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -570,10 +609,16 @@ async def show_hw_by_date(message: Message, state: FSMContext):
               media_group.append(InputMediaAudio(media=media_data[0]))
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
+          
+          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].parse_mode = "html"
+
           await message.answer_media_group(media_group)
+        else:
+          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
     await state.clear()
 
-@dp.message(F.text == '➕ Добавить Д/З ➕')
+@dp.message(F.text == 'Добавить Д/З ➕')
 async def add_hw_one(message: Message, state: FSMContext):
   if await get_user_role(message.from_user.id) >= 2:
     await state.set_state(adding_homework.subject)
@@ -587,36 +632,39 @@ async def add_hw_two(call: CallbackQuery, state: FSMContext):
   await call.message.answer(f"Предмет <b>{call.data}</b> выбран.", parse_mode="html")
   await state.update_data(subject=call.data)
   await state.set_state(adding_homework.task)
-  await call.message.answer("Введите домашнее задание (текст, фото можно будет добавить позже):", reply_markup=types.ReplyKeyboardRemove())
+  await call.message.answer("Введите домашнее задание <b>(можно прикрепить медиа)</b>:", parse_mode="html", reply_markup=types.ReplyKeyboardRemove())
 
-@dp.message(adding_homework.media_group, F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT]))
+@dp.message(F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT]))
 @dp.message(adding_homework.task)
-async def add_hw_three(message: Message, state: FSMContext, album: list = None):
+async def add_hw_three(message: Message, state: FSMContext, album: list = None, album_caption: str = None):
 
   if (await state.get_data()).get("task") is None:
-    await state.update_data(task=message.text)
+    if album and album_caption:
+      await state.update_data(task=album_caption)
+    else:
+      await state.update_data(task=message.text)
     
   media_group = []
 
   data = await state.get_data()
 
   if album:
-    for msg in album:
-      if msg.photo:
-        file_id = msg.photo[-1].file_id
+    for i in range(len(album)):
+      if album[i].photo:
+        file_id = album[i].photo[-1].file_id
         media_group.append(InputMediaPhoto(media=file_id))
-      elif msg.video:
-        file_id = msg.video.file_id
+      elif album[i].video:
+        file_id = album[i].video.file_id
         media_group.append(InputMediaVideo(media=file_id))
-      elif msg.audio:
-        file_id = msg.audio.file_id
+      elif album[i].audio:
+        file_id = album[i].audio.file_id
         media_group.append(InputMediaAudio(media=file_id))
-      elif msg.document:
-        file_id = msg.document.file_id
+      elif album[i].document:
+        file_id = album[i].document.file_id
         media_group.append(InputMediaDocument(media=file_id))
       else:
-        obj_dict = msg.model_dump()
-        file_id = obj_dict[msg.content_type]['file_id']
+        obj_dict = album[i].model_dump()
+        file_id = obj_dict[album[i].content_type]['file_id']
         media_group.append(InputMedia(media=file_id))
 
     # print(media_group)
@@ -668,7 +716,7 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None):
     await message.answer("Произошла ошибка. Попробуйте снова.")
 
 
-@dp.message(F.text == "❌ Удалить Д/З по id ❌")
+@dp.message(F.text == "❌ Удалить Д/З")
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
   if await get_user_role(message.from_user.id) >= 3:
     await state.set_state(removing_homework.hw_id)
@@ -679,24 +727,44 @@ async def remove_hw_by_id(message: Message, state: FSMContext):
   await state.update_data(hw_id=message.text)
   data = await state.get_data()
   task = await get_homework_by_id(data['hw_id'])
-  await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?\n\n<b>{task[0]}</b>\n\n{task[1]}", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
+
+  if await get_all_media_by_id(data["hw_id"]) is not None:
+    media_group_data = await get_all_media_by_id(data["hw_id"])
+    media_group = []
+    for media_data in media_group_data:
+      if media_data[1] == "photo":
+        media_group.append(InputMediaPhoto(media=media_data[0]))
+      elif media_data[1] == "video":
+        media_group.append(InputMediaVideo(media=media_data[0]))
+      elif media_data[1] == "audio":
+        media_group.append(InputMediaAudio(media=media_data[0]))
+      elif media_data[1] == "document":
+        media_group.append(InputMediaDocument(media=media_data[0]))
+    
+    media_group[0].caption = f"<b>{task[0]}</b>\n\n{str(task[1]).capitalize()}"
+    media_group[0].parse_mode = "html"
+
+    await message.answer_media_group(media_group)
+    await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
+  else:
+    await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?\n<b>{task[0]}</b>\n\n{task[1]}", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
 
 @dp.callback_query(F.data == "delete_hw")
 async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
-  await call.message.delete()
+  # await call.message.delete()
   data = await state.get_data()
   await delete_homework_by_id(data['hw_id'])
   await delete_media_by_id(data['hw_id'])
-  await call.message.answer("Задание удалено.")
+  await call.message.edit_text("Задание удалено.")
   await state.clear()
   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
 
 
-@dp.callback_query(F.data == "add_photo")
-async def add_hw_photo_handler(call: CallbackQuery, state: FSMContext):
-  await call.message.delete()
-  await state.set_state(adding_homework.media_group)
-  await call.message.answer("Отправьте медиа (сгруппированно, одним сообщением)", reply_markup=types.ReplyKeyboardRemove())
+# @dp.callback_query(F.data == "add_photo")
+# async def add_hw_photo_handler(call: CallbackQuery, state: FSMContext):
+#   await call.message.delete()
+#   await state.set_state(adding_homework.media_group)
+#   await call.message.answer("Отправьте медиа (сгруппированно, одним сообщением)", reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.callback_query(F.data == "load_new_week")

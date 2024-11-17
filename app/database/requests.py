@@ -164,10 +164,3 @@ async def delete_media_by_id(homework_id):
       pass
     await conn.commit()
 
-
-# print(asyncio.run(get_task_by_subject("Литература")))
-asyncio.run(add_new_user(3, 4))
-# asyncio.run(update_homework_dates())
-# print(asyncio.run(get_tasks_by_date(1731528000)))
-# asyncio.run(change_user_role(1522039516, 4))
-# print(asyncio.run(get_homework_by_id(3)))

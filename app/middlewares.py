@@ -1,7 +1,11 @@
 import asyncio
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message
+
+from cachetools import TTLCache
+
+from rich import print
 
 class AlbumMiddleware(BaseMiddleware):
     def __init__(self, latency: Union[int, float] = 0.1):
@@ -14,7 +18,7 @@ class AlbumMiddleware(BaseMiddleware):
         self.album_data[event.media_group_id]["messages"].append(event)
         return len(self.album_data[event.media_group_id]["messages"])
 
-    async def __call__(self, handler, event: Message, data: Dict[str, Any]) -> Any:
+    async def __call__(self, handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]], event: Message, data: Dict[str, Any]) -> Any:
         if not event.media_group_id:
             return await handler(event, data)
 
@@ -28,5 +32,45 @@ class AlbumMiddleware(BaseMiddleware):
         album_messages = self.album_data[event.media_group_id]["messages"]
         album_messages.sort(key=lambda x: x.message_id)
         data["album"] = album_messages
+        for msg in album_messages:
+            if msg.caption:
+                data["album_caption"] = msg.caption
+                break
         del self.album_data[event.media_group_id]
+        return await handler(event, data)
+
+class AntiFloodMiddleware(BaseMiddleware):
+
+    def __init__(self, time_limit: int=2) -> None:
+        self.limit = TTLCache(maxsize=10_000, ttl=time_limit)
+
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
+        if event.chat.id in self.limit:
+            return
+        else:
+            self.limit[event.chat.id] = None
+        return await handler(event, data)
+    
+
+class TestMiddleware(BaseMiddleware):
+
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
+        print("------------test middleware---------")
+        print("--------------handler---------------")
+        print(await handler(event, data))
+        print("---------------event----------------")
+        print(event)
+        print("---------------data-----------------")
+        print(data)
+        data["aboba"] = "abobus mobobus"
         return await handler(event, data)

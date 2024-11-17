@@ -2,16 +2,16 @@ from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardBut
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
-  [KeyboardButton(text="👀 Посмотреть Д/З 👀"), KeyboardButton(text="➕ Добавить Д/З ➕")],
-  [KeyboardButton(text="❌ Удалить Д/З по id ❌"), KeyboardButton(text="😈 Админ-панель 😈")]
+  [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
+  [KeyboardButton(text="❌ Удалить Д/З"), KeyboardButton(text="Админ-панель 😈")]
   ], resize_keyboard=True, input_field_placeholder="Выберите пункт меню")
 
 start_keyboard_adder = ReplyKeyboardMarkup(keyboard=[
-  [KeyboardButton(text="👀 Посмотреть Д/З 👀"), KeyboardButton(text="➕ Добавить Д/З ➕")],
+  [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
 ], resize_keyboard=True, input_field_placeholder="Выберите пункт меню")
 
 start_keyboard = ReplyKeyboardMarkup(keyboard=[
-  [KeyboardButton(text="👀 Посмотреть Д/З 👀")]
+  [KeyboardButton(text="👀 Посмотреть Д/З")]
 ], resize_keyboard=True, input_field_placeholder="Выберите пункт меню")
 
 async def get_start_keyboard(role):
@@ -50,7 +50,7 @@ check_hw_before_apply_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
     [InlineKeyboardButton(text="Да ✅", callback_data="all_right")],
     [InlineKeyboardButton(text="🔄 Изменить предмет", callback_data="change_subject"), InlineKeyboardButton(text="Изменить задание 🔄", callback_data="change_task")],
-    [InlineKeyboardButton(text="🖼 Добавить фото 🖼", callback_data="add_photo")],
+    # [InlineKeyboardButton(text="🖼 Добавить фото 🖼", callback_data="add_photo")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
   ]
 )
