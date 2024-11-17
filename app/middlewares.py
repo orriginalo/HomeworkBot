@@ -5,6 +5,8 @@ from aiogram.types import Message
 
 from cachetools import TTLCache
 
+from app.database.requests import log
+
 from rich import print
 
 class AlbumMiddleware(BaseMiddleware):
@@ -73,4 +75,26 @@ class TestMiddleware(BaseMiddleware):
         print("---------------data-----------------")
         print(data)
         data["aboba"] = "abobus mobobus"
+        return await handler(event, data)
+    
+
+
+class MsgLoggerMiddleware(BaseException):
+
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
+        
+        msg = event.text
+        user_name = event.from_user.first_name
+        try:
+            if event.content_type == "text":
+                await log(f'[{user_name}] - "{msg}"', "MSGLOGGER")
+            else:
+                await log(f'[{user_name}] - "some <{event.content_type}>"', "MSGLOGGER")
+        except Exception as e:
+            print(e)
         return await handler(event, data)

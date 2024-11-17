@@ -3,7 +3,7 @@ from app.database.requests import *
 import app.variables as var
 import app.keyboards as kb
 from app.backuper import create_backups
-from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware
+from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware, MsgLoggerMiddleware
 import os
 import sys
 import time
@@ -51,7 +51,6 @@ class adding_user(StatesGroup): # Temporary
 class removing_user(StatesGroup):
   user_id = State()
 
-
 class adding_new_week(StatesGroup):
   file = State()
 
@@ -59,20 +58,9 @@ class adding_new_week(StatesGroup):
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
-dp.message.middleware(AntiFloodMiddleware(0.3))
+dp.message.middleware(MsgLoggerMiddleware())
+# dp.message.middleware(AntiFloodMiddleware(0.3))
 # dp.message.middleware(TestMiddleware())
-
-
-
-# @dp.message(F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT, CT.TEXT]))
-# async def any_text_handler(message: Message, album: list = None, album_caption: str = None):
-#   print("ANY TEXT DETECTED")
-#   print(album)
-#   print(album_caption)
-#   await message.answer(f"Album caption: {album_caption}")
-
-
-
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -160,11 +148,9 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
         media_group[0].parse_mode = "Markdown"
 
         await call.bot.send_media_group(admin_id[0], media_group)
-        # await call.bot.send_message(admin_id[0], f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*", parse_mode="Markdown")
       else:
         await call.bot.send_message(admin_id[0], f"🔔 Добавлено домашнее задание по\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework_id}*", parse_mode="Markdown")
 
-  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
   await state.clear()
   
 
@@ -359,6 +345,19 @@ async def get_db_backup_handler(call: CallbackQuery):
 
   await call.message.answer_document(dbfile, caption=f"Резервная копия базы данных <b>{backup_date_time}</b>", parse_mode="html")
 
+@dp.callback_query(F.data == "get_logs_backup")
+async def get_logs_backup_handler(call: CallbackQuery):
+  logs_backups_path = "data/logs"
+  logs_backup_files = os.listdir(logs_backups_path)
+  logs_backup_files.sort()
+  last_logs_backup_file = logs_backup_files[-1]
+  backup_date_str = last_logs_backup_file.replace("backup_logs_", "").replace(".log", "").replace("_", " ")
+  backup_date_time = datetime.strptime(backup_date_str, "%Y-%m-%d")
+  path_to_file = f"{logs_backups_path}/{last_logs_backup_file}"
+
+  logfile = FSInputFile(path_to_file) 
+
+  await call.message.answer_document(logfile, caption=f"Резервная копия логов <b>{backup_date_time}</b>", parse_mode="html")
 
 
 @dp.callback_query(F.data.contains("-changed"))
