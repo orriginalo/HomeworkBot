@@ -540,7 +540,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
-        await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
+        # await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
