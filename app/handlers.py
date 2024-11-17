@@ -459,7 +459,7 @@ async def show_hw_yesterday_handler(message: Message, state: FSMContext):
           await message.answer_media_group(media_group)
       await state.clear()
 
-@dp.message(view_homework.day, F.text == "На сегодня")
+@dp.message(view_homework.day and F.text == "На сегодня")
 async def show_hw_today_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
