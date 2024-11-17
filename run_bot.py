@@ -17,17 +17,38 @@ async def check_paths():
   try:
     if os.path.exists("data") == False:
       os.mkdir("data")
+  except FileExistsError:
+    await log("Error creating ./data directory", "DIRCREATOR")
+
+  try:
+    if os.path.exists("data") == False:
+      os.mkdir("data")
+  except FileExistsError:
+    await log("Error creating ./data directory", "DIRCREATOR")
+
+  try:
     if os.path.exists("data\\backups") == False:
       os.mkdir("data/backups")
+  except FileExistsError:
+    await log("Error creating ./data/backups directory", "DIRCREATOR")
+
+  try:
     if os.path.exists("data\\backups\\html_schedules") == False:
       os.mkdir("data/backups/html_schedules")
+  except FileExistsError:
+    await log("Error creating ./data/backups/html_schedules directory", "DIRCREATOR")
+
+  try:
     if os.path.exists("data\\backups\\databases") == False:
       os.mkdir("data/backups/databases")
+  except FileExistsError:
+    await log("Error creating ./data/backups/databases directory", "DIRCREATOR")
+
+  try:
     if os.path.exists("data\\logs") == False:
       os.mkdir("data/logs")
   except FileExistsError:
-    await log("Error creating directories", "DIRCREATOR")
-
+    await log("Error creating ./data/logs directory", "DIRCREATOR")
 
 async def main():
   # await async_main()

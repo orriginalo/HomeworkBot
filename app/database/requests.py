@@ -15,7 +15,7 @@ db_file = "Database.db"
 """
 
 async def log(message, category = "DATABASE"):
-    async with aiofiles.open(f"data\\logs\\{datetime.now().strftime('%Y-%m-%d')}.log", "a", encoding="utf-8") as f:
+    async with aiofiles.open(f"./data/logs/{datetime.now().strftime('%Y-%m-%d')}.log", "a", encoding="utf-8") as f:
         await f.write(f"{await get_cur_time()} - [{category}]: {message}\n")
     print(f"[orange1]{await get_cur_time()}[/orange1] - [{category}]: {message}")
 

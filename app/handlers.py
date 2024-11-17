@@ -347,6 +347,7 @@ async def get_db_backup_handler(call: CallbackQuery):
 
 @dp.callback_query(F.data == "get_logs_backup")
 async def get_logs_backup_handler(call: CallbackQuery):
+  await log("Uploading .log file", "BACKUPER")
   logs_backups_path = "data/logs"
   logs_backup_files = os.listdir(logs_backups_path)
   logs_backup_files.sort()
