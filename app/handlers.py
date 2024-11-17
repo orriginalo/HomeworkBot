@@ -493,7 +493,7 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
           await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
-@dp.message(view_homework.day, F.text == "На завтра")
+@dp.message(view_homework.day and F.text == "На завтра")
 async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
@@ -527,7 +527,7 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
           await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
-@dp.message(view_homework.day, F.text == "На послезавтра")
+@dp.message(view_homework.day and F.text == "На послезавтра")
 async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
@@ -562,7 +562,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
           await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
-@dp.message(view_homework.day, F.text == "🗓 По дате")
+@dp.message(view_homework.day and F.text == "🗓 По дате")
 async def show_hw_by_date_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.with_date)
   await message.answer(f'Введи дату в виде "номер_месяца число" без кавычек. Сейчас <b>{datetime.fromtimestamp(var.today_ts).strftime("%m")}</b> месяц', parse_mode="html")
@@ -632,7 +632,7 @@ async def add_hw_two(call: CallbackQuery, state: FSMContext):
   await call.message.answer(f"Предмет <b>{call.data}</b> выбран.", parse_mode="html")
   await state.update_data(subject=call.data)
   await state.set_state(adding_homework.task)
-  await call.message.answer("Введите домашнее задание <b>(можно прикрепить медиа)</b>:", parse_mode="html", reply_markup=types.ReplyKeyboardRemove())
+  await call.message.answer("Напишите домашнее задание <b>(текст обязателен, можно прикрепить медиа)</b>:", parse_mode="html", reply_markup=types.ReplyKeyboardRemove())
 
 @dp.message(F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT]))
 @dp.message(adding_homework.task)
@@ -641,9 +641,11 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
   if (await state.get_data()).get("task") is None:
     if album and album_caption:
       await state.update_data(task=album_caption)
-    else:
+    elif message.text != None:
       await state.update_data(task=message.text)
-    
+    else:
+      await state.update_data(task="")
+
   media_group = []
 
   data = await state.get_data()
