@@ -1,4 +1,4 @@
-from db_sqlite_controller import *
+from app.database.requests import *
 
 add_homework("Математика", "Установить определение простого числа")
 add_homework("Информатика", "Проверить правильность уравнения в квадрате")

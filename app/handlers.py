@@ -64,14 +64,14 @@ dp.message.middleware(MsgLoggerMiddleware())
 
 @dp.message(CommandStart())
 async def start(message: Message):
-    if await check_exists_user(message.from_user.id):
+      await add_new_user(message.from_user.id, 1)
       if await get_user_role(message.from_user.id) != 0:
         if await get_user_role(message.from_user.id) >= 2:
           await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
         else: 
           await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
-    else:
-      await add_new_user(message.from_user.id, 0)
+    # else:
+    #   await add_new_user(message.from_user.id, 0)
 
 @dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):
@@ -347,7 +347,7 @@ async def get_db_backup_handler(call: CallbackQuery):
 
 @dp.callback_query(F.data == "get_logs_backup")
 async def get_logs_backup_handler(call: CallbackQuery):
-  await log("Uploading .log file", "BACKUPER")
+  await log("Uploading .log file", "FILEMANAGER")
   logs_backups_path = "data/logs"
   logs_backup_files = os.listdir(logs_backups_path)
   logs_backup_files.sort()

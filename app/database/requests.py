@@ -19,6 +19,15 @@ async def log(message, category = "DATABASE"):
         await f.write(f"{await get_cur_time()} - [{category}]: {message}\n")
     print(f"[orange1]{await get_cur_time()}[/orange1] - [{category}]: {message}")
 
+# LOG CARTEGORIES:
+# [DATABASE] - Database requests
+# [BACKUP] - Database backuping
+# [RUNNER] - Bot runner
+# [MSGLOGGER] - Message logger
+# [DIRCREATOR] - Directory creator
+# [FILEMANAGER] - File manager
+
+
 async def get_cur_time():
   return await asyncio.get_event_loop().run_in_executor(None, lambda: datetime.now().strftime("%H:%M:%S"))
 
@@ -49,9 +58,10 @@ async def get_user_role(user_id):
 
 async def add_new_user(user_id, role):
   async with aiosqlite.connect(db_file) as conn:
+    if await check_exists_user(user_id) == True:
+      return
     async with conn.execute("INSERT INTO users (id, role) VALUES (?, ?)", (user_id, role)) as cursor:
-      if await check_exists_user(user_id) == True:
-        return
+      pass
     await conn.commit()
     await log(f"User {user_id} added with {role} role")
 
