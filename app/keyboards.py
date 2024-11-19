@@ -68,6 +68,12 @@ v_kakom_formatike_keyboard = InlineKeyboardMarkup(
   ]
 )
 
+back_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
+  ]
+)
+
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:

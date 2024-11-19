@@ -178,7 +178,13 @@ async def add_admin_id(message: Message, state: FSMContext):
 
     user_id = data.get("user_id")
 
-    if await get_user_role(user_id) <= 2:
+    user_role = await get_user_role(user_id)
+    if user_role == None:
+      await message.answer(f"❌ Пользователь не существует или скрыл id.")
+      await state.clear()
+      return
+
+    elif user_role <= 2:
       await change_user_role(user_id, 3)
       await message.answer(f"✅ Пользователь добавлен в администраторы.", parse_mode="html")
     else:
@@ -202,7 +208,13 @@ async def remove_admin_id(message: Message, state: FSMContext):
 
     user_id = data.get("user_id")
 
-    if await get_user_role(user_id) == 3:
+    user_role = await get_user_role(user_id)
+    if user_role == None:
+      await message.answer(f"❌ Пользователь не существует или скрыл id.")
+      await state.clear()
+      return
+
+    elif user_role == 3:
       await change_user_role(user_id, 1)
       await message.answer(f"✅ Пользователь удален из администраторов.")
     else:
@@ -226,7 +238,13 @@ async def add_adder_id(message: Message, state: FSMContext):
     
     user_id = data.get("user_id")
 
-    if await get_user_role(user_id) <= 1:
+    user_role = await get_user_role(user_id)
+    if user_role == None:
+      await message.answer(f"❌ Пользователь не существует или скрыл id.")
+      await state.clear()
+      return
+    
+    elif user_role <= 1:
       await change_user_role(user_id, 2)
       await message.answer(f"✅ Пользователь добавлен в добавлятелей.")
     else:
@@ -250,7 +268,13 @@ async def remove_adder_id(message: Message, state: FSMContext):
     
     user_id = data.get("user_id")
 
-    if await get_user_role(user_id) == 2:
+    user_role = await get_user_role(user_id)
+    if user_role == None:
+      await message.answer(f"❌ Пользователь не существует или скрыл id.")
+      await state.clear()
+      return
+
+    elif user_role == 2:
       await change_user_role(user_id, 1)
       await message.answer(f"✅ Пользователь удален из добавлятелей.", parse_mode="html")
     else:
@@ -722,7 +746,7 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
   if await get_user_role(message.from_user.id) >= 3:
     await state.set_state(removing_homework.hw_id)
-    await message.answer("Введите id задания:", reply_markup=types.ReplyKeyboardRemove())
+    await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
 
 @dp.message(removing_homework.hw_id)
 async def remove_hw_by_id(message: Message, state: FSMContext):
