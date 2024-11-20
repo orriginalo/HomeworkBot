@@ -667,6 +667,8 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
       await state.update_data(task=album_caption)
     elif message.text != None:
       await state.update_data(task=message.text)
+    elif message.caption != None:
+      await state.update_data(task=message.caption)
     else:
       await state.update_data(task="")
 
