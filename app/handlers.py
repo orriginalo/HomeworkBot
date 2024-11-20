@@ -487,12 +487,12 @@ async def show_hw_yesterday_handler(message: Message, state: FSMContext):
 async def show_hw_today_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.today_ts)
+    tasks = await get_tasks_by_date(var.calculate_today()[1])
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
-      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.today_ts)}</b>:", parse_mode="html")
+      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_today()[1])}</b>:", parse_mode="html")
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
@@ -521,12 +521,12 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
 async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.tomorrow_ts)
+    tasks = await get_tasks_by_date(var.calculate_tomorrow()[1])
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
-      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.tomorrow_ts)}</b>:", parse_mode="html")
+      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_tomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
@@ -555,12 +555,12 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
 async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.after_tomorrow_ts)
+    tasks = await get_tasks_by_date(var.calculate_aftertomorrow()[1])
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
-      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.after_tomorrow_ts)}</b>:", parse_mode="html")
+      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_aftertomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
@@ -589,7 +589,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
 @dp.message(view_homework.day and F.text == "🗓 По дате")
 async def show_hw_by_date_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.with_date)
-  await message.answer(f'Введи дату в виде "номер_месяца число" без кавычек. Сейчас <b>{datetime.fromtimestamp(var.today_ts).strftime("%m")}</b> месяц', parse_mode="html")
+  await message.answer(f'Введи дату в виде "номер_месяца число" без кавычек. Сейчас <b>{datetime.fromtimestamp(var.calculate_today()[1]).strftime("%m")}</b> месяц', parse_mode="html")
 
 
 @dp.message(F.text == "Назад ↩️")
