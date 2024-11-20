@@ -662,7 +662,11 @@ async def add_hw_two(call: CallbackQuery, state: FSMContext):
 @dp.message(adding_homework.task)
 async def add_hw_three(message: Message, state: FSMContext, album: list = None, album_caption: str = None):
 
-  if (await state.get_data()).get("task") is None:
+  if message.content_type == "sticker":
+    await message.answer("Нельзя прикрепить стикер.")
+
+
+  elif (await state.get_data()).get("task") is None:
     if album and album_caption:
       await state.update_data(task=album_caption)
     elif message.text != None:
