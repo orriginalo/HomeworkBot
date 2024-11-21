@@ -125,17 +125,44 @@ async def get_admins_chatid():
 # from_date_rounded = datetime.timestamp(datetime.strptime(from_date, "%d/%m/%Y %H:%M:%S"))
 # print(from_date_rounded)
 # print(datetime.fromtimestamp(from_date_rounded))
-async def get_task_by_subject(subject):
-    async with aiosqlite.connect(db_file) as conn:
-        async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? ORDER BY id DESC LIMIT 2", (subject,)) as cursor:
-            tasks = await cursor.fetchall()
-    return tasks
+
+# async def get_task_by_subject(subject):
+#     async with aiosqlite.connect(db_file) as conn:
+#         async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? ORDER BY id DESC LIMIT 2", (subject,)) as cursor:
+#             tasks = await cursor.fetchall()
+#     return tasks
+
 
 async def get_tasks_by_date(timestamp):
     async with aiosqlite.connect(db_file) as conn:
         async with conn.execute("SELECT subject, task, id FROM homeworks WHERE to_date = ?", (timestamp,)) as cursor:
             results = await cursor.fetchall()
     return results if results else None
+
+# async def get_task_by_subject(subject):
+#     async with aiosqlite.connect(db_file) as conn:
+#         async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? ORDER BY id DESC LIMIT 2", (subject,)) as cursor:
+#             tasks = await cursor.fetchall()
+#     return tasks
+    
+async def get_task_by_subject(subject):
+    async with aiosqlite.connect(db_file) as conn:
+        # Получаем последние два from_date для указанного предмета
+        async with conn.execute("SELECT from_date FROM homeworks WHERE subject = ? ORDER BY from_date DESC LIMIT 2", (subject,)) as cursor:
+            last_dates = await cursor.fetchall()
+        
+        # Извлекаем только значения from_date из кортежей
+        last_dates = [date[0] for date in last_dates]
+        
+        if not last_dates:
+            return []  # Если нет заданий, возвращаем пустой список
+
+        # Получаем все задания, соответствующие последним двум from_date
+        async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? AND from_date IN (?, ?)", 
+                                (subject, last_dates[0], last_dates[1])) as cursor:
+            tasks = await cursor.fetchall()
+
+    return tasks
 
 async def update_homework_dates():
     await log("Updating homework to_date dates...")
@@ -174,3 +201,4 @@ async def delete_media_by_id(homework_id):
       pass
     await conn.commit()
 
+print(asyncio.run(get_task_by_subject("Биология")))
