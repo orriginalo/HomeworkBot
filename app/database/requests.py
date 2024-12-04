@@ -149,17 +149,21 @@ async def get_task_by_subject(subject):
     async with aiosqlite.connect(db_file) as conn:
         # Получаем последние два from_date для указанного предмета
         async with conn.execute("SELECT from_date FROM homeworks WHERE subject = ? ORDER BY from_date DESC LIMIT 2", (subject,)) as cursor:
-            last_dates = await cursor.fetchall()
+          last_dates = await cursor.fetchall()
         
         # Извлекаем только значения from_date из кортежей
         last_dates = [date[0] for date in last_dates]
         
         if not last_dates:
-            return []  # Если нет заданий, возвращаем пустой список
+          return []  # Если нет заданий, возвращаем пустой список
 
         # Получаем все задания, соответствующие последним двум from_date
-        async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? AND from_date IN (?, ?)", 
-                                (subject, last_dates[0], last_dates[1])) as cursor:
+        
+        if len(last_dates) > 1:
+          async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? AND from_date IN (?, ?)", (subject, last_dates[0], last_dates[1])) as cursor:
+            tasks = await cursor.fetchall()
+        else:
+          async with conn.execute("SELECT from_date, task, id FROM homeworks WHERE subject = ? AND from_date = ?", (subject, last_dates[0])) as cursor:
             tasks = await cursor.fetchall()
 
     return tasks

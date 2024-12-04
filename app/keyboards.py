@@ -26,9 +26,10 @@ async def get_start_keyboard(role):
     return start_keyboard
 
 see_hw_keyboard = ReplyKeyboardMarkup(keyboard=[
+  [KeyboardButton(text="Посмотреть по предмету")],
   [KeyboardButton(text="На сегодня"), KeyboardButton(text="На завтра"), KeyboardButton(text="На послезавтра")],
   [KeyboardButton(text="🗓 По дате"), KeyboardButton(text="Назад ↩️")],
-], resize_keyboard=True, input_field_placeholder="Выберите день")
+], resize_keyboard=True, input_field_placeholder="Выбери вариант")
 
 superuser_keyboard = InlineKeyboardMarkup(inline_keyboard=[
   [InlineKeyboardButton(text="➕ Добавить админа", callback_data="add_admin"), InlineKeyboardButton(text="Удалить админа ❌", callback_data="remove_admin")],

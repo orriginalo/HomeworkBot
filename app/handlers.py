@@ -413,16 +413,18 @@ async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
 @dp.message(F.text == '👀 Посмотреть Д/З')
 async def show_homework_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.day)
-  await message.answer("В каком форматике?", reply_markup=kb.v_kakom_formatike_keyboard)
+  await message.answer ("Выбери вариант.", reply_markup=kb.see_hw_keyboard)
+  # await message.answer("В каком форматике?", reply_markup=kb.v_kakom_formatike_keyboard)
 
 @dp.callback_query(F.data == "by_date")
 async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
   await state.set_state(view_homework.day)
   await call.message.answer("Выберите день", reply_markup=kb.see_hw_keyboard)
 
-@dp.callback_query(F.data == "by_subject")
-async def check_hw_by_subject_handler(call: CallbackQuery):
-  await call.message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(var.allowed_subjects))
+# @dp.callback_query(F.data == "by_subject")
+@dp.message(F.text == "Посмотреть по предмету")
+async def check_hw_by_subject_handler(message: Message):
+  await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(var.allowed_subjects))
 
 @dp.callback_query(F.data.contains("-check-hw"))
 async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
