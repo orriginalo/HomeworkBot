@@ -15,6 +15,9 @@ from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, 
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
+from app.excel_maker.db_to_excel import create_schedule
+from app.excel_maker.formatter import format_table
+
 from other_scripts.db_subject_populator import populate_schedule
 
 import psutil
@@ -64,7 +67,7 @@ dp.message.middleware(MsgLoggerMiddleware())
 
 @dp.message(CommandStart())
 async def start(message: Message):
-      await add_new_user(message.from_user.id, 1)
+      # await add_new_user(message.from_user.id, 1)
       if await get_user_role(message.from_user.id) != 0:
         if await get_user_role(message.from_user.id) >= 2:
           await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
@@ -377,13 +380,22 @@ async def get_logs_backup_handler(call: CallbackQuery):
   logs_backup_files.sort()
   last_logs_backup_file = logs_backup_files[-1]
   backup_date_str = last_logs_backup_file.replace("backup_logs_", "").replace(".log", "").replace("_", " ")
-  backup_date_time = datetime.strptime(backup_date_str, "%Y-%m-%d")
+  backup_date_time = str(datetime.strptime(backup_date_str, "%Y-%m-%d")).replace("00:00:00", "")
   path_to_file = f"{logs_backups_path}/{last_logs_backup_file}"
 
   logfile = FSInputFile(path_to_file) 
 
   await call.message.answer_document(logfile, caption=f"Резервная копия логов <b>{backup_date_time}</b>", parse_mode="html")
 
+@dp.callback_query(F.data == "get_data_excel")
+async def get_data_excel(call: CallbackQuery):
+  msg1 = await call.message.answer("⌛ Создание таблицы...")
+  create_schedule()
+  await msg1.edit_text("⌛ Форматирование...")
+  format_table()
+  await msg1.edit_text("⌛ Сохранение...")
+  await call.message.answer_document(FSInputFile("domashkabot info.xlsx"), caption="✅ Готово!")
+  await msg1.delete()
 
 @dp.callback_query(F.data.contains("-changed"))
 async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):

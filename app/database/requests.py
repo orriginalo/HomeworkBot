@@ -56,14 +56,18 @@ async def get_user_role(user_id):
     return role
   return role[0]
 
-async def add_new_user(user_id, role):
+async def add_new_user(user_id, role, username = None):
   async with aiosqlite.connect(db_file) as conn:
     if await check_exists_user(user_id) == True:
       return
-    async with conn.execute("INSERT INTO users (id, role) VALUES (?, ?)", (user_id, role)) as cursor:
-      pass
+    if username:
+      async with conn.execute("INSERT INTO users (id, role, username) VALUES (?, ?, ?)", (user_id, role, username)) as cursor:
+        pass
+    else:
+      async with conn.execute("INSERT INTO users (id, role) VALUES (?, ?)", (user_id, role)) as cursor:
+        pass
     await conn.commit()
-    await log(f"User {user_id} added with {role} role")
+    await log(f"User {username} ({user_id}) added with {role} role")
 
 async def del_user(user_id):
   async with aiosqlite.connect(db_file) as conn:
@@ -205,4 +209,16 @@ async def delete_media_by_id(homework_id):
       pass
     await conn.commit()
 
-print(asyncio.run(get_task_by_subject("Биология")))
+async def get_username_by_id(user_id):
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)) as cursor:
+      result = await cursor.fetchone()
+  return result[0] if result is not None else None
+
+async def set_username_by_id(user_id, username):
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("UPDATE users SET username = ? WHERE id = ?", (username, user_id)) as cursor:
+      pass
+    await conn.commit()
+
+# print(asyncio.run(get_username_by_id(1522039516)))

@@ -9,8 +9,9 @@ scheduler = AsyncIOScheduler()
 def create_db_backup():
 
   all_backup_files = os.listdir("data/backups/databases")
+  all_backup_files.sort()
 
-  if len(all_backup_files) > 10:
+  if len(all_backup_files) > 6:
     os.remove(f"data/backups/databases/{all_backup_files[0]}")
 
   source_file = 'Database.db'  # Путь к файлу для резервного копирования
