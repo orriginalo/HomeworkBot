@@ -235,4 +235,8 @@ async def get_homework_deadline_by_id(homework_id):
             result = await cursor.fetchone()
     return result[0] if result is not None else None
 
-print(asyncio.run(get_task_by_subject("Биология")))
+# print(asyncio.run(get_task_by_subject("Биология")))
+# asyncio.run(reset_homework_deadline_by_id(1))
+asyncio.run(update_homework_dates())
+
+
