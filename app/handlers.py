@@ -834,7 +834,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     data = await state.get_data()
     await reset_homework_deadline_by_id(data['hw_id'])
     await message.answer("✅ Дата сдачи сброшена.")
-    await update_homework_dates()
+    # await update_homework_dates()
     deadline = await get_homework_deadline_by_id(data['hw_id'])
     new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
     await message.answer(new_deadline_text)

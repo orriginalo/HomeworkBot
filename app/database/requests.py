@@ -3,6 +3,8 @@ from rich import print
 import aiosqlite
 import asyncio
 import aiofiles
+import sqlite3
+from app.variables import calculate_today
 
 db_file = "Database.db"
 
@@ -221,22 +223,41 @@ async def set_username_by_id(user_id, username):
       pass
     await conn.commit()
 
-
 async def reset_homework_deadline_by_id(homework_id):
-  async with aiosqlite.connect(db_file) as conn:
-    async with conn.execute("UPDATE homeworks SET to_date = NULL WHERE id = ?", (homework_id,)) as cursor:
-      pass
-    await conn.commit()
-# print(asyncio.run(get_username_by_id(1522039516)))
+    await log(f"Resetting to_date for homework ID: {homework_id}...")
+    current_timestamp = calculate_today()[1]  # Текущая дата в формате timestamp
+    print(current_timestamp)
+
+    async with aiosqlite.connect(db_file) as conn:
+        # Получаем from_date и subject для указанного домашнего задания
+        async with conn.execute("SELECT from_date, subject FROM homeworks WHERE id = ?", (homework_id,)) as cursor:
+            homework_entry = await cursor.fetchone()
+
+        if homework_entry is None:
+            await log(f"No homework found with ID: {homework_id}")
+            return  # Если домашнее задание не найдено, выходим из функции
+
+        from_date, subject = homework_entry
+        print(from_date, subject)
+        # Находим ближайшую дату занятия для предмета относительно текущей даты
+        async with conn.execute("SELECT MIN(timestamp) FROM schedule WHERE subject = ? AND timestamp > ?", 
+                                (subject, current_timestamp)) as cursor:
+            next_class_date = await cursor.fetchone()
+            print(next_class_date)
+
+        if next_class_date[0] is not None:
+            # Сбрасываем to_date и устанавливаем ближайшую дату занятия
+            await conn.execute("UPDATE homeworks SET to_date = ? WHERE id = ?", 
+                               (next_class_date[0], homework_id))
+            await log(f"Updated to_date for homework ID: {homework_id} to {next_class_date[0]}")
+
+        # Фиксируем изменения
+        await conn.commit()
+    await log("Homework to_date has been reset and updated.")
+
 
 async def get_homework_deadline_by_id(homework_id):
     async with aiosqlite.connect(db_file) as conn:
         async with conn.execute("SELECT to_date FROM homeworks WHERE id = ?", (homework_id,)) as cursor:
             result = await cursor.fetchone()
     return result[0] if result is not None else None
-
-# print(asyncio.run(get_task_by_subject("Биология")))
-# asyncio.run(reset_homework_deadline_by_id(1))
-asyncio.run(update_homework_dates())
-
-
