@@ -3,7 +3,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
-  [KeyboardButton(text="❌ Удалить Д/З"), KeyboardButton(text="Админ-панель 😈")]
+  [KeyboardButton(text="❌ Удалить Д/З"), KeyboardButton(text="Админ-панель 😈")],
+  [KeyboardButton(text="🔄 Сбросить дедлайн Д/З 🔄")]
   ], resize_keyboard=True, input_field_placeholder="Выберите пункт меню")
 
 start_keyboard_adder = ReplyKeyboardMarkup(keyboard=[

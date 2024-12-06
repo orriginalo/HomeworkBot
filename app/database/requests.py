@@ -221,4 +221,18 @@ async def set_username_by_id(user_id, username):
       pass
     await conn.commit()
 
+
+async def reset_homework_deadline_by_id(homework_id):
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("UPDATE homeworks SET to_date = NULL WHERE id = ?", (homework_id,)) as cursor:
+      pass
+    await conn.commit()
 # print(asyncio.run(get_username_by_id(1522039516)))
+
+async def get_homework_deadline_by_id(homework_id):
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("SELECT to_date FROM homeworks WHERE id = ?", (homework_id,)) as cursor:
+            result = await cursor.fetchone()
+    return result[0] if result is not None else None
+
+print(asyncio.run(get_task_by_subject("Биология")))

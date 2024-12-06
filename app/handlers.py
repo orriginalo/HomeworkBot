@@ -22,6 +22,10 @@ from other_scripts.db_subject_populator import populate_schedule
 
 import psutil
 
+
+class resetting_deadline(StatesGroup):
+  hw_id = State()
+
 class view_homework(StatesGroup):
   day = State()
   with_date = State()
@@ -138,9 +142,9 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
     for media in data.get("media_group"):
       await add_media_to_db(homework_id, media.media, media.type)
 
-  await call.message.delete()
   await call.message.answer(f"✅ Домашнее задание добавлено.") # в базу
   await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+  await call.message.delete()
   admins = await get_admins_chatid()
   for admin_id in admins:
     if admin_id[0] != call.from_user.id:
@@ -459,12 +463,12 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
 
-          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime('%d.%m.%Y')}</b>\n\n{str(task[1]).capitalize()}"
+          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "") + f"\n\n{str(task[1]).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await call.message.answer_media_group(media_group)
       else:
-        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b>\n\n{str(task[1]).capitalize()}", parse_mode="html")
+        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "") + f"\n\n{str(task[1]).capitalize()}", parse_mode="html")
   else:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
 
@@ -817,6 +821,26 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
   await state.set_state(adding_new_week.file)
   await call.message.answer("Отправьте файл с новой неделей", reply_markup=types.ReplyKeyboardRemove())
+
+@dp.message(F.text == "🔄 Сбросить дедлайн Д/З 🔄")
+async def reset_deadline_handler(message: Message, state: FSMContext):
+  await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
+  await state.set_state(resetting_deadline.hw_id)
+
+
+@dp.message(resetting_deadline.hw_id)
+async def reset_deadline(message: Message, state: FSMContext):
+    await state.update_data(hw_id=message.text)
+    data = await state.get_data()
+    await reset_homework_deadline_by_id(data['hw_id'])
+    await message.answer("✅ Дата сдачи сброшена.")
+    await update_homework_dates()
+    deadline = await get_homework_deadline_by_id(data['hw_id'])
+    new_deadline_text = f"Новая дата сдачи: {(datetime.fromtimestamp(deadline) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
+    await message.answer(new_deadline_text)
+    await state.set_state(resetting_deadline.deadline)
+    await state.clear()
+    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
 
 
   
