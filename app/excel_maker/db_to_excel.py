@@ -30,12 +30,9 @@ def get_db():
     try:
         # Чтение всех листов из Excel файла
         df_dict = pd.read_excel(excel_filename, sheet_name=None)
-        print("[bold green]База данных загружена\n")
         return df_dict
 
     except FileNotFoundError:
-        print("[bold red]База данных не найдена")
-        print("[bold yellow]Создание новой...")
 
         # Создание нового Excel файла с тремя листами
         with pd.ExcelWriter(excel_filename) as writer:
@@ -43,7 +40,6 @@ def get_db():
                 df = pd.DataFrame(columns=all_columns[i])
                 df.to_excel(writer, index=False, sheet_name=sheet_names[i])
         
-        print("[bold green]База создан")
         return {sheet_names[i]: pd.DataFrame(columns=all_columns[i]) for i in range(3)}
 
 def append_db(data: list, df_dict: dict, sheet_name: str):
@@ -78,8 +74,6 @@ def append_db(data: list, df_dict: dict, sheet_name: str):
     with pd.ExcelWriter(excel_filename) as writer:
         for name, df in df_dict.items():
             df.to_excel(writer, index=False, sheet_name=name)
-
-    print("[gray][Debug][/gray] [bright white]Добавлено в базу данных")
 
 def db_to_excel():
   for homework in get_homeworks():

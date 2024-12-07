@@ -445,6 +445,7 @@ async def check_hw_by_subject_handler(message: Message):
 @dp.callback_query(F.data.contains("-check-hw"))
 async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
+  user_role = await get_user_role(call.from_user.id)
   tasks = await get_task_by_subject(call.data.replace("-check-hw", ""))
   if len(tasks) > 0:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
@@ -468,7 +469,7 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
 
           await call.message.answer_media_group(media_group)
       else:
-        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "") + f"\n\n{str(task[1]).capitalize()}", parse_mode="html")
+        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "")  + (f" <i>id {task[2]}</i>" if user_role >= 3 else "") + f"\n\n{str(task[1]).capitalize()}", parse_mode="html")
   else:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
 
@@ -506,6 +507,7 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_today()[1])
+    user_role = await get_user_role(message.from_user.id)
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -514,6 +516,7 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
+        task_id = homework[2]
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -527,12 +530,12 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
 
-          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На завтра")
@@ -540,6 +543,7 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_tomorrow()[1])
+    user_role = await get_user_role(message.from_user.id)
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -548,6 +552,7 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
+        task_id = homework[2]
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -561,12 +566,12 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
 
-          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На послезавтра")
@@ -574,6 +579,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_aftertomorrow()[1])
+    user_role = await get_user_role(message.from_user.id)
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -582,6 +588,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
+        task_id = homework[2]
         # await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
@@ -596,12 +603,12 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
 
-          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "🗓 По дате")
@@ -616,6 +623,7 @@ async def back_handler(message: Message):
 
 @dp.message(view_homework.with_date)
 async def show_hw_by_date(message: Message, state: FSMContext):
+    user_role = await get_user_role(message.from_user.id)
     try:
       inted_date_from_user = [int(num) for num in message.text.split(" ")]
     except:
@@ -639,6 +647,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
       for homework in tasks:
         subject = homework[0]
         task = homework[1]
+        task_id = homework[2]
         if await get_all_media_by_id(homework[2]) is not None:
           media_group_data = await get_all_media_by_id(homework[2])
           media_group = []
@@ -652,12 +661,12 @@ async def show_hw_by_date(message: Message, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
           
-          media_group[0].caption = f"<b>{subject}</b>\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
     await state.clear()
 
 @dp.message(F.text == 'Добавить Д/З ➕')
