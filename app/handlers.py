@@ -464,7 +464,7 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
             elif media_data[1] == "document":
               media_group.append(InputMediaDocument(media=media_data[0]))
 
-          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "") + f"\n\n{str(task[1]).capitalize()}"
+          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "")  + (f" <i>id {task[2]}</i>" if user_role >= 3 else "") + f"\n\n{str(task[1]).capitalize()}"
           media_group[0].parse_mode = "html"
 
           await call.message.answer_media_group(media_group)
