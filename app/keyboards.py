@@ -77,6 +77,13 @@ back_keyboard = InlineKeyboardMarkup(
   ]
 )
 
+donate_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="Поддержать", pay=True)],
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="donate_cancel")]
+]
+)
+
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:

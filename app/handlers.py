@@ -10,8 +10,8 @@ import time
 
 import aiogram
 from aiogram import F ,types, Router
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMedia, InputMediaAudio, ContentType as CT
+from aiogram.filters import CommandStart, Command, CommandObject
+from aiogram.types import Message, CallbackQuery, FSInputFile, LabeledPrice, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMedia, InputMediaAudio, ContentType as CT
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
@@ -851,7 +851,29 @@ async def reset_deadline(message: Message, state: FSMContext):
     await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
 
 
-  
+@dp.callback_query(F.data == "donate_cancel")
+async def donate_cancel_handler(call: CallbackQuery):
+  await call.message.delete()
+  await call.message.answer("❌ Действие отменено.")
+  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+
+
+@dp.message(Command("donate", "donat", "донат"))
+async def donate(message: Message, command: CommandObject):
+  if command.args is None or not command.args.isdigit() or not 1 <= int(command.args) <= 2500:
+    await message.answer("Ошибка")
+    return
+  amount = int(command.args)
+
+  prices = [LabeledPrice(label="XTR", amount=amount)]
+  await message.answer_invoice(
+    title="Поддержать донатиком",
+    description="",
+    prices=prices,
+    provider_token="",
+    payload=f"{amount} stars",
+    currency="XTR",
+    reply_markup=kb.donate_keyboard)
 
 # @dp.message(adding_homework.media_group and F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT]))
 # async def handle_albums(message: Message, album: list[Message], state: FSMContext):
