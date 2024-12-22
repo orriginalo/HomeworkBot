@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./Database.db:/app/Database.db
+      - ./data:/app/data
     environment:
       - TZ=Europe/Samara
     container_name: domashkatgbot
