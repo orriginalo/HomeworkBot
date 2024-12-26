@@ -618,7 +618,8 @@ async def show_hw_by_date_handler(message: Message, state: FSMContext):
 
 
 @dp.message(F.text == "Назад ↩️")
-async def back_handler(message: Message):
+async def back_handler(message: Message, state: FSMContext):
+  await state.clear()
   await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
 
 @dp.message(view_homework.with_date)
