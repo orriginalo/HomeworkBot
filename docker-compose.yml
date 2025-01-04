@@ -15,6 +15,8 @@ services:
       - internal
     depends_on:
       - selenium
+    env_file:
+      - .env
   selenium:
     image: selenium/standalone-firefox
     restart: no
