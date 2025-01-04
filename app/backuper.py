@@ -6,7 +6,8 @@ import shutil
 import datetime
 import os
 
-scheduler = AsyncIOScheduler()
+scheduler1 = AsyncIOScheduler()
+scheduler2 = AsyncIOScheduler()
 
 def create_db_backup():
 
@@ -47,14 +48,21 @@ async def download_timetable_job():
 
 async def schedule_backup():
   try:
-    scheduler.add_job(create_backups, 'interval', hours=1)
+    scheduler1.add_job(create_backups, 'interval', hours=1)
     print("Scheduler backups added")
-    scheduler.add_job(download_timetable_job, 'interval', hours=12)
-    print("Scheduler timetable added")
     await download_timetable_job()
-    scheduler.start()
+    scheduler1.start()
   except Exception:
-    log("Database backuping ERROR", "BACKUP")
+    await log("Database backuping ERROR", "BACKUP")
+
+async def timetable_get():
+  try:
+    scheduler2.add_job(download_timetable_job, 'interval', hours=12)
+    print("Scheduler timetable added")
+    scheduler2.start()
+  except Exception:
+    log("Timetable downloading ERROR", "BACKUP")
+
     
 
 

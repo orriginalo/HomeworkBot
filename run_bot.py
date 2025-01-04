@@ -6,7 +6,7 @@ import os
 from app.database.requests import log
 from app.handlers import dp
 from app.database.models import async_main
-from app.backuper import schedule_backup
+from app.backuper import schedule_backup, timetable_get
 
 from config import API_KEY
 
@@ -56,6 +56,7 @@ async def main():
   disp.include_router(dp)
   await log("Bot started", "RUNNER")
   await schedule_backup()
+  await timetable_get()
   await disp.start_polling(bot)
 
 
