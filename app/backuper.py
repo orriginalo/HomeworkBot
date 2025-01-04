@@ -2,6 +2,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.database.requests import log
 from other_scripts.timetable_downloader import download_timetable
 from other_scripts.timetable_parser import parse_timetable
+from other_scripts.db_subject_populator import populate_schedule
 import shutil
 import datetime
 import os
@@ -47,6 +48,9 @@ async def download_timetable_job():
   print("Parsing Started")
   parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
   print("Parsing Ended")
+  print("Populating Started")
+  populate_schedule()
+  print("Populating Ended")
   
 
 async def schedule_backup():

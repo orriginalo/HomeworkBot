@@ -3,6 +3,7 @@ from datetime import datetime
 import datetime as dt
 from bs4 import BeautifulSoup
 import sqlite3 as sql
+import json
 # Для удачной генерации нужно удалить все лишние расписания кроме нужного (от корня будут >1 <div>, нужно чтобы остался один)
 # А также удалить верхнюю строку с "пара/время" (Удалить самый первый )
 
@@ -42,51 +43,66 @@ def add_subject(timestamp, subject, weeknum):
 def get_iterable_text(soup_find_text):
   return [text.strip() for text in soup_find_text.splitlines() if text.strip()]
 
-def populate_schedule(file_name:str):
-  with open(file_name, encoding="utf-8") as f:
-    html = f.read()
+# def populate_schedule(file_name:str):
+#   with open(file_name, encoding="utf-8") as f:
+#     html = f.read()
 
-  soup = BeautifulSoup(html, "lxml")
+#   soup = BeautifulSoup(html, "lxml")
 
-  edu_week_number = int(re.search(r"(\d+)", soup.find('div', class_="week-num").text).group().strip())
+#   edu_week_number = int(re.search(r"(\d+)", soup.find('div', class_="week-num").text).group().strip())
 
-  delete_old(edu_week_number)
-  rows = soup.find_all("div", class_="row")
+#   delete_old(edu_week_number)
+#   rows = soup.find_all("div", class_="row")
 
-  i = 0
+#   i = 0
 
-  global_week_number = dt.datetime.fromtimestamp(get_monday_timestamp(35)) + dt.timedelta(weeks=edu_week_number)
-  timestamp = datetime.datetime.timestamp(global_week_number)
+#   global_week_number = dt.datetime.fromtimestamp(get_monday_timestamp(35)) + dt.timedelta(weeks=edu_week_number)
+#   timestamp = datetime.datetime.timestamp(global_week_number)
 
-# global_week_number = get_weeknumber(SUPERWEEKNUMBER + dt.timedelta(weeks=current_edu_week_number))
-#   timestamp = get_monday_timestamp(global_week_number)
-  print(f"Week number: {global_week_number}")
+# # global_week_number = get_weeknumber(SUPERWEEKNUMBER + dt.timedelta(weeks=current_edu_week_number))
+# #   timestamp = get_monday_timestamp(global_week_number)
+#   print(f"Week number: {global_week_number}")
 
-  for row in rows: # Для каждой строки в строках
+#   for row in rows: # Для каждой строки в строках
 
 
-    date = 0
-    cells = list(row.children)
-    classes = []
-    weekday = row.find("div", class_="table-header-col").text.strip()
-    for cell in cells:
-      cell_iterable_text = get_iterable_text(cell.text)
+#     date = 0
+#     cells = list(row.children)
+#     classes = []
+#     weekday = row.find("div", class_="table-header-col").text.strip()
+#     for cell in cells:
+#       cell_iterable_text = get_iterable_text(cell.text)
 
-      if cell.name == "div" and cell.has_attr("class") and cell["class"][0] == "table-col table-desktop-col":
-        classes.append("-")
+#       if cell.name == "div" and cell.has_attr("class") and cell["class"][0] == "table-col table-desktop-col":
+#         classes.append("-")
 
-      elif len(cell_iterable_text) > 2:
-        print(cell_iterable_text)
-        if "пр." in cell_iterable_text[2]:
-          subject = cell_iterable_text[2].replace("пр.", "")
-          if subject not in classes:
-            # Обозначения предметов (также изменить в app.variables.py)
-            if subject == "Основы безопасности и защиты Родины":
-              subject = "ОБЗР"
-            classes.append(subject)
-            add_subject(timestamp, subject, edu_week_number)
-            print(f"{datetime.datetime.fromtimestamp(timestamp)} {subject}")
-    timestamp += 86400
-    
+#       elif len(cell_iterable_text) > 2:
+#         print(cell_iterable_text)
+#         if "пр." in cell_iterable_text[2]:
+#           subject = cell_iterable_text[2].replace("пр.", "")
+#           if subject not in classes:
+#             # Обозначения предметов (также изменить в app.variables.py)
+#             if subject == "Основы безопасности и защиты Родины":
+#               subject = "ОБЗР"
+#             classes.append(subject)
+#             add_subject(timestamp, subject, edu_week_number)
+#             print(f"{datetime.datetime.fromtimestamp(timestamp)} {subject}")
+#     timestamp += 86400
 
+
+def populate_schedule():
+  timetable_json = json.load(open("./data/timetables/timetables.json", "r", encoding="utf-8"))
+
+# Проход по JSON
+  for week, days in timetable_json.items():
+    delete_old(week)
+    print(f"Неделя: {week}")
+    for timestamp, lessons in days.items():
+      print(f"  День (timestamp): {timestamp}")
+      for pair_number, subject in lessons.items():
+        add_subject(timestamp, subject, week)
+        print(f"    {datetime.datetime.fromtimestamp(timestamp)} - {subject}")
+
+
+populate_schedule()
 # populate_schedule("schedule-12.html")
