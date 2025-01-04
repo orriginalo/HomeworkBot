@@ -67,4 +67,4 @@ def download_timetable():
         # Закрываем драйвер
         driver.quit()
 
-download_timetable()
+# download_timetable()

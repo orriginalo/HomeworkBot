@@ -57,7 +57,6 @@ async def schedule_backup():
   try:
     scheduler1.add_job(create_backups, 'interval', hours=1)
     print("Scheduler backups added")
-    await download_timetable_job()
     scheduler1.start()
   except Exception:
     await log("Database backuping ERROR", "BACKUP")
@@ -65,8 +64,10 @@ async def schedule_backup():
 async def timetable_get():
   try:
     scheduler2.add_job(download_timetable_job, 'interval', seconds=30)
+    await download_timetable_job()
     scheduler2.start()
-  except Exception:
+  except Exception as e:
+    print("Error: "+str(e))
     log("Timetable downloading ERROR", "BACKUP")
 
     
