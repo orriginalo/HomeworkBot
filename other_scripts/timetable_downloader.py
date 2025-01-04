@@ -17,8 +17,6 @@ firefox_options = webdriver.FirefoxOptions()
 firefox_options.add_argument("--headless")  # Чтобы браузер работал без UI
 firefox_options.add_argument("--disable-gpu")
 
-driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options)
-
 # Логин и пароль из .env
 username = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
@@ -26,6 +24,8 @@ password = os.getenv("PASSWORD")
 # Настройки для Chrome
 
 def download_timetable():
+
+    driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options)
 
     try:
         # Открываем страницу для логина

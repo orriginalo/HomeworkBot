@@ -41,10 +41,13 @@ async def create_backups():
   create_html_backup()
 
 async def download_timetable_job():
+  print("Starting downloading the timetable...")
   download_timetable()
-  await log("Timetable downloaded", "BACKUP")
+  print("Downloading Ended")
+  print("Parsing Started")
   parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
-  await log("Timetable parsed", "BACKUP")
+  print("Parsing Ended")
+  
 
 async def schedule_backup():
   try:
@@ -57,8 +60,7 @@ async def schedule_backup():
 
 async def timetable_get():
   try:
-    scheduler2.add_job(download_timetable_job, 'interval', hours=12)
-    print("Scheduler timetable added")
+    scheduler2.add_job(download_timetable_job, 'interval', seconds=30)
     scheduler2.start()
   except Exception:
     log("Timetable downloading ERROR", "BACKUP")

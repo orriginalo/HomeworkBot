@@ -7,6 +7,11 @@ from app.database.requests import log
 from app.handlers import dp
 from app.database.models import async_main
 from app.backuper import schedule_backup, timetable_get
+# from other_scripts.timetable_downloader import download_timetable
+# from other_scripts.timetable_parser import parse_timetable
+# from dotenv import load_dotenv
+
+# load_dotenv()
 
 from config import API_KEY
 
