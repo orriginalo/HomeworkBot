@@ -20,8 +20,6 @@ services:
     restart: no
     networks:
       - internal
-    profiles:
-      - app
 networks:
   internal:
     external: false
