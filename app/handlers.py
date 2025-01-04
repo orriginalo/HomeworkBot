@@ -19,6 +19,9 @@ from app.excel_maker.db_to_excel import create_schedule
 from app.excel_maker.formatter import format_table
 
 from other_scripts.db_subject_populator import populate_schedule
+from other_scripts.timetable_downloader import download_timetable
+from other_scripts.timetable_parser import parse_timetable
+from other_scripts.db_subject_populator import populate_schedule
 
 import psutil
 
@@ -827,10 +830,17 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
 #   await call.message.answer("Отправьте медиа (сгруппированно, одним сообщением)", reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.callback_query(F.data == "load_new_week")
+@dp.callback_query(F.data == "update_timetable")
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
-  await state.set_state(adding_new_week.file)
-  await call.message.answer("Отправьте файл с новой неделей", reply_markup=types.ReplyKeyboardRemove())
+  msg = await call.message.answer("⏳ Скачивание расписания...")
+  await download_timetable()
+  await msg.edit_text("⏳ Парсинг значений расписания...")
+  await parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
+  await msg.edit_text("⏳ Обновление значений базы данных...")
+  await populate_schedule()
+  await msg.edit_text("✅ Расписание обновлено.")
+  await state.clear()
+
 
 @dp.message(F.text == "🔄 Сбросить дедлайн Д/З 🔄")
 async def reset_deadline_handler(message: Message, state: FSMContext):

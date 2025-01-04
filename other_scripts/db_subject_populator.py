@@ -57,13 +57,10 @@ def populate_schedule():
 # Проход по JSON
   for week, days in timetable_json.items():
     delete_old(week)
-    print(f"Неделя: {week}")
     for timestamp, lessons in days.items():
-      print(f"  День (timestamp): {timestamp}")
       for pair_number, subject in lessons.items():
         if subject != "-" and check_exists_subject(subject, int(timestamp)) == False:
           add_subject(int(timestamp), subject, int(week))
-        print(f"    {datetime.datetime.fromtimestamp(int(timestamp))} - {subject}")
 
 
 # populate_schedule()

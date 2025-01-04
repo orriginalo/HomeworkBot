@@ -22,6 +22,8 @@ def calculate_timestamp(week1, week2, year, day):
     # Возвращаем timestamp
     return target_date.timestamp()
 
+def get_iterable_text(soup_find_text):
+  return [text.strip() for text in soup_find_text.splitlines() if text.strip()] if len(soup_find_text) > 2 else []
 
 def parse_timetable(html_file, json_file):
     current_timetables = json.load(open(json_file, "r", encoding="utf-8"))
@@ -64,21 +66,19 @@ def parse_timetable(html_file, json_file):
             pair_cols = day_row.find_all("div", class_="table-col")
             for pair_index, pair_col in enumerate(pair_cols, start=1):
                 pair_label = f"{pair_index}"
-                
-                # Получение информации о предмете
-                subject_parts = pair_col.find_all(text=True)
-                cleaned_subject = (clean_text(" ".join(subject_parts)) or "-").split(" ")
-                if len(cleaned_subject) >= 5:
-                  subject = cleaned_subject[4]
-                  if ".Основы" in subject:
-                      subject = subject.replace(".Основы", ".ОБЗР")
-                  if ".Физическая" in subject:
-                      subject = subject.replace(".Физическая", ".Физ-ра")
-                  if "пр." in subject:
-                      subject = subject.replace("пр.", "")
-                  timetable[week_num][day_name][pair_label] = subject
-                else:
-                  timetable[week_num][day_name][pair_label] = "-"
+                cell_text_it: list = get_iterable_text(pair_col.text)
+
+                subject = "-"
+                if len(cell_text_it) >= 3:
+                    subject = cell_text_it[2]
+
+                if ".Основы безопасности и защиты родины" in subject:
+                    subject = subject.replace(".Основы безопасности и защиты родины", ".ОБЗР")
+                if ".Физическая" in subject:
+                    subject = subject.replace(".Физическая", ".Физ-ра")
+                if "пр." in subject:
+                    subject = subject.replace("пр.", "")
+                timetable[week_num][day_name][pair_label] = subject
     
     print(timetable)
     with open("./data/timetables/timetables.json", "w", encoding="utf-8") as file:

@@ -40,7 +40,7 @@ superuser_keyboard = InlineKeyboardMarkup(inline_keyboard=[
   [InlineKeyboardButton(text="📊 Загруженность сервера", callback_data="server_status"), InlineKeyboardButton(text="Получить копию БД 🗄", callback_data="get_db_backup")],
   [InlineKeyboardButton(text="📋 Получить копию логов 📋", callback_data="get_logs_backup")],
   [InlineKeyboardButton(text="🗄 Получить данные в виде таблицы 🗄", callback_data="get_data_excel")],
-  [InlineKeyboardButton(text="➡️ Загрузить новую неделю ⬅️", callback_data="load_new_week")],
+  [InlineKeyboardButton(text="➡️ Обновить расписание ⬅️", callback_data="update_timetable")],
   [InlineKeyboardButton(text="Назад ↩️", callback_data="back")]
 ])
 

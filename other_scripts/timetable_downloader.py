@@ -57,11 +57,15 @@ def download_timetable():
         # Получаем HTML-код страницы
         page_html = driver.page_source
         
+        page_screenshot = driver.get_screenshot_as_png()
+        with open("./data/screenshots/timetable.png", "wb") as screenshot_file:
+            screenshot_file.write(page_screenshot)
+
         # Сохраняем HTML в файл
         with open("./data/timetables/timetable.html", "w", encoding="utf-8") as file:
             file.write(page_html)
 
-        print("HTML успешно сохранён!")
+        print("HTML successfully saved!")
 
     finally:
         # Закрываем драйвер
