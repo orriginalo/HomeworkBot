@@ -10,3 +10,18 @@ services:
       - TZ=Europe/Samara
     container_name: domashkatgbot
     image: domashkatgbot
+    restart: no
+    networks:
+      - internal
+    depends_on:
+      - selenium
+  selenium:
+    image: selenium/standalone-firefox
+    restart: no
+    networks:
+      - internal
+    profiles:
+      - app
+networks:
+  internal:
+    external: false

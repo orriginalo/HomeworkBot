@@ -1,5 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.database.requests import log
+from other_scripts.timetable_downloader import download_timetable
+from other_scripts.timetable_parser import parse_timetable
 import shutil
 import datetime
 import os
@@ -37,9 +39,19 @@ async def create_backups():
   create_db_backup()
   create_html_backup()
 
+async def download_timetable_job():
+  download_timetable()
+  await log("Timetable downloaded", "BACKUP")
+  parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
+  await log("Timetable parsed", "BACKUP")
+
 async def schedule_backup():
   try:
     scheduler.add_job(create_backups, 'interval', hours=1)
+    print("Scheduler backups added")
+    scheduler.add_job(download_timetable_job, 'interval', hours=12)
+    print("Scheduler timetable added")
+    download_timetable_job()
     scheduler.start()
   except Exception:
     log("Database backuping ERROR", "BACKUP")

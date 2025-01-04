@@ -55,8 +55,12 @@ def populate_schedule(file_name:str):
 
   i = 0
 
-  global_week_number = 35 + edu_week_number
-  timestamp = get_monday_timestamp(global_week_number)
+  global_week_number = dt.datetime.fromtimestamp(get_monday_timestamp(35)) + dt.timedelta(weeks=edu_week_number)
+  timestamp = datetime.datetime.timestamp(global_week_number)
+
+# global_week_number = get_weeknumber(SUPERWEEKNUMBER + dt.timedelta(weeks=current_edu_week_number))
+#   timestamp = get_monday_timestamp(global_week_number)
+  print(f"Week number: {global_week_number}")
 
   for row in rows: # Для каждой строки в строках
 
