@@ -833,13 +833,17 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "update_timetable")
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
   msg = await call.message.answer("⏳ Скачивание расписания...")
-  await download_timetable()
-  await msg.edit_text("⏳ Парсинг значений расписания...")
-  await parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
-  await msg.edit_text("⏳ Обновление значений базы данных...")
-  await populate_schedule()
-  await msg.edit_text("✅ Расписание обновлено.")
-  await state.clear()
+  try:
+    download_timetable()
+    await msg.edit_text("⏳ Парсинг значений расписания...")
+    parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
+    await msg.edit_text("⏳ Обновление значений базы данных...")
+    populate_schedule()
+    await msg.edit_text("✅ Расписание обновлено.")
+    await state.clear()
+  except Exception as e: 
+    await msg.edit_text("❌ Ошибка при обновлении расписания.")
+
 
 
 @dp.message(F.text == "🔄 Сбросить дедлайн Д/З 🔄")
