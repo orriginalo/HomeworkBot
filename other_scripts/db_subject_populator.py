@@ -104,5 +104,5 @@ def populate_schedule():
         print(f"    {datetime.datetime.fromtimestamp(timestamp)} - {subject}")
 
 
-populate_schedule()
+# populate_schedule()
 # populate_schedule("schedule-12.html")
