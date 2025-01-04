@@ -33,7 +33,7 @@ def delete_old(weeknum):
   conn.close()
 
 
-def add_subject(timestamp, subject, weeknum):
+def add_subject(timestamp:int, subject:str, weeknum:int):
   conn = sql.connect("Database.db")
   cursor = conn.cursor()
   cursor.execute("INSERT INTO schedule (timestamp, subject, weeknumber) VALUES (?, ?, ?)", (timestamp, subject, weeknum))
@@ -100,7 +100,7 @@ def populate_schedule():
     for timestamp, lessons in days.items():
       print(f"  День (timestamp): {timestamp}")
       for pair_number, subject in lessons.items():
-        add_subject(timestamp, subject, week)
+        add_subject(int(timestamp), subject, int(week))
         print(f"    {datetime.datetime.fromtimestamp(timestamp)} - {subject}")
 
 
