@@ -40,55 +40,16 @@ def add_subject(timestamp:int, subject:str, weeknum:int):
   conn.commit()
   conn.close()
 
+def check_exists_subject(subject:str, timestamp:int):
+  conn = sql.connect("Database.db")
+  cursor = conn.cursor()
+  cursor.execute("SELECT id FROM schedule WHERE subject = ? AND timestamp = ?", (subject, timestamp))
+  result = cursor.fetchone()
+  conn.close()
+  return True if result else False
+
 def get_iterable_text(soup_find_text):
   return [text.strip() for text in soup_find_text.splitlines() if text.strip()]
-
-# def populate_schedule(file_name:str):
-#   with open(file_name, encoding="utf-8") as f:
-#     html = f.read()
-
-#   soup = BeautifulSoup(html, "lxml")
-
-#   edu_week_number = int(re.search(r"(\d+)", soup.find('div', class_="week-num").text).group().strip())
-
-#   delete_old(edu_week_number)
-#   rows = soup.find_all("div", class_="row")
-
-#   i = 0
-
-#   global_week_number = dt.datetime.fromtimestamp(get_monday_timestamp(35)) + dt.timedelta(weeks=edu_week_number)
-#   timestamp = datetime.datetime.timestamp(global_week_number)
-
-# # global_week_number = get_weeknumber(SUPERWEEKNUMBER + dt.timedelta(weeks=current_edu_week_number))
-# #   timestamp = get_monday_timestamp(global_week_number)
-#   print(f"Week number: {global_week_number}")
-
-#   for row in rows: # Для каждой строки в строках
-
-
-#     date = 0
-#     cells = list(row.children)
-#     classes = []
-#     weekday = row.find("div", class_="table-header-col").text.strip()
-#     for cell in cells:
-#       cell_iterable_text = get_iterable_text(cell.text)
-
-#       if cell.name == "div" and cell.has_attr("class") and cell["class"][0] == "table-col table-desktop-col":
-#         classes.append("-")
-
-#       elif len(cell_iterable_text) > 2:
-#         print(cell_iterable_text)
-#         if "пр." in cell_iterable_text[2]:
-#           subject = cell_iterable_text[2].replace("пр.", "")
-#           if subject not in classes:
-#             # Обозначения предметов (также изменить в app.variables.py)
-#             if subject == "Основы безопасности и защиты Родины":
-#               subject = "ОБЗР"
-#             classes.append(subject)
-#             add_subject(timestamp, subject, edu_week_number)
-#             print(f"{datetime.datetime.fromtimestamp(timestamp)} {subject}")
-#     timestamp += 86400
-
 
 def populate_schedule():
   timetable_json = json.load(open("./data/timetables/timetables.json", "r", encoding="utf-8"))
@@ -100,8 +61,9 @@ def populate_schedule():
     for timestamp, lessons in days.items():
       print(f"  День (timestamp): {timestamp}")
       for pair_number, subject in lessons.items():
-        add_subject(int(timestamp), subject, int(week))
-        print(f"    {datetime.datetime.fromtimestamp(timestamp)} - {subject}")
+        if subject != "-" and check_exists_subject(subject, int(timestamp)) == False:
+          add_subject(int(timestamp), subject, int(week))
+        print(f"    {datetime.datetime.fromtimestamp(int(timestamp))} - {subject}")
 
 
 # populate_schedule()
