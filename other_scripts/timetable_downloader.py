@@ -5,6 +5,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from webdriver_manager.chrome import ChromeDriverManager
+from PIL import Image
 
 from rich import print
 import json
@@ -13,19 +15,22 @@ import os
 
 load_dotenv()
 
+# firefox_options = webdriver.ChromeOptions() # for local testing
 firefox_options = webdriver.FirefoxOptions()
 firefox_options.add_argument("--headless")  # Чтобы браузер работал без UI
 firefox_options.add_argument("--disable-gpu")
+firefox_options.add_argument("--window-size=1920,1080")
 
 # Логин и пароль из .env
-username = os.getenv("LOGIN")
+login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
-
+group = "Пдо-16"
 # Настройки для Chrome
 
-def download_timetable():
+def download_timetable(make_screenshot=False, dst="./data/timetables/timetable.html"):
 
     driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options)
+    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) # for local testing
 
     try:
         # Открываем страницу для логина
@@ -35,31 +40,62 @@ def download_timetable():
         time.sleep(2)
         
         # Находим элементы логина и пароля
-        username_input = driver.find_element(By.NAME, "login")  # Название поля логина
-        password_input = driver.find_element(By.NAME, "password")  # Название поля пароля
+        username_input = driver.find_element(By.NAME, "login")
+        password_input = driver.find_element(By.NAME, "password")
         
         # Вводим логин и пароль
-        username_input.send_keys(username)
+        username_input.send_keys(login)
         password_input.send_keys(password)
         
         # Отправляем форму
         password_input.send_keys(Keys.RETURN)
         
         # Ждём, пока сайт авторизует пользователя
-        time.sleep(1)  # Увеличьте время, если авторизация занимает больше времени
+        time.sleep(3)
         
         # Открываем страницу с расписанием
-        driver.get("https://time.ulstu.ru/timetable?filter=%D0%9F%D0%B4%D0%BE-16")
+        driver.get(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
         
         # Ждём загрузки страницы с расписанием
-        time.sleep(2)
+        time.sleep(3)
         
-        # Получаем HTML-код страницы
+        crop_box=(370, 50, 1530, 800)
+        
         page_html = driver.page_source
+        # Убираем ненужные элементы с помощью JavaScript для того чтобы скриншот вмещал в себя все нужное
+        if make_screenshot:
+            driver.execute_script("""
+                // Удаляем Header
+                const header = document.querySelector('nav.navbar');
+                if (header) header.remove();
+
+                const layoutSelector = document.querySelector('.layout-panel');
+                if (layoutSelector) layoutSelector.remove();
+
+                // Удаляем поле для ввода группы
+                const inputGroup = document.querySelector('.input-group');
+                if (inputGroup) inputGroup.remove();
+
+                // Удаляем надпись текущей недели
+                const currentWeek = document.querySelector('.week');
+                if (currentWeek) currentWeek.remove();
+
+                // Удаляем первое расписание, если их два
+                const weekNums = document.querySelectorAll('.week-num');
+                if (weekNums.length > 1) {
+                    weekNums[0].parentElement.remove();
+                }
+            """)
         
-        page_screenshot = driver.get_screenshot_as_png()
-        with open("./data/screenshots/timetable.png", "wb") as screenshot_file:
-            screenshot_file.write(page_screenshot)
+            screenshot_path = "./data/screenshots/timetable.png" 
+            driver.save_screenshot(screenshot_path)
+            # print(f"Скриншот сохранён: {screenshot_path}")
+            
+            image = Image.open(screenshot_path)
+            cropped_image = image.crop(crop_box)  # Обрезаем изображение
+            cropped_image.save(screenshot_path)
+            # print(f"Обрезанный скриншот сохранён: {screenshot_path}")
+        # Получаем HTML-код страницы
 
         # Сохраняем HTML в файл
         with open("./data/timetables/timetable.html", "w", encoding="utf-8") as file:

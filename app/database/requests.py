@@ -255,9 +255,38 @@ async def reset_homework_deadline_by_id(homework_id):
         await conn.commit()
     await log("Homework to_date has been reset and updated.")
 
+async def get_notifications_by_id(user_id):
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("SELECT notifications FROM users WHERE id = ?", (user_id,)) as cursor:
+            result = await cursor.fetchone()
+    return True if result[0] == 1 else False
+
+async def set_notifications_by_id(user_id, notifications: bool):
+    notifications = int(notifications)
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("UPDATE users SET notifications = ? WHERE id = ?", (notifications, user_id)) as cursor:
+            pass
+        await conn.commit()
 
 async def get_homework_deadline_by_id(homework_id):
     async with aiosqlite.connect(db_file) as conn:
         async with conn.execute("SELECT to_date FROM homeworks WHERE id = ?", (homework_id,)) as cursor:
             result = await cursor.fetchone()
     return result[0] if result is not None else None
+
+async def get_all_users_with_notifications():
+    users = []
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("SELECT id FROM users WHERE notifications = 1") as cursor:
+            result = await cursor.fetchall()
+    for user in result:
+        users.append(user[0])
+    return users
+
+async def get_user_notifications(user_id):
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("SELECT notifications FROM users WHERE id = ?", (user_id,)) as cursor:
+            result = await cursor.fetchone()
+    return True if result[0] == 1 else False
+
+# print(asyncio.run(get_user_notifications(1665322698)))

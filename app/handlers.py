@@ -22,6 +22,8 @@ from other_scripts.db_subject_populator import populate_schedule
 from other_scripts.timetable_downloader import download_timetable
 from other_scripts.timetable_parser import parse_timetable
 from other_scripts.db_subject_populator import populate_schedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 import psutil
 
@@ -71,6 +73,8 @@ dp.message.middleware(AlbumMiddleware())
 dp.message.middleware(MsgLoggerMiddleware())
 # dp.message.middleware(AntiFloodMiddleware(0.3))
 # dp.message.middleware(TestMiddleware())
+notifications_scheduler = AsyncIOScheduler()
+
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -869,6 +873,29 @@ async def reset_deadline(message: Message, state: FSMContext):
 async def repair_bot(message: Message, command: CommandObject, state: FSMContext):
   await state.clear()
   await message.answer("🔧 Бот починен.")
+
+@dp.message(Command("settings"))
+async def show_settings(message: Message, command: CommandObject, state: FSMContext):
+  await state.clear()
+  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard(await get_user_notifications(message.from_user.id)))
+
+@dp.callback_query(F.data == "enable_notifications")
+async def enable_notifications(call: CallbackQuery):
+    # Включаем рассылку
+    await set_notifications_by_id(call.from_user.id, True)
+
+    updated_keyboard = await kb.get_settings_keyboard(True)
+    await call.message.edit_reply_markup(reply_markup=updated_keyboard)
+    await call.message.answer("✅ Рассылка расписания включена.")
+
+@dp.callback_query(F.data == "disable_notifications")
+async def disable_notifications(call: CallbackQuery):
+    # Отключаем рассылку
+    await set_notifications_by_id(call.from_user.id, False)
+
+    updated_keyboard = await kb.get_settings_keyboard(False)
+    await call.message.edit_reply_markup(reply_markup=updated_keyboard)
+    await call.message.answer("✅ Рассылка расписания отключена.")
 
 # @dp.callback_query(F.data == "donate_cancel")
 # async def donate_cancel_handler(call: CallbackQuery):

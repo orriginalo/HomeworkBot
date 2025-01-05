@@ -1,4 +1,3 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.database.requests import log
 from other_scripts.timetable_downloader import download_timetable
 from other_scripts.timetable_parser import parse_timetable
@@ -6,9 +5,6 @@ from other_scripts.db_subject_populator import populate_schedule
 import shutil
 import datetime
 import os
-
-scheduler1 = AsyncIOScheduler()
-scheduler2 = AsyncIOScheduler()
 
 def create_db_backup():
 
@@ -29,17 +25,11 @@ def create_db_backup():
   shutil.copy2(source_file, backup_path)
   
   return backup_path
-
-def create_html_backup():
-  for file in os.listdir("./"):
-    if file.endswith(".html"):
-      shutil.copy2(file, "./data/backups/html_schedules")
   
 # @scheduler.add_job("interval", seconds = 1)
 async def create_backups():
   await log("Database backuped", "BACKUP")
   create_db_backup()
-  create_html_backup()
 
 async def download_timetable_job():
   print("Starting downloading the timetable...")
@@ -51,24 +41,3 @@ async def download_timetable_job():
   print("Populating Started")
   populate_schedule()
   print("Populating Ended")
-  
-
-async def schedule_backup():
-  try:
-    scheduler1.add_job(create_backups, 'interval', hours=1)
-    print("Scheduler backups added")
-    scheduler1.start()
-  except Exception:
-    await log("Database backuping ERROR", "BACKUP")
-
-async def timetable_get():
-  try:
-    scheduler2.add_job(download_timetable_job, 'interval', hours=12)
-    scheduler2.start()
-  except Exception as e:
-    print("Error: "+str(e))
-    await log("Timetable downloading ERROR", "BACKUP")
-
-    
-
-

@@ -6,17 +6,19 @@ import os
 from app.database.requests import log
 from app.handlers import dp
 from app.database.models import async_main
-from app.backuper import schedule_backup, timetable_get
-# from other_scripts.timetable_downloader import download_timetable
-# from other_scripts.timetable_parser import parse_timetable
-# from dotenv import load_dotenv
-
-# load_dotenv()
+from app.scheduler import start_scheduler
+from app.database.requests import get_all_users_with_notifications
+from other_scripts.timetable_downloader import download_timetable
+from aiogram.types import FSInputFile
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from config import API_KEY
 
 bot = Bot(token=API_KEY)
 disp = Dispatcher()
+
+notifications_scheduler = AsyncIOScheduler()
 
 async def check_paths():
   try:
@@ -55,13 +57,23 @@ async def check_paths():
   except FileExistsError:
     await log("Error creating ./data/logs directory", "DIRCREATOR")
 
+async def send_new_timetable():
+    await log("Sending new timetable", "NOTIFICATIONS")
+    download_timetable(make_screenshot=True)
+
+    photo = FSInputFile("./data/screenshots/timetable.png")
+    for user_id in await get_all_users_with_notifications():
+        await bot.send_photo(user_id, photo, caption="🔔 Новое расписание")
+
+
 async def main():
   # await async_main()
   await check_paths()
   disp.include_router(dp)
   await log("Bot started", "RUNNER")
-  await schedule_backup()
-  await timetable_get()
+  notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="mon", hour=3, minute=21))
+  notifications_scheduler.start()
+  await start_scheduler()
   await disp.start_polling(bot)
 
 

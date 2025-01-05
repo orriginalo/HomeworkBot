@@ -1,15 +1,19 @@
 from bs4 import BeautifulSoup
-from rich import print
+from datetime import datetime, timedelta
 import re
-from datetime import datetime, timedelta
 import json
+import os
 
-SUPERMONTHNUMBER = 34
+START_STUDY_WEEK_NUM = 34 # Неделя с которой началась учеба в 2024 году
 
-from datetime import datetime, timedelta
+short_subjects = {
+    "основы безопасности и защиты родины": "ОБЗР",
+    "физическая культура": "Физ-ра",
+}
 
 
 def calculate_timestamp(week1, week2, year, day):
+
     # Вычисляем дату начала первой недели года
     first_week_start = datetime(year, 1, 1) + timedelta(weeks=week1 - 1)
     
@@ -25,8 +29,14 @@ def calculate_timestamp(week1, week2, year, day):
 def get_iterable_text(soup_find_text):
   return [text.strip() for text in soup_find_text.splitlines() if text.strip()] if len(soup_find_text) > 2 else []
 
-def parse_timetable(html_file, json_file):
-    current_timetables = json.load(open(json_file, "r", encoding="utf-8"))
+def parse_timetable(html_file: str, json_file: str = None):
+
+    timetable = {}
+    if json_file is not None:
+        if not os.path.exists(json_file):
+            with open(json_file, "w", encoding="utf-8") as file:
+                file.write("{}")
+        timetable = json.load(open(json_file, "r", encoding="utf-8")) # Загружаем расписание из json файла
 
     def clean_text(text):
         """Очистка текста от лишних символов."""
@@ -35,7 +45,6 @@ def parse_timetable(html_file, json_file):
     with open(html_file, "r", encoding="utf-8") as file:
         soup = BeautifulSoup(file, "html.parser")
 
-    timetable = current_timetables
     # Ищем все недели
     week_sections = soup.find_all("div", class_="week-num")
     
@@ -58,7 +67,7 @@ def parse_timetable(html_file, json_file):
             day_num = re.findall(r'\d+', clean_text(day_col.text))
             day_num = day_num[0]
             # day_name = datetime.fromtimestamp(calculate_timestamp(SUPERMONTHNUMBER, int(week_name), 2024, int(day_num))).strftime("%d/%m/%Y, %H:%M:%S")
-            day_name = int(calculate_timestamp(SUPERMONTHNUMBER, int(week_num), 2024, int(day_num)))
+            day_name = int(calculate_timestamp(START_STUDY_WEEK_NUM, int(week_num), 2024, int(day_num)))
             timetable[week_num][day_name] = {}
             
 
@@ -72,15 +81,20 @@ def parse_timetable(html_file, json_file):
                 if len(cell_text_it) >= 3:
                     subject = cell_text_it[2]
 
-                if ".Основы безопасности и защиты родины" in subject:
-                    subject = subject.replace(".Основы безопасности и защиты родины", ".ОБЗР")
-                if ".Физическая" in subject:
-                    subject = subject.replace(".Физическая", ".Физ-ра")
+
+                # Заменяем длинные названия на более короткие
+                pr_in = False
                 if "пр." in subject:
-                    subject = subject.replace("пр.", "")
+                    pr_in = True
+                subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
+                if pr_in and "пр." not in subject:
+                    subject = f"пр.{subject}"
+
                 timetable[week_num][day_name][pair_label] = subject
     
-    print(timetable)
-    with open("./data/timetables/timetables.json", "w", encoding="utf-8") as file:
-        json.dump(timetable, file, ensure_ascii=False, indent=4)
+    if json_file is not None:
+        with open(json_file, "w", encoding="utf-8") as file:
+            json.dump(timetable, file, ensure_ascii=False, indent=4)
+        print(f"Расписание сохранено в {json_file}")
+
     return timetable
