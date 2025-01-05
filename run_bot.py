@@ -71,7 +71,7 @@ async def main():
   await check_paths()
   disp.include_router(dp)
   await log("Bot started", "RUNNER")
-  notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="mon", hour=3, minute=21))
+  notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=18, minute=0)) 
   notifications_scheduler.start()
   await start_scheduler()
   await disp.start_polling(bot)
