@@ -19,7 +19,7 @@ load_dotenv()
 firefox_options = webdriver.FirefoxOptions()
 firefox_options.add_argument("--headless")  # Чтобы браузер работал без UI
 firefox_options.add_argument("--disable-gpu")
-firefox_options.add_argument("--window-size=1920,1080")
+firefox_options.add_argument("--window-size=1920,1600")
 
 # Логин и пароль из .env
 login = os.getenv("LOGIN")
@@ -93,18 +93,18 @@ def download_timetable(make_screenshot: bool = False): # new
             rect: dict = parent_container.rect
 
             driver.execute_script("arguments[0].scrollIntoView();", parent_container)
-
+            
             screenshot_path = "./data/screenshots/timetable.png"
             driver.save_screenshot(screenshot_path)
             print(f"Скриншот сохранён: {screenshot_path}")
             
-            margin = 25
+            margin = 35
 
             crop_box = (
                 max(0, int(rect['x']) - margin),  # left с учётом отступа
-                max(0, int(rect['y']) - margin),  # top с учётом отступа
+                max(0, int(rect['y']) - margin - 65),  # top с учётом отступа
                 int(rect['x'] + rect['width'] + margin),  # right с учётом отступа
-                int(rect['y'] + rect['height'] + margin)  # bottom с учётом отступа
+                int(rect['y'] + rect['height'] + margin - 40)  # bottom с учётом отступа
             )
             print(f"Обрезка по координатам: {crop_box}")
             print(crop_box)
