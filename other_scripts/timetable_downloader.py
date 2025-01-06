@@ -27,10 +27,10 @@ password = os.getenv("PASSWORD")
 group = "Пдо-16"
 # Настройки для Chrome
 
-def download_timetable(make_screenshot=False, dst="./data/timetables/timetable.html"):
+def download_timetable(make_screenshot: bool = False): # new
 
-    driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options)
-    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) # for local testing
+    driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 
+    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options)
 
     try:
         # Открываем страницу для логина
@@ -60,8 +60,6 @@ def download_timetable(make_screenshot=False, dst="./data/timetables/timetable.h
         time.sleep(3)
         
         crop_box=(370, 50, 1530, 800)
-        
-        page_html = driver.page_source
         # Убираем ненужные элементы с помощью JavaScript для того чтобы скриншот вмещал в себя все нужное
         if make_screenshot:
             driver.execute_script("""
@@ -87,24 +85,41 @@ def download_timetable(make_screenshot=False, dst="./data/timetables/timetable.h
                 }
             """)
         
-            screenshot_path = "./data/screenshots/timetable.png" 
-            driver.save_screenshot(screenshot_path)
-            # print(f"Скриншот сохранён: {screenshot_path}")
-            
-            image = Image.open(screenshot_path)
-            cropped_image = image.crop(crop_box)  # Обрезаем изображение
-            cropped_image.save(screenshot_path)
-            # print(f"Обрезанный скриншот сохранён: {screenshot_path}")
-        # Получаем HTML-код страницы
+            week_num_element = driver.find_element(By.CLASS_NAME, "week-num")
+    
+    # Получаем родительский контейнер
+            parent_container = week_num_element.find_element(By.XPATH, "./..")  # Поднимаемся на уровень выше в DOM
 
+            rect: dict = parent_container.rect
+
+            driver.execute_script("arguments[0].scrollIntoView();", parent_container)
+
+            screenshot_path = "./data/screenshots/timetable.png"
+            driver.save_screenshot(screenshot_path)
+            print(f"Скриншот сохранён: {screenshot_path}")
+            
+            margin = 25
+
+            crop_box = (
+                max(0, int(rect['x']) - margin),  # left с учётом отступа
+                max(0, int(rect['y']) - margin),  # top с учётом отступа
+                int(rect['x'] + rect['width'] + margin),  # right с учётом отступа
+                int(rect['y'] + rect['height'] + margin)  # bottom с учётом отступа
+            )
+            print(f"Обрезка по координатам: {crop_box}")
+            print(crop_box)
+            image = Image.open(screenshot_path)
+            cropped_image = image.crop(crop_box)
+            cropped_image.save(screenshot_path)
+            print(f"Обрезанный скриншот сохранён: {screenshot_path}")
+
+        # Получаем HTML-код страницы
+        page_html = driver.page_source
+        
         # Сохраняем HTML в файл
         with open("./data/timetables/timetable.html", "w", encoding="utf-8") as file:
             file.write(page_html)
-
-        print("HTML successfully saved!")
+        print("HTML успешно сохранён!")
 
     finally:
-        # Закрываем драйвер
         driver.quit()
-
-# download_timetable()
