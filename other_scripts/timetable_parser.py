@@ -8,7 +8,7 @@ START_STUDY_WEEK_NUM = 34 # Неделя с которой началась уч
 
 short_subjects = {
     "основы безопасности и защиты родины": "ОБЗР",
-    "физическая культура": "Физ-ра",
+    # "физическая культура": "Физ-ра",
 }
 
 
@@ -87,8 +87,9 @@ def parse_timetable(html_file: str, json_file: str = None):
                 if "пр." in subject:
                     pr_in = True
                 subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
-                if pr_in and "пр." not in subject:
-                    subject = f"пр.{subject}"
+                # if pr_in and "пр." not in subject:
+                #     subject = f"пр.{subject}"
+                subject = subject.replace("пр.", "") 
 
                 timetable[week_num][day_name][pair_label] = subject
     
