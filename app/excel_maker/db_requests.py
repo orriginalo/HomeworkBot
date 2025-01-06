@@ -9,7 +9,7 @@ def get_homeworks():
 
 def get_users():
     with sql.connect("Database.db") as conn:
-        cursor = conn.execute("SELECT id, role, username FROM users")
+        cursor = conn.execute("SELECT id, role, username, notifications FROM users")
         result = cursor.fetchall()
     return result
 

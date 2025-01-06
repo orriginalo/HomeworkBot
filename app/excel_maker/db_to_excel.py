@@ -58,7 +58,8 @@ def append_db(data: list, df_dict: dict, sheet_name: str):
             new_data = pd.DataFrame({
                 "Телеграм id": [data[0]],
                 "Никнейм": [data[1]],
-                "Роль": [data[2]]
+                "Роль": [data[2]],
+                "Уведомления": [data[3]]
             })
         case "Расписание пар":
             new_data = pd.DataFrame({
@@ -82,7 +83,7 @@ def db_to_excel():
       append_db([homework[0], from_date, homework[2], homework[3], to_date], get_db(), "Домашние задания")
 
   for user in get_users():
-      append_db([user[0], user[2], user[1]], get_db(), "Пользователи")
+      append_db([user[0], user[2], user[1], ("Да" if bool(user[3]) else "Нет")], get_db(), "Пользователи")
 
   for schedule in get_schedule():
       date = datetime.fromtimestamp(schedule[0]).strftime("%d/%m/%Y")
