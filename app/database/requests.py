@@ -120,6 +120,15 @@ async def get_all_users_with_role(role):
     result_users.append(user[0])
   return result_users
 
+async def get_all_users():
+  result_users = []
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("SELECT id FROM users") as cursor:
+      result = await cursor.fetchall()
+  for user in result:
+    result_users.append(user[0])
+  return result_users
+
 async def get_admins_chatid():
    async with aiosqlite.connect(db_file) as conn:
     async with conn.execute("SELECT id FROM users WHERE role = 3 OR role = 4") as cursor:
@@ -289,4 +298,4 @@ async def get_user_notifications(user_id):
             result = await cursor.fetchone()
     return True if result[0] == 1 else False
 
-# print(asyncio.run(get_user_notifications(1665322698)))
+# print(asyncio.run(get_all_users()))

@@ -45,6 +45,9 @@ class adding_homework(StatesGroup):
   media_ids = State()
   media_types = State()
 
+class tell_all_users(StatesGroup):
+  msg = State()
+
 class adding_admin(StatesGroup):
   user_id = State()
 
@@ -896,6 +899,28 @@ async def disable_notifications(call: CallbackQuery):
     updated_keyboard = await kb.get_settings_keyboard(False)
     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
     await call.message.answer("✅ Рассылка расписания отключена.")
+
+
+@dp.callback_query(F.data == "tell_all_users_call")
+async def tell_all_users_handler(call: CallbackQuery, state: StatesGroup):
+  await call.message.delete()
+  await call.message.answer("Введите сообщение для всех пользователей")
+  await state.set_state(tell_all_users.msg)
+
+@dp.message(tell_all_users.msg)
+async def tell_all_users_state(message: Message, state: FSMContext):
+  await message.delete()
+  msg = message.text
+  if msg:
+    await message.answer("Отправляю сообщение всем пользователям...")
+    users = await get_all_users()
+    for user in users:
+      await message.answer(f"✉️ {user}...")
+      await message.bot.send_message(user, msg)
+    await message.answer("✅ Сообщение отправлено всем пользователям.")
+  await state.clear()
+  await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
+
 
 # @dp.callback_query(F.data == "donate_cancel")
 # async def donate_cancel_handler(call: CallbackQuery):
