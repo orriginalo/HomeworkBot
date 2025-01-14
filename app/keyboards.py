@@ -88,9 +88,9 @@ donate_keyboard = InlineKeyboardMarkup(
 async def get_settings_keyboard(notifications: bool):
   
   if notifications:
-    notifications_btn = InlineKeyboardButton(text="Выключить рассылку", callback_data="disable_notifications")
+    notifications_btn = InlineKeyboardButton(text="Выключить рассылку расписания", callback_data="disable_notifications")
   else:
-    notifications_btn = InlineKeyboardButton(text="Включить рассылку", callback_data="enable_notifications")
+    notifications_btn = InlineKeyboardButton(text="Включить рассылку расписания", callback_data="enable_notifications")
 
   kb = InlineKeyboardBuilder()
   kb.add(notifications_btn)

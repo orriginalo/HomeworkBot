@@ -6,30 +6,82 @@ import os
 
 START_STUDY_WEEK_NUM = 34 # Неделя с которой началась учеба в 2024 году
 
+ADDED_WEEKS = 20 # В переходе на 2 семестр 2024/2025 срезали 20 недель (теперь над расписанием пишется неделя начиная с 1)
+
+remove_all_before_dot = False
+
+replace_subject_to_short = True
+
 short_subjects = {
     "основы безопасности и защиты родины": "ОБЗР",
-    # "физическая культура": "Физ-ра",
 }
 
+# Вы можете задать значение ключа на "" чтобы префикс был удален
+prefix_map = {
+    "пр.": "",
+    "лек.": "",
+    "лаб.": "лаб."
+}
 
-def calculate_timestamp(week1, week2, year, day):
+# Флаг для включения/отключения обработки префиксов
+process_prefixes = True
 
-    # Вычисляем дату начала первой недели года
-    first_week_start = datetime(year, 1, 1) + timedelta(weeks=week1 - 1)
+
+def process_subject(subject: str) -> str:
+    """
+    Обрабатывает название предмета, заменяя префиксы и длинные названия.
     
-    # Вычисляем целевую дату, добавляя вторую неделю как timedelta
-    target_date = first_week_start + timedelta(weeks=week2)
+    :param subject: Название предмета из расписания.
+    :return: Обработанное название.
+    """
+
+    # Разделяем префикс и основной текст
+    if '.' in subject:
+        prefix, main_subject = subject.split('.', 1)
+        prefix += '.'  # Восстанавливаем точку
+    else:
+        prefix, main_subject = '', subject
+
+    # Заменяем префикс, если флаг включен
+    if process_prefixes:
+        prefix = prefix_map.get(prefix, prefix)
+    else:
+        prefix = ''
+
+    # Соединяем обработанный префикс и основной текст
+    if len(list(prefix)) > 0:
+        if list(prefix)[-1] == "." in prefix:
+            return f"{prefix}{main_subject}".strip()
+    return f"{prefix} {main_subject}".strip()
+
+def get_monday_timestamp(week_number: int, year: int) -> int:
+    """
+    Возвращает округленный timestamp понедельника указанной недели, учитывая переход на следующий год.
+
+    :param week_number: Номер недели (1 и выше).
+    :param year: Год, с которого начинается расчет.
+    :return: Округленный до целого timestamp понедельника.
+    """
+    # Определяем первый день года
+    first_day_of_year = datetime(year, 1, 1)
     
-    # Устанавливаем день месяца
-    target_date = target_date.replace(day=day)
+    # Определяем смещение до первого понедельника года
+    days_to_monday = (7 - first_day_of_year.weekday()) % 7
+    first_monday = first_day_of_year + timedelta(days=days_to_monday)
     
-    # Возвращаем timestamp
-    return target_date.timestamp()
+    # Вычисляем целевой понедельник
+    target_monday = first_monday + timedelta(weeks=week_number - 1)
+    
+    # Если целевой понедельник относится к следующему году, обновляем year
+    if target_monday.year > year:
+        year = target_monday.year
+    
+    return round(target_monday.timestamp())
 
 def get_iterable_text(soup_find_text):
   return [text.strip() for text in soup_find_text.splitlines() if text.strip()] if len(soup_find_text) > 2 else []
 
-def parse_timetable(html_file: str, json_file: str = None):
+def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json: bool = False, group_name: str = None):
 
     timetable = {}
     if json_file is not None:
@@ -51,7 +103,13 @@ def parse_timetable(html_file: str, json_file: str = None):
     for week_section in week_sections:
         re_week_name = re.findall(r'\d+', clean_text(week_section.text))
         week_num = re_week_name[0]
-        timetable[week_num] = {}
+        week_num_real = int(week_num) + ADDED_WEEKS - 1 #
+        week_num_real = str(week_num_real)
+        if add_groupname_to_json:
+            timetable[group_name] = {}
+            timetable[group_name][week_num_real] = {}
+        else:
+            timetable[week_num_real] = {}
         
         # Секция соответствующих дней недели
         week_container = week_section.find_next("div", class_="container")
@@ -59,18 +117,22 @@ def parse_timetable(html_file: str, json_file: str = None):
         
         day_rows.pop(0)
 
+        first_day_of_the_week = get_monday_timestamp(int(week_num) + START_STUDY_WEEK_NUM + ADDED_WEEKS, 2024)
         for day_row in day_rows:
             day_col = day_row.find("div", class_="table-header-col")
             if not day_col:
                 continue  # Пропуск строки, если это не день
             
-            day_num = re.findall(r'\d+', clean_text(day_col.text))
-            day_num = day_num[0]
-            # day_name = datetime.fromtimestamp(calculate_timestamp(SUPERMONTHNUMBER, int(week_name), 2024, int(day_num))).strftime("%d/%m/%Y, %H:%M:%S")
-            day_name = int(calculate_timestamp(START_STUDY_WEEK_NUM, int(week_num), 2024, int(day_num)))
-            timetable[week_num][day_name] = {}
-            
+            # date = datetime.fromtimestamp(first_day_of_the_week).strftime("%d/%m/%Y, %H:%M:%S")
+            date = first_day_of_the_week
+            date = str(date)
+            if add_groupname_to_json:
+                timetable[group_name][week_num_real][date] = {}
+            else:
+                timetable[week_num_real][date] = {}
 
+            first_day_of_the_week += 86400
+            
             # Колонки пар
             pair_cols = day_row.find_all("div", class_="table-col")
             for pair_index, pair_col in enumerate(pair_cols, start=1):
@@ -83,15 +145,16 @@ def parse_timetable(html_file: str, json_file: str = None):
 
 
                 # Заменяем длинные названия на более короткие
-                pr_in = False
-                if "пр." in subject:
-                    pr_in = True
-                subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
-                # if pr_in and "пр." not in subject:
-                #     subject = f"пр.{subject}"
-                subject = subject.replace("пр.", "") 
+                if replace_subject_to_short:
+                    subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
 
-                timetable[week_num][day_name][pair_label] = subject
+                if process_prefixes:
+                    subject = process_subject(subject)
+
+                if add_groupname_to_json:
+                    timetable[group_name][week_num_real][date][pair_label] = subject
+                else:
+                    timetable[week_num_real][date][pair_label] = subject
     
     if json_file is not None:
         with open(json_file, "w", encoding="utf-8") as file:
