@@ -58,18 +58,26 @@ async def get_user_role(user_id):
     return role
   return role[0]
 
-async def add_new_user(user_id, role, username = None):
+async def add_new_user(user_id, role, username = None, firstname = None, lastname = None):
   async with aiosqlite.connect(db_file) as conn:
     if await check_exists_user(user_id) == True:
       return
+    now = datetime.now()
+    now_ts = int(datetime.timestamp(now))
     if username:
-      async with conn.execute("INSERT INTO users (id, role, username) VALUES (?, ?, ?)", (user_id, role, username)) as cursor:
+      async with conn.execute("INSERT INTO users (id, role, username, firstname, created_at) VALUES (?, ?, ?, ?, ?, ?)", (user_id, role, username, firstname, lastname, now_ts)) as cursor:
         pass
     else:
-      async with conn.execute("INSERT INTO users (id, role) VALUES (?, ?)", (user_id, role)) as cursor:
+      async with conn.execute("INSERT INTO users (id, role, firstname, created_at) VALUES (?, ?, ?, ?, ?)", (user_id, role, firstname, lastname, now_ts)) as cursor:
         pass
     await conn.commit()
     await log(f"User {username} ({user_id}) added with {role} role")
+
+async def update_user_info(user_id, username, firstname, lastname):
+    async with aiosqlite.connect(db_file) as conn:
+        async with conn.execute("UPDATE users SET username = ?, firstname = ?, lastname = ? WHERE id = ?", (username, firstname, lastname, user_id)) as cursor:
+            pass
+        await conn.commit()
 
 async def del_user(user_id):
   async with aiosqlite.connect(db_file) as conn:
@@ -220,6 +228,22 @@ async def delete_media_by_id(homework_id):
       pass
     await conn.commit()
 
+async def get_name_by_id(user_id):
+  """
+  [0] - firstname
+  [1] - lastname
+  """
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("SELECT firstname, lastname FROM users WHERE id = ?", (user_id,)) as cursor:
+      result = await cursor.fetchone()
+  return result if result is not None else None
+
+async def set_name_by_id(user_id, firstname, lastname):
+  async with aiosqlite.connect(db_file) as conn:
+    async with conn.execute("UPDATE users SET firstname = ?, lastname = ? WHERE id = ?", (firstname, lastname, user_id)) as cursor:
+      pass
+    await conn.commit()
+
 async def get_username_by_id(user_id):
   async with aiosqlite.connect(db_file) as conn:
     async with conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)) as cursor:
@@ -298,4 +322,4 @@ async def get_user_notifications(user_id):
             result = await cursor.fetchone()
     return True if result[0] == 1 else False
 
-# print(asyncio.run(get_all_users()))
+# print(asyncio.run(get_name_by_id(1522039516)))

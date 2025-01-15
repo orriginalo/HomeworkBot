@@ -8,8 +8,17 @@ def get_homeworks():
     return result
 
 def get_users():
+    """
+    [0] - id
+    [1] - role
+    [2] - username
+    [3] - notifications
+    [4] - firstname
+    [5] - lastname
+    [6] - created_at
+    """
     with sql.connect("Database.db") as conn:
-        cursor = conn.execute("SELECT id, role, username, notifications FROM users")
+        cursor = conn.execute("SELECT id, role, username, notifications, firstname, lastname, created_at FROM users")
         result = cursor.fetchall()
     return result
 

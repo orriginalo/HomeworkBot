@@ -9,7 +9,7 @@ import sys
 import time
 
 import aiogram
-from aiogram import F ,types, Router
+from aiogram import F, types, Router
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, CallbackQuery, FSInputFile, LabeledPrice, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMedia, InputMediaAudio, ContentType as CT
 from aiogram.fsm.state import StatesGroup, State
@@ -81,14 +81,8 @@ notifications_scheduler = AsyncIOScheduler()
 
 @dp.message(CommandStart())
 async def start(message: Message):
-      # await add_new_user(message.from_user.id, 1)
-      if await get_user_role(message.from_user.id) != 0:
-        if await get_user_role(message.from_user.id) >= 2:
-          await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
-        else: 
-          await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
-    # else:
-    #   await add_new_user(message.from_user.id, 0)
+  if await get_user_role(message.from_user.id) != 0:
+    await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
 
 @dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):

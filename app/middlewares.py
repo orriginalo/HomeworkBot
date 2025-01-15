@@ -5,7 +5,7 @@ from aiogram.types import Message
 
 from cachetools import TTLCache
 
-from app.database.requests import log, check_exists_user, add_new_user, get_username_by_id, set_username_by_id
+from app.database.requests import log, check_exists_user, add_new_user, get_username_by_id, set_username_by_id, get_name_by_id, set_name_by_id, update_user_info
 
 from rich import print
 
@@ -90,9 +90,12 @@ class MsgLoggerMiddleware(BaseException):
         
         
         if await check_exists_user(event.from_user.id) == False:
-            await add_new_user(event.from_user.id, 1, event.from_user.username)
-        if await get_username_by_id(event.from_user.id) is None:
-            await set_username_by_id(event.from_user.id, event.from_user.username)
+            await add_new_user(event.from_user.id, 1, event.from_user.username, event.from_user.first_name, event.from_user.last_name)
+        # if await get_username_by_id(event.from_user.id) is None:
+        await update_user_info(event.from_user.id, event.from_user.username, event.from_user.first_name, event.from_user.last_name)
+        # await set_username_by_id(event.from_user.id, event.from_user.username)
+        # if (await get_name_by_id(event.from_user.id))[0] is None or (await get_name_by_id(event.from_user.id))[1] is None:
+        # await set_name_by_id(event.from_user.id, event.from_user.first_name, event.from_user.last_name)
         msg = event.text
         user_name = event.from_user.first_name
         try:

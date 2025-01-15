@@ -5,7 +5,7 @@ from app.excel_maker.db_requests import get_homeworks, get_users, get_schedule
 import os
 
 homeworks_columns = ["id", "Дата (Когда задано)", "Предмет", "Домашнее задание", "Дата сдачи" ]
-users_columns = ["Телеграм id", "Никнейм", "Роль"]
+users_columns = ["Телеграм id", "Юзернейм", "Имя", "Роль", "Уведомления", "Создан"]
 schedule_columns = ["Дата", "Предмет", "Номер недели"]
 
 all_columns = [homeworks_columns, users_columns, schedule_columns]
@@ -57,9 +57,11 @@ def append_db(data: list, df_dict: dict, sheet_name: str):
         case "Пользователи":
             new_data = pd.DataFrame({
                 "Телеграм id": [data[0]],
-                "Никнейм": [data[1]],
-                "Роль": [data[2]],
-                "Уведомления": [data[3]]
+                "Юзернейм": [data[1]],
+                "Имя": [data[2]],
+                "Роль": [data[3]],
+                "Уведомления": [data[4]],
+                "Создан": [data[5]]
             })
         case "Расписание пар":
             new_data = pd.DataFrame({
@@ -76,6 +78,13 @@ def append_db(data: list, df_dict: dict, sheet_name: str):
         for name, df in df_dict.items():
             df.to_excel(writer, index=False, sheet_name=name)
 
+def get_name(firstname: str, lastname: str):
+    if lastname is None or lastname.strip() == "":
+        return firstname
+    if firstname is None or firstname.strip() == "":
+        return lastname
+    return f"{firstname} {lastname}"
+
 def db_to_excel():
   for homework in get_homeworks():
       from_date = datetime.fromtimestamp(homework[1]).strftime("%d/%m/%Y")
@@ -83,7 +92,14 @@ def db_to_excel():
       append_db([homework[0], from_date, homework[2], homework[3], to_date], get_db(), "Домашние задания")
 
   for user in get_users():
-      append_db([user[0], user[2], user[1], ("Да" if bool(user[3]) else "Нет")], get_db(), "Пользователи")
+      user_id = user[0]
+      username = user[2]
+      name = get_name(user[4], user[5])
+      role = user[1]
+      notifications = ("Да" if bool(user[3]) else "Нет")
+      created_at = datetime.fromtimestamp(user[6]) if user[6] else ""
+      
+      append_db([user_id, username, name, role, notifications, created_at], get_db(), "Пользователи")
 
   for schedule in get_schedule():
       date = datetime.fromtimestamp(schedule[0]).strftime("%d/%m/%Y")
