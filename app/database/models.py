@@ -1,59 +1,52 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from typing import Annotated
+from sqlalchemy import BIGINT, TIMESTAMP, text
+from sqlalchemy.orm import Mapped, mapped_column
+from app.database.db_setup import Base
 
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
-
-engine = create_async_engine(
-  url=os.getenv("SQLALCHEMY_URL"),
-  echo=True
-  )
-
-async_session = async_sessionmaker(engine)
-
-class Base(AsyncAttrs, DeclarativeBase):
-  pass
-
+intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
+created_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('utc', CURRENT_TIMESTAMP)"))]
+updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('utc', CURRENT_TIMESTAMP)"))]
 
 class User(Base):
   __tablename__ = "users"
-  id: Mapped[int] = mapped_column(primary_key=True)
+  uid: Mapped[intpk]
+  tg_id: Mapped[int] = mapped_column(BIGINT)
   role: Mapped[int]
-  username: Mapped[str]
+  username: Mapped[str | None]
   firstname: Mapped[str]
   lastname: Mapped[str]
-  created_at: Mapped[int]
-  notifications: Mapped[int]
+  notifications: Mapped[bool]
+  created_at: Mapped[created_at]
+  updated_at: Mapped[updated_at]
+  group_id: Mapped[int]
+  is_leader: Mapped[bool]
 
-
-class Homeworks(Base):
+class Homework(Base):
   __tablename__ = "homeworks"
-  id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-  from_date: Mapped[int] = mapped_column(nullable=True)
-  subject: Mapped[str] = mapped_column(nullable=True)
-  task: Mapped[str] = mapped_column(nullable=True)
-  to_date: Mapped[int] = mapped_column(nullable=True)
-
-
+  uid: Mapped[intpk]
+  from_date: Mapped[int] = mapped_column(TIMESTAMP)
+  subject: Mapped[str]
+  task: Mapped[str]
+  to_date: Mapped[int] = mapped_column(TIMESTAMP)
+  group_id: Mapped[int]
+  created_at: Mapped[created_at]
+  added_by: Mapped[int] = mapped_column(BIGINT)
 
 class Schedule(Base):
   __tablename__ = "schedule"
-  id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-  timestamp: Mapped[int] = mapped_column(nullable=True)
-  subject: Mapped[str] = mapped_column(nullable=True)
-  weeknumber: Mapped[int] = mapped_column(nullable=True)
-
-
+  uid: Mapped[intpk]
+  timestamp: Mapped[int] = mapped_column(TIMESTAMP)
+  subject: Mapped[str]
+  week_number: Mapped[int]
 
 class Media(Base):
   __tablename__ = "media"
-  homework_id: Mapped[int] = mapped_column(primary_key=True)
-  media_id: Mapped[int] = mapped_column(nullable=True)
-  media_type: Mapped[str] = mapped_column(nullable=True)
-
-
-async def async_main():
-  async with engine.begin() as conn:
-    await conn.run_sync(Base.metadata.create_all)
+  uid: Mapped[intpk]
+  homework_id: Mapped[int]
+  media_id: Mapped[str]
+  media_type: Mapped[str]
+  
+class Groups(Base):
+  __tablename__ = "groups"
+  uid: Mapped[intpk]
+  course: Mapped[int]

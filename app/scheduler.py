@@ -2,7 +2,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from app.database.requests.other import log
 from app.backuper import create_backups, download_timetable_job
-from app.database.requests.user import get_all_users_with_notifications
 
 scheduler = AsyncIOScheduler()
 

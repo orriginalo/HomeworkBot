@@ -3,11 +3,11 @@ import logging
 from aiogram import Bot, Dispatcher
 import asyncio
 import os
-from app.database.requests import log
+from app.database.requests.other import log
 from app.handlers import dp
-from app.database.models import async_main
+from app.database.core import create_tables
 from app.scheduler import start_scheduler
-from app.database.requests import get_all_users_with_notifications
+from app.database.requests.user import get_users_with_notifications
 from other_scripts.timetable_downloader import download_timetable
 from aiogram.types import FSInputFile
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -62,16 +62,16 @@ async def send_new_timetable():
     download_timetable(make_screenshot=True)
 
     photo = FSInputFile("./data/screenshots/timetable.png")
-    for user_id in await get_all_users_with_notifications():
+    for user_id in await get_users_with_notifications():
         await bot.send_photo(user_id, photo, caption="🔔 Новое расписание")
 
 
 async def main():
-  await async_main()
+  await create_tables()
   await check_paths()
   disp.include_router(dp)
   await log("Bot started", "RUNNER")
-  notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=16, minute=00)) 
+  # notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=16, minute=00)) 
   # notifications_scheduler.add_job(send_new_timetable, 'interval', seconds=30)
   # await send_new_timetable()
   notifications_scheduler.start()
@@ -80,7 +80,7 @@ async def main():
 
 
 if __name__ == "__main__":
-  # logging.basicConfig(level=logging.INFO)
+  logging.basicConfig(level=logging.INFO)
   try:
     asyncio.run(main())
   except (KeyboardInterrupt, SystemExit):

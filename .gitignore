@@ -13,6 +13,7 @@ Database.db
 
 test.py
 run_BOT_FOR_TESTS.py
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

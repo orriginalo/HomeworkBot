@@ -76,7 +76,7 @@ class adding_new_week(StatesGroup):
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
-dp.message.middleware(MsgLoggerMiddleware())
+dp.message.outer_middleware(MsgLoggerMiddleware())
 # dp.message.middleware(AntiFloodMiddleware(0.3))
 # dp.message.middleware(TestMiddleware())
 notifications_scheduler = AsyncIOScheduler()

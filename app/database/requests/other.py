@@ -37,16 +37,3 @@ async def get_admins_chatid():
     async with conn.execute("SELECT id FROM users WHERE role = 3 OR role = 4") as cursor:
       result = await cursor.fetchall()
    return result
-
-async def get_notifications_by_id(user_id):
-    async with aiosqlite.connect(db_file) as conn:
-        async with conn.execute("SELECT notifications FROM users WHERE id = ?", (user_id,)) as cursor:
-            result = await cursor.fetchone()
-    return True if result[0] == 1 else False
-
-async def set_notifications_by_id(user_id, notifications: bool):
-    notifications = int(notifications)
-    async with aiosqlite.connect(db_file) as conn:
-        async with conn.execute("UPDATE users SET notifications = ? WHERE id = ?", (notifications, user_id)) as cursor:
-            pass
-        await conn.commit()

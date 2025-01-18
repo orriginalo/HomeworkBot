@@ -54,7 +54,7 @@ def format_table():
             1: (108, True),
             2: (130, True),
             3: (130, True),
-            4: (51, True),
+            4: (51, True), 
             5: (120, True),
             6: (120, True),
         })

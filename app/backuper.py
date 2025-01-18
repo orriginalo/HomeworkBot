@@ -1,4 +1,4 @@
-from app.database.requests import log
+from app.database.requests.other import log
 from other_scripts.timetable_downloader import download_timetable
 from other_scripts.timetable_parser import parse_timetable
 from other_scripts.db_subject_populator import populate_schedule
