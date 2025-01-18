@@ -1,4 +1,4 @@
-from app.database.requests import *
+from app.database.requests.homework import add_homework
 
 add_homework("Математика", "Установить определение простого числа")
 add_homework("Информатика", "Проверить правильность уравнения в квадрате")

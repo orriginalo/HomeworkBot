@@ -5,7 +5,8 @@ from aiogram.types import Message
 
 from cachetools import TTLCache
 
-from app.database.requests import log, check_exists_user, add_new_user, get_username_by_id, set_username_by_id, get_name_by_id, set_name_by_id, update_user_info
+from app.database.requests.other import log
+from app.database.requests.user import check_exists_user, add_new_user, get_username_by_id, set_username_by_id, get_name_by_id, set_name_by_id, update_user_info
 
 from rich import print
 

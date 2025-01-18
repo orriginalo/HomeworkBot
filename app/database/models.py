@@ -1,8 +1,15 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-engine = create_async_engine(url="sqlite+aiosqlite:///bob.db")
+
+engine = create_async_engine(
+  url=os.getenv("SQLALCHEMY_URL"),
+  echo=True
+  )
 
 async_session = async_sessionmaker(engine)
 
@@ -14,6 +21,11 @@ class User(Base):
   __tablename__ = "users"
   id: Mapped[int] = mapped_column(primary_key=True)
   role: Mapped[int]
+  username: Mapped[str]
+  firstname: Mapped[str]
+  lastname: Mapped[str]
+  created_at: Mapped[int]
+  notifications: Mapped[int]
 
 
 class Homeworks(Base):

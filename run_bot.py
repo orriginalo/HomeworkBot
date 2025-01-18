@@ -67,7 +67,7 @@ async def send_new_timetable():
 
 
 async def main():
-  # await async_main()
+  await async_main()
   await check_paths()
   disp.include_router(dp)
   await log("Bot started", "RUNNER")

@@ -1,5 +1,8 @@
 import aiogram.exceptions
-from app.database.requests import *
+from app.database.requests.homework import *
+from app.database.requests.user import *
+from app.database.requests.other import *
+from app.database.requests.media import *
 import app.variables as var
 import app.keyboards as kb
 from app.backuper import create_backups
