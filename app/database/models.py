@@ -13,12 +13,12 @@ class User(Base):
   tg_id: Mapped[int] = mapped_column(BIGINT)
   role: Mapped[int]
   username: Mapped[str | None]
-  firstname: Mapped[str]
-  lastname: Mapped[str]
+  firstname: Mapped[str | None]
+  lastname: Mapped[str | None]
   notifications: Mapped[bool]
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
-  group_id: Mapped[int]
+  group_id: Mapped[int | None]
   is_leader: Mapped[bool]
 
 class Homework(Base):
@@ -26,11 +26,11 @@ class Homework(Base):
   uid: Mapped[intpk]
   from_date: Mapped[int] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
-  task: Mapped[str]
-  to_date: Mapped[int] = mapped_column(TIMESTAMP)
+  task: Mapped[str | None]
+  to_date: Mapped[int | None] = mapped_column(TIMESTAMP)
   group_id: Mapped[int]
   created_at: Mapped[created_at]
-  added_by: Mapped[int] = mapped_column(BIGINT)
+  added_by: Mapped[int | None] = mapped_column(BIGINT)
 
 class Schedule(Base):
   __tablename__ = "schedule"

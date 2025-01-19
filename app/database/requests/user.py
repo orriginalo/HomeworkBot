@@ -30,7 +30,8 @@ async def del_user(tg_id: int):
   try:
     async with session() as s:
       stmt = select(User).where(User.tg_id == tg_id)
-      user = await s.execute(stmt).scalar_one_or_none()
+      result = await s.execute(stmt)
+      user = result.scalar_one_or_none()
       if user:
         await s.delete(user)
         await s.commit()
@@ -43,7 +44,8 @@ async def del_user(tg_id: int):
 async def get_users_with_notifications():
   async with session() as s:
     stmt = select(User).where(User.notifications == True)
-    users = await s.execute(stmt).scalars().all()
+    result = await s.execute(stmt)
+    users = result.scalars().all()
     return users
   
 async def get_user_by_id(tg_id: int):
@@ -64,7 +66,8 @@ async def update_user(tg_id: int, **kwargs):
   try:
     async with session() as s:
       stmt = select(User).where(User.tg_id == tg_id)
-      user = await s.execute(stmt).scalar_one()
+      result = await s.execute(stmt)
+      user = result.scalar_one()
       for key, value in kwargs.items():
         if value is not None:
           setattr(user, key, value)
@@ -77,11 +80,13 @@ async def update_user(tg_id: int, **kwargs):
 async def get_users():
   async with session() as s:
     stmt = select(User)
-    users = await s.execute(stmt).scalars().all()
+    result = await s.execute(stmt)
+    users = result.scalars().all()
     return users
 
 async def get_users_with_role(role: int):
   async with session() as s:
     stmt = select(User).where(User.role == role)
-    users = await s.execute(stmt).scalars().all()
+    result = await s.execute(stmt)
+    users = result.scalars().all()
     return users

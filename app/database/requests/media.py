@@ -1,21 +1,46 @@
-import aiosqlite
+from app.database.db_setup import session
+from app.database.models import Media
+from sqlalchemy import select
+import logging
 
-db_file = "Database.db"
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-async def add_media_to_db(homework_id, media_id, media_type = None):
-  async with aiosqlite.connect(db_file) as conn:
-    async with conn.execute("INSERT INTO media (homework_id, media_id, media_type) VALUES (?, ?, ?)", (homework_id, media_id, media_type)) as cursor:
-      pass
-    await conn.commit()
+async def add_media(homework_id: int, media_id: str, media_type: str):
+  try:
+    async with session() as s:
+      media = Media(
+        homework_id=homework_id, 
+        media_id=media_id, 
+        media_type=media_type
+      )
+      s.add(media)
+      await s.commit()
+      return media
+  except Exception as e:
+    logger.error(f"Error adding media: {e}")
+    return None
+  
+async def del_media(media_id: int):
+  try:
+    async with session() as s:
+      stmt = select(Media).where(Media.uid == media_id)
+      media = s.execute(stmt).scalar_one_or_none()
+      if media:
+        s.delete(media)
+        await s.commit()
+      else:
+        logger.info(f"Media with uid={media_id} not found.")
+  except Exception as e:
+    logger.error(f"Error deleting media {media_id}: {e}")
+    return None
 
-async def get_all_media_by_id(homework_id):
-  async with aiosqlite.connect(db_file) as conn:
-    async with conn.execute("SELECT media_id, media_type FROM media WHERE homework_id = ?", (homework_id,)) as cursor:
-      result = await cursor.fetchall()
-  return result if len(result) > 0 else None
-
-async def delete_media_by_id(homework_id):
-  async with aiosqlite.connect(db_file) as conn:
-    async with conn.execute("DELETE FROM media WHERE homework_id = ?", (homework_id,)) as cursor:
-      pass
-    await conn.commit()
+async def get_media_by_id(media_id: int):
+  try:
+    async with session() as s:
+      stmt = select(Media).where(Media.uid == media_id)
+      result = await s.execute(stmt).all()
+      return result
+  except Exception as e:
+    logger.error(f"Error getting media by ID {media_id}: {e}")
+    return None

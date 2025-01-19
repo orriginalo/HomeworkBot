@@ -91,7 +91,8 @@ class MsgLoggerMiddleware(BaseException):
         
         
         if not await get_user_by_id(event.from_user.id):
-            await add_user(event.from_user.id, 1, event.from_user.username, event.from_user.first_name, event.from_user.last_name)
+            print("ADDING USER")
+            await add_user(event.from_user.id, 1, event.from_user.username, event.from_user.first_name, event.from_user.last_name, False, 1, False)
         await update_user(event.from_user.id, username=event.from_user.username, firstname=event.from_user.first_name, lastname=event.from_user.last_name)
 
         msg = event.text

@@ -2,19 +2,21 @@ from sqlalchemy import select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
 import logging
+import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def add_homework(subject: str, from_date:int, task: str, group_id: int, added_by: int):
+async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int):
   try:
     async with session() as s:
       homework = Homework(
-        from_date=from_date, 
+        from_date=datetime.datetime.fromtimestamp(from_date_ts), 
         subject=subject, 
         task=task,
         group_id=group_id, 
-        added_by=added_by
+        added_by=added_by,
+        to_date=None
       )
       s.add(homework)
       await s.commit()
@@ -27,7 +29,8 @@ async def del_homework(homework_id: int):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.uid == homework_id)
-      homework = await s.execute(stmt).scalar_one_or_none()
+      result = await s.execute(stmt)
+      homework = result.scalar_one_or_none()
       if homework:
         s.delete(homework)
         await s.commit()
@@ -40,28 +43,31 @@ async def get_homework_by_id(homework_id: int):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.uid == homework_id)
-      result = await s.execute(stmt).scalar_one_or_none()
-      return result
+      result = await s.execute(stmt)
+      homework = result.scalar_one_or_none()
+      return homework
   except Exception as e:
     logger.error(f"Error getting homework by ID {homework_id}: {e}")
     return None
   
-async def get_homework_by_date(to_date: int):
+async def get_homeworks_by_date(to_date: int):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.to_date == to_date)
       result = await s.execute(stmt).scalars().all()
-      return result
+      homework = result.scalars().all()
+      return homework
   except Exception as e:
     logger.error(f"Error getting homework by date {to_date}: {e}")
     return None
   
-async def get_homework_by_subject(subject: str):
+async def get_homeworks_by_subject(subject: str):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.subject == subject)
-      result = await s.execute(stmt).scalars().all()
-      return result
+      result = await s.execute(stmt)
+      homework = result.scalars().all()
+      return homework
   except Exception as e:
     logger.error(f"Error getting homework by subject {subject}: {e}")
     return None

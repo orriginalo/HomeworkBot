@@ -76,22 +76,21 @@ class adding_new_week(StatesGroup):
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
-dp.message.outer_middleware(MsgLoggerMiddleware())
+dp.message.middleware(MsgLoggerMiddleware())
 # dp.message.middleware(AntiFloodMiddleware(0.3))
 # dp.message.middleware(TestMiddleware())
 notifications_scheduler = AsyncIOScheduler()
 
-
 @dp.message(CommandStart())
 async def start(message: Message):
-  if await get_user_role(message.from_user.id) != 0:
-    await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
+  if (await get_user_by_id(message.from_user.id))["role"] != 0:
+    await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
 
 @dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):
-  if await get_user_role(message.from_user.id) == 3:
+  if (await get_user_by_id(message.from_user.id))["role"] == 3:
     await message.answer("Админ-панель:", reply_markup=kb.adminka_keyboard)
-  if await get_user_role(message.from_user.id) == 4:
+  if (await get_user_by_id(message.from_user.id))["role"] == 4:
     await message.answer("Админ-панель:", reply_markup=kb.superuser_keyboard)
 
 @dp.message(adding_new_week.file, F.content_type == CT.DOCUMENT)
@@ -120,7 +119,7 @@ async def load_new_week(message: Message, state: FSMContext):
 async def back(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
   await call.message.answer("❌ Действие отменено.")
-  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
   await state.clear()
 
 @dp.callback_query(F.data == "change_subject")
@@ -150,7 +149,7 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
       await add_media_to_db(homework_id, media.media, media.type)
 
   await call.message.answer(f"✅ Домашнее задание добавлено.") # в базу
-  await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+  await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
   await call.message.delete()
   admins = await get_admins_chatid()
   for admin_id in admins:
@@ -171,8 +170,8 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
 # ADMIN PANEL CALLBACKS
 @dp.callback_query(F.data == "show_favs")
 async def show_favs(call: CallbackQuery):
-    adders = [str(f"[{num}](tg://user?id={num})") for num in await get_all_users_with_role(2)]
-    admins = [str(f"[{num}](tg://user?id={num})") for num in await get_all_users_with_role(3)]
+    adders = [str(f"[{num}](tg://user?id={num})") for num in await get_users_with_role(2)]
+    admins = [str(f"[{num}](tg://user?id={num})") for num in await get_users_with_role(3)]
 
     await call.message.answer(f"*Админы:*\n{"\n".join(admins)}\n\n*Добавлятели:*\n{"\n".join(adders)}", parse_mode="Markdown")
 
@@ -192,14 +191,14 @@ async def add_admin_id(message: Message, state: FSMContext):
 
     user_id = data.get("user_id")
 
-    user_role = await get_user_role(user_id)
+    user_role = (await get_user_by_id(user_id))["role"]
     if user_role == None:
       await message.answer(f"❌ Пользователь не существует или скрыл id.")
       await state.clear()
       return
 
     elif user_role <= 2:
-      await change_user_role(user_id, 3)
+      await update_user(user_id, role=3)
       await message.answer(f"✅ Пользователь добавлен в администраторы.", parse_mode="html")
     else:
       await message.answer(f"❌ Пользователь уже является администратором.", parse_mode="html")
@@ -222,14 +221,14 @@ async def remove_admin_id(message: Message, state: FSMContext):
 
     user_id = data.get("user_id")
 
-    user_role = await get_user_role(user_id)
+    user_role = (await get_user_by_id(user_id))["role"]
     if user_role == None:
       await message.answer(f"❌ Пользователь не существует или скрыл id.")
       await state.clear()
       return
 
     elif user_role == 3:
-      await change_user_role(user_id, 1)
+      await update_user(user_id, role=1)
       await message.answer(f"✅ Пользователь удален из администраторов.")
     else:
       await message.answer(f"❌ Пользователь не является администратором.")
@@ -252,14 +251,14 @@ async def add_adder_id(message: Message, state: FSMContext):
     
     user_id = data.get("user_id")
 
-    user_role = await get_user_role(user_id)
+    user_role = (await get_user_by_id(user_id))["role"]
     if user_role == None:
       await message.answer(f"❌ Пользователь не существует или скрыл id.")
       await state.clear()
       return
     
     elif user_role <= 1:
-      await change_user_role(user_id, 2)
+      await update_user(user_id, role=2)
       await message.answer(f"✅ Пользователь добавлен в добавлятелей.")
     else:
       await message.answer(f"❌ Пользователь уже является добавлятелем.")
@@ -282,14 +281,14 @@ async def remove_adder_id(message: Message, state: FSMContext):
     
     user_id = data.get("user_id")
 
-    user_role = await get_user_role(user_id)
+    user_role = (await get_user_by_id(user_id))["role"]
     if user_role == None:
       await message.answer(f"❌ Пользователь не существует или скрыл id.")
       await state.clear()
       return
 
     elif user_role == 2:
-      await change_user_role(user_id, 1)
+      await update_user(user_id, role=1)
       await message.answer(f"✅ Пользователь удален из добавлятелей.", parse_mode="html")
     else:
       await message.answer(f"❌ Пользователь не является добавлятелем.", parse_mode="html")
@@ -317,10 +316,10 @@ async def add_user_id(message: Message, state: FSMContext):
   
   user_id = data.get("user_id")
 
-  if await check_exists_user(user_id):
+  if await get_user_by_id(user_id):
     await message.answer(f"❌ Пользователь уже существует.")
   else:
-    await add_new_user(user_id, 1)
+    await add_user(user_id, 1)
     await message.answer(f"✅ Пользователь добавлен.")
 
   await state.clear()
@@ -343,7 +342,7 @@ async def remove_user_id(message: Message, state: FSMContext):
   
   user_id = data.get("user_id")
 
-  if await check_exists_user(user_id):
+  if await get_user_by_id(user_id):
     await del_user(user_id)
     await message.answer(f"✅ Пользователь удален.")
   else:
@@ -452,8 +451,8 @@ async def check_hw_by_subject_handler(message: Message):
 @dp.callback_query(F.data.contains("-check-hw"))
 async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
-  user_role = await get_user_role(call.from_user.id)
-  tasks = await get_task_by_subject(call.data.replace("-check-hw", ""))
+  user_role = (await get_user_by_id(call.from_user.id))["role"]
+  tasks = (await get_homeworks_by_subject(call.data.replace("-check-hw", "")))
   if len(tasks) > 0:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
     # print(tasks)
@@ -484,7 +483,7 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
 async def show_hw_yesterday_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.yesterday_ts)
+    tasks = await get_homeworks_by_date(var.yesterday_ts)
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -514,7 +513,7 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_today()[1])
-    user_role = await get_user_role(message.from_user.id)
+    user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -550,7 +549,7 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_tomorrow()[1])
-    user_role = await get_user_role(message.from_user.id)
+    user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -586,7 +585,7 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     tasks = await get_tasks_by_date(var.calculate_aftertomorrow()[1])
-    user_role = await get_user_role(message.from_user.id)
+    user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
@@ -627,11 +626,11 @@ async def show_hw_by_date_handler(message: Message, state: FSMContext):
 @dp.message(F.text == "Назад ↩️")
 async def back_handler(message: Message, state: FSMContext):
   await state.clear()
-  await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
+  await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
 
 @dp.message(view_homework.with_date)
 async def show_hw_by_date(message: Message, state: FSMContext):
-    user_role = await get_user_role(message.from_user.id)
+    user_role = (await get_user_by_id(message.from_user.id))["role"]
     try:
       inted_date_from_user = [int(num) for num in message.text.split(" ")]
     except:
@@ -679,7 +678,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
 
 @dp.message(F.text == 'Добавить Д/З ➕')
 async def add_hw_one(message: Message, state: FSMContext):
-  if await get_user_role(message.from_user.id) >= 2:
+  if (await get_user_by_id(message.from_user.id))["role"] >= 2:
     await state.set_state(adding_homework.subject)
     await message.answer("Выберите предмет:", reply_markup=await kb.allowed_subjects_keyboard(var.allowed_subjects))
     kb.ReplyKeyboardRemove(remove_keyboard=True)
@@ -785,7 +784,7 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
 
 @dp.message(F.text == "❌ Удалить Д/З")
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
-  if await get_user_role(message.from_user.id) >= 3:
+  if (await get_user_by_id(message.from_user.id))["role"] >= 3:
     await state.set_state(removing_homework.hw_id)
     await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
 
@@ -824,7 +823,7 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   await delete_media_by_id(data['hw_id'])
   await call.message.edit_text("Задание удалено.")
   await state.clear()
-  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
 
 
 # @dp.callback_query(F.data == "add_photo")
@@ -867,7 +866,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
     await message.answer(new_deadline_text)
     await state.clear()
-    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
+    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
 
 @dp.message(Command("repair"))
 async def repair_bot(message: Message, command: CommandObject, state: FSMContext):
@@ -916,14 +915,14 @@ async def tell_all_users_state(message: Message, state: FSMContext):
       await message.bot.send_message(user, msg)
     await message.answer("✅ Сообщение отправлено всем пользователям.")
   await state.clear()
-  await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(message.from_user.id)))
+  await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
 
 
 # @dp.callback_query(F.data == "donate_cancel")
 # async def donate_cancel_handler(call: CallbackQuery):
 #   await call.message.delete()
 #   await call.message.answer("❌ Действие отменено.")
-#   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(await get_user_role(call.from_user.id)))
+#   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
 
 
 # @dp.message(Command("donate", "donat", "донат"))
