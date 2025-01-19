@@ -6,25 +6,44 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def add_user(tg_id: int, role: int = 1, username: str = None, firstname: str = "", lastname: str = "", notifications: bool = False, group_id: int = None, is_leader: bool = False):
+async def add_user(
+    tg_id: int,
+    role: int = 1,
+    username: str = None,
+    firstname: str = "",
+    lastname: str = "",
+    notifications: bool = False,
+    group_id: int = None,
+    is_leader: bool = False
+):
     try:
-      async with session() as s:
-        user = User(
-            tg_id=tg_id, 
-            role=role, 
-            username=username, 
-            firstname=firstname, 
-            lastname=lastname, 
-            notifications=notifications, 
-            group_id=group_id, 
-            is_leader=is_leader
-        )
-        s.add(user)
-        await s.commit()
-        return user
+        async with session() as s:
+            # Проверка, существует ли пользователь с таким tg_id
+            stmt = select(User).where(User.tg_id == tg_id)
+            result = await s.execute(stmt)
+            existing_user = result.scalar_one_or_none()
+
+            if existing_user:
+                logger.info(f"User with tg_id {tg_id} already exists.")
+                return existing_user  # Возвращаем существующего пользователя
+
+            user = User(
+                tg_id=tg_id,
+                role=role,
+                username=username,
+                firstname=firstname,
+                lastname=lastname,
+                notifications=notifications,
+                group_id=group_id,
+                is_leader=is_leader
+            )
+            s.add(user)
+            await s.commit()
+            return user
     except Exception as e:
-      logger.error(f"Error adding user: {e}")
-      return None
+        logger.error(f"Error adding user: {e}")
+        return None
+
 
 async def del_user(tg_id: int):
   try:
@@ -42,11 +61,14 @@ async def del_user(tg_id: int):
     return None
 
 async def get_users_with_notifications():
+  users_list = []
   async with session() as s:
     stmt = select(User).where(User.notifications == True)
     result = await s.execute(stmt)
     users = result.scalars().all()
-    return users
+    for user in users:
+      users_list.append(vars(user))
+    return users_list
   
 async def get_user_by_id(tg_id: int):
   try:
@@ -78,15 +100,22 @@ async def update_user(tg_id: int, **kwargs):
     return None
 
 async def get_users():
+  users_list = []
   async with session() as s:
     stmt = select(User)
     result = await s.execute(stmt)
     users = result.scalars().all()
-    return users
+    for user in users:
+      users_list.append(vars(user))
+    return users_list
 
 async def get_users_with_role(role: int):
+  users_list = []
   async with session() as s:
     stmt = select(User).where(User.role == role)
     result = await s.execute(stmt)
     users = result.scalars().all()
-    return users
+    for user in users:
+      users_list.append(vars(user))
+    return users_list
+  

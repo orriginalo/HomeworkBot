@@ -18,16 +18,49 @@ async def add_subject(timestamp: int, subject: str, week_number: int):
       s.add(schedule)
       await s.commit()
       return schedule
+    logger.info(f"Schedule with week={week_number} and subject={subject} added.")
   except Exception as e:
     logger.error(f"Error adding schedule: {e}")
 
 async def get_schedule_by_week(week_number: int):
+  schedule_list = []
   try:
     async with session() as s:
       stmt = select(Schedule).where(Schedule.week_number == week_number)
       result = await s.execute(stmt)
       schedule = result.scalars().all()
-      return schedule
+      for sch in schedule:
+        schedule_list.append(vars(sch))
+      return schedule_list
   except Exception as e:
     logger.error(f"Error getting schedule by week {week_number}: {e}")
     return None
+  
+async def del_schedule_by_week(week_number: int):
+  try:
+    async with session() as s:
+      stmt = select(Schedule).where(Schedule.week_number == week_number)
+      result = await s.execute(stmt)
+      schedules = result.scalars().all()  # Получаем все записи для этой недели
+      
+      if schedules:
+        for schedule in schedules:
+          await s.delete(schedule)
+        await s.commit()
+        logger.info(f"Schedules for week_number={week_number} deleted.")
+      else:
+        logger.info(f"Schedule with week_number={week_number} not found.")
+  except Exception as e:
+    logger.error(f"Error deleting schedule {week_number}: {e}")
+    return None
+
+  
+async def check_exists_subject(subject: str, timestamp: int):
+  async with session() as s:
+    stmt = select(Schedule).where(Schedule.subject == subject, Schedule.timestamp == datetime.datetime.fromtimestamp(timestamp))
+    result = await s.execute(stmt)
+    schedule = result.scalar_one_or_none()
+    if schedule:
+      return True
+    else:
+      return False

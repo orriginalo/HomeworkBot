@@ -11,7 +11,7 @@ def create_db_backup():
   all_backup_files = os.listdir("./data/backups/databases")
   all_backup_files.sort()
 
-  if len(all_backup_files) > 6:
+  if len(all_backup_files) > 48:
     os.remove(f"./data/backups/databases/{all_backup_files[0]}")
 
   source_file = 'Database.db'  # Путь к файлу для резервного копирования
@@ -39,5 +39,5 @@ async def download_timetable_job():
   parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
   print("Parsing Ended")
   print("Populating Started")
-  populate_schedule()
+  await populate_schedule()
   print("Populating Ended")

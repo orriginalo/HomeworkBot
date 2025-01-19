@@ -25,9 +25,10 @@ async def del_media(media_id: int):
   try:
     async with session() as s:
       stmt = select(Media).where(Media.uid == media_id)
-      media = s.execute(stmt).scalar_one_or_none()
+      media = await s.execute(stmt)
+      media = media.scalar_one_or_none()
       if media:
-        s.delete(media)
+        await s.delete(media)
         await s.commit()
       else:
         logger.info(f"Media with uid={media_id} not found.")
@@ -36,11 +37,16 @@ async def del_media(media_id: int):
     return None
 
 async def get_media_by_id(media_id: int):
+  media_list = []
   try:
     async with session() as s:
-      stmt = select(Media).where(Media.uid == media_id)
-      result = await s.execute(stmt).all()
-      return result
+      stmt = select(Media).where(Media.homework_id == media_id)
+      result = await s.execute(stmt)
+      media = result.scalars().all()
+      for m in media:
+        media_list.append(vars(m))
+      
+      return media_list if len(media_list) > 0 else None
   except Exception as e:
     logger.error(f"Error getting media by ID {media_id}: {e}")
     return None

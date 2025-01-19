@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
 import logging
@@ -7,7 +7,7 @@ import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int):
+async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None):
   try:
     async with session() as s:
       homework = Homework(
@@ -16,11 +16,14 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
         task=task,
         group_id=group_id, 
         added_by=added_by,
-        to_date=None
+        to_date=datetime.datetime.fromtimestamp(to_date_ts) if to_date_ts else None
       )
       s.add(homework)
       await s.commit()
-      return homework
+      
+      await s.refresh(homework)
+      return vars(homework)
+    
   except Exception as e:
     logger.error(f"Error adding homework: {e}")
     return None
@@ -28,11 +31,16 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
 async def del_homework(homework_id: int):
   try:
     async with session() as s:
+
+      if not isinstance(homework_id, int):
+        homework_id = int(homework_id)
+      print(type(homework_id))
+
       stmt = select(Homework).where(Homework.uid == homework_id)
       result = await s.execute(stmt)
       homework = result.scalar_one_or_none()
       if homework:
-        s.delete(homework)
+        await s.delete(homework)
         await s.commit()
       else:
         logger.info(f"Homework with uid={homework_id} not found.")
@@ -45,29 +53,41 @@ async def get_homework_by_id(homework_id: int):
       stmt = select(Homework).where(Homework.uid == homework_id)
       result = await s.execute(stmt)
       homework = result.scalar_one_or_none()
-      return homework
+      return vars(homework)
   except Exception as e:
     logger.error(f"Error getting homework by ID {homework_id}: {e}")
     return None
   
-async def get_homeworks_by_date(to_date: int):
+async def get_homeworks_by_date(to_date_ts: int):
+  hw_list = []
   try:
     async with session() as s:
-      stmt = select(Homework).where(Homework.to_date == to_date)
-      result = await s.execute(stmt).scalars().all()
+      iso_time = datetime.datetime.fromtimestamp(to_date_ts).replace(microsecond=0)
+      stmt = select(Homework).where(
+        Homework.to_date >= iso_time,
+        Homework.to_date < iso_time + datetime.timedelta(seconds=1)
+      )
+      result = await s.execute(stmt)
       homework = result.scalars().all()
-      return homework
+      for hw in homework:
+        hw_list.append(vars(hw))
+      return hw_list
   except Exception as e:
-    logger.error(f"Error getting homework by date {to_date}: {e}")
+    logger.error(f"Error getting homework by date {to_date_ts}: {e}")
     return None
+
   
 async def get_homeworks_by_subject(subject: str):
+  hw_list = []
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.subject == subject)
       result = await s.execute(stmt)
       homework = result.scalars().all()
-      return homework
+      for hw in homework:
+        hw.from_date = datetime.datetime.timestamp(hw.from_date)
+        hw_list.append(vars(hw))
+      return hw_list
   except Exception as e:
     logger.error(f"Error getting homework by subject {subject}: {e}")
     return None
@@ -76,7 +96,8 @@ async def update_homework(homework_id: int, **kwargs):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.uid == homework_id)
-      homework = await s.execute(stmt).scalar_one()
+      homework = await s.execute(stmt)
+      homework = homework.scalar_one()
       for key, value in kwargs.items():
         if value is not None:
           setattr(homework, key, value)
@@ -85,39 +106,28 @@ async def update_homework(homework_id: int, **kwargs):
   except Exception as e:
     logger.error(f"Error updating homework {homework_id}: {e}")
     return None
-# async def update_homework_dates():
-#     await log("Updating homework to_date dates...")
-#     async with aiosqlite.connect(db_file) as conn:
-#         # Fetch all homework entries
-#         async with conn.execute("SELECT from_date, subject FROM homeworks WHERE to_date IS NULL") as cursor:
-#             homework_entries = await cursor.fetchall()
-#             # print(homework_entries)
-#         for from_date, subject in homework_entries:
-#             # Find the next class date for the subject
-#             async with conn.execute("SELECT MIN(timestamp) FROM schedule WHERE subject = ? AND timestamp > ?", (subject, from_date)) as cursor:
-#                 next_class_date = await cursor.fetchone()
-
-#             if next_class_date[0] is not None:
-#                 # Update the to_date in homeworks
-#                 await conn.execute("UPDATE homeworks SET to_date = ? WHERE from_date = ? AND subject = ?", (next_class_date[0], from_date, subject))
-        
-#         # Commit changes
-#         await conn.commit()
 
 async def update_homework_dates():
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.to_date == None)
-      homework = await s.execute(stmt).scalars().all()
+      result = await s.execute(stmt)
+      homework = result.scalars().all()
       for h in homework:
-        # Find the next class date for the subject
+        # Ищем все возможные даты занятия для предмета
         stmt = select(Schedule).where(Schedule.subject == h.subject, Schedule.timestamp > h.from_date)
-        next_class_date = await s.execute(stmt).scalar_one_or_none()
-        if next_class_date:
+        next_class_dates = await s.execute(stmt)
+        next_class_dates = next_class_dates.scalars().all()  # получаем все возможные даты
+        
+        if next_class_dates:
+          # Например, можно выбрать первую или последнюю дату
+          next_class_date = min(next_class_dates, key=lambda x: x.timestamp)  # выбираем ближайшую дату
           h.to_date = next_class_date.timestamp
-          await s.commit()
+      await s.commit()
   except Exception as e:
     logger.error(f"Error updating homework dates: {e}")
+
+
 
 # async def reset_homework_deadline_by_id(homework_id):
 #     await log(f"Resetting to_date for homework ID: {homework_id}...")

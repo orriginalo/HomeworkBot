@@ -18,7 +18,7 @@ async def add_group(course: int):
   except Exception as e:
     logger.error(f"Error adding group: {e}")
     return None
-  
+
 async def del_group(group_id: int):
   try:
     async with session() as s:

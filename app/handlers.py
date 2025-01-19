@@ -108,7 +108,7 @@ async def load_new_week(message: Message, state: FSMContext):
     n1_msg = await message.answer("✅ Файл загружен.")
     time.sleep(0.5)
     await n1_msg.edit_text("⏳ Обновление расписания...")
-    populate_schedule(file_name)
+    await populate_schedule(file_name)
     await n1_msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e:
@@ -142,11 +142,15 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
   subject = data.get("subject")
   task = data.get("task")
 
-  homework_id = await add_homework(subject, task)
+  homework_id = await add_homework(subject, task, 1, call.from_user.id, var.calculate_today()[1])
+  print(homework_id)
+  homework_id = homework_id["uid"]
+  print(homework_id)
 
+  print(data)
   if data.get("media_group") is not None:
     for media in data.get("media_group"):
-      await add_media_to_db(homework_id, media.media, media.type)
+      await add_media(homework_id, media.media, media.type)
 
   await call.message.answer(f"✅ Домашнее задание добавлено.") # в базу
   await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
@@ -452,169 +456,147 @@ async def check_hw_by_subject_handler(message: Message):
 async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
   user_role = (await get_user_by_id(call.from_user.id))["role"]
-  tasks = (await get_homeworks_by_subject(call.data.replace("-check-hw", "")))
-  if len(tasks) > 0:
+  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", "")))
+  if len(homeworks) > 0:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
     # print(tasks)
-    for task in tasks:
-      if await get_all_media_by_id(task[2]) is not None:
-          media_group_data = await get_all_media_by_id(task[2])
+    for homework in homeworks:
+      # if await get_all_media_by_id(task[2]) is not None:
+      #     media_group_data = await get_all_media_by_id(task[2])
+      hw_uid = homework["uid"]
+      hw_subject = homework["subject"]
+      hw_task = homework["task"]
+      if await get_media_by_id(hw_uid) is not None and len(await get_media_by_id(hw_uid)) > 0:
+          media_group_data = await get_media_by_id(hw_uid)
           media_group = []
           for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
+            if media_data["media_type"] == "photo":
+              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+            elif media_data["media_type"] == "video":
+              media_group.append(InputMediaVideo(media=media_data["media_id"]))
+            elif media_data["media_type"] == "audio":
+              media_group.append(InputMediaAudio(media=media_data["media_id"]))
+            elif media_data["media_type"] == "document":
+              media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "")  + (f" <i>id {task[2]}</i>" if user_role >= 3 else "") + f"\n\n{str(task[1]).capitalize()}"
+          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f" <i>id {hw_uid}</i>" if user_role >= 3 else "") + f"\n\n{hw_task}"
           media_group[0].parse_mode = "html"
 
           await call.message.answer_media_group(media_group)
       else:
-        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(task[0]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if task == tasks[-1] else "")  + (f" <i>id {task[2]}</i>" if user_role >= 3 else "") + f"\n\n{str(task[1]).capitalize()}", parse_mode="html")
+        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f" <i>id {hw_uid}</i>" if user_role >= 3 else "") + f"\n\n{hw_task}", parse_mode="html")
   else:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
-
-@dp.message(view_homework.day, F.text == "На вчера")
-async def show_hw_yesterday_handler(message: Message, state: FSMContext):
-    sent_message = await message.answer(f"⏳ Обновляю информацию...")
-    await update_homework_dates()
-    tasks = await get_homeworks_by_date(var.yesterday_ts)
-    # print(f"TASKS\t {tasks}")
-    if tasks is None:
-      await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
-    else:
-      await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.yesterday_ts)}</b>:", parse_mode="html")
-      for homework in tasks:
-        subject = homework[0]
-        task = homework[1]
-        await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}",parse_mode="html")
-        if await get_all_media_by_id(homework[2]) is not None:
-          media_group_data = await get_all_media_by_id(homework[2])
-          media_group = []
-          for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
-          await message.answer_media_group(media_group)
-      await state.clear()
 
 @dp.message(view_homework.day and F.text == "На сегодня")
 async def show_hw_today_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.calculate_today()[1])
+    # tasks = await get_tasks_by_date(var.calculate_today()[1])
+    tasks = await get_homeworks_by_date(var.calculate_today()[1])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
-    if tasks is None:
+    if tasks is None or len(tasks) == 0:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_today()[1])}</b>:", parse_mode="html")
       for homework in tasks:
-        subject = homework[0]
-        task = homework[1]
-        task_id = homework[2]
-        if await get_all_media_by_id(homework[2]) is not None:
-          media_group_data = await get_all_media_by_id(homework[2])
+        subject = homework["subject"]
+        task = homework["task"]
+        task_id = homework["uid"]
+        if await get_media_by_id(task_id) is not None:
+          media_group_data = await get_media_by_id(task_id)
           media_group = []
           for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
+            if media_data["media_type"] == "photo":
+              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+            elif media_data["media_type"] == "video":
+              media_group.append(InputMediaVideo(media=media_data["media_id"]))
+            elif media_data["media_type"] == "audio":
+              media_group.append(InputMediaAudio(media=media_data["media_id"]))
+            elif media_data["media_type"] == "document":
+              media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На завтра")
 async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.calculate_tomorrow()[1])
+    # tasks = await get_tasks_by_date(var.calculate_today()[1])
+    tasks = await get_homeworks_by_date(var.calculate_tomorrow()[1])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
-    if tasks is None:
+    if tasks is None or len(tasks) == 0:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_tomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
-        subject = homework[0]
-        task = homework[1]
-        task_id = homework[2]
-        if await get_all_media_by_id(homework[2]) is not None:
-          media_group_data = await get_all_media_by_id(homework[2])
+        subject = homework["subject"]
+        task = homework["task"]
+        task_id = homework["uid"]
+        if await get_media_by_id(task_id) is not None:
+          media_group_data = await get_media_by_id(task_id)
           media_group = []
           for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
+            if media_data["media_type"] == "photo":
+              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+            elif media_data["media_type"] == "video":
+              media_group.append(InputMediaVideo(media=media_data["media_id"]))
+            elif media_data["media_type"] == "audio":
+              media_group.append(InputMediaAudio(media=media_data["media_id"]))
+            elif media_data["media_type"] == "document":
+              media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На послезавтра")
 async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    tasks = await get_tasks_by_date(var.calculate_aftertomorrow()[1])
+    # tasks = await get_tasks_by_date(var.calculate_today()[1])
+    tasks = await get_homeworks_by_date(var.calculate_aftertomorrow()[1])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
-    if tasks is None:
+    if tasks is None or len(tasks) == 0:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_aftertomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
-        subject = homework[0]
-        task = homework[1]
-        task_id = homework[2]
-        # await message.answer(f"<b>{subject}</b>\n\n{str(task).capitalize()}", parse_mode="html")
-        if await get_all_media_by_id(homework[2]) is not None:
-          media_group_data = await get_all_media_by_id(homework[2])
+        subject = homework["subject"]
+        task = homework["task"]
+        task_id = homework["uid"]
+        if await get_media_by_id(task_id) is not None:
+          media_group_data = await get_media_by_id(task_id)
           media_group = []
           for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
+            if media_data["media_type"] == "photo":
+              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+            elif media_data["media_type"] == "video":
+              media_group.append(InputMediaVideo(media=media_data["media_id"]))
+            elif media_data["media_type"] == "audio":
+              media_group.append(InputMediaAudio(media=media_data["media_id"]))
+            elif media_data["media_type"] == "document":
+              media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "🗓 По дате")
@@ -643,7 +625,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
     # print(date_time)
     # print(datetime.timestamp(date_time))
     date_time_timestamp = datetime.timestamp(date_time)
-    tasks = await get_tasks_by_date(date_time_timestamp)
+    tasks = await get_homeworks_by_date(date_time_timestamp)
     # print(f"TASKS\t {tasks}")
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
@@ -652,28 +634,28 @@ async def show_hw_by_date(message: Message, state: FSMContext):
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
       for homework in tasks:
-        subject = homework[0]
-        task = homework[1]
-        task_id = homework[2]
-        if await get_all_media_by_id(homework[2]) is not None:
-          media_group_data = await get_all_media_by_id(homework[2])
+        subject = homework["subject"]
+        task = homework["task"]
+        task_id = homework["uid"]
+        if await get_media_by_id(task_id) is not None:
+          media_group_data = await get_media_by_id(task_id)
           media_group = []
           for media_data in media_group_data:
-            if media_data[1] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data[0]))
-            elif media_data[1] == "video":
-              media_group.append(InputMediaVideo(media=media_data[0]))
-            elif media_data[1] == "audio":
-              media_group.append(InputMediaAudio(media=media_data[0]))
-            elif media_data[1] == "document":
-              media_group.append(InputMediaDocument(media=media_data[0]))
+            if media_data["media_type"] == "photo":
+              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+            elif media_data["media_type"] == "video":
+              media_group.append(InputMediaVideo(media=media_data["media_id"]))
+            elif media_data["media_type"] == "audio":
+              media_group.append(InputMediaAudio(media=media_data["media_id"]))
+            elif media_data["media_type"] == "document":
+              media_group.append(InputMediaDocument(media=media_data["media_id"]))
           
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task).capitalize()}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
     await state.clear()
 
 @dp.message(F.text == 'Добавить Д/З ➕')
@@ -792,35 +774,45 @@ async def remove_hw_by_id_handler(message: Message, state: FSMContext):
 async def remove_hw_by_id(message: Message, state: FSMContext):
   await state.update_data(hw_id=message.text)
   data = await state.get_data()
-  task = await get_homework_by_id(data['hw_id'])
 
-  if await get_all_media_by_id(data["hw_id"]) is not None:
-    media_group_data = await get_all_media_by_id(data["hw_id"])
+  hw_uid = int(data["hw_id"])
+  print(f"getting homework by id {hw_uid}")
+  homework = await get_homework_by_id(hw_uid)
+
+  hw_subject = homework["subject"]
+  hw_task = homework["task"]
+
+  if await get_media_by_id(data["hw_id"]) is not None:
+    media_group_data = await get_media_by_id(data["hw_id"])
     media_group = []
     for media_data in media_group_data:
-      if media_data[1] == "photo":
-        media_group.append(InputMediaPhoto(media=media_data[0]))
-      elif media_data[1] == "video":
-        media_group.append(InputMediaVideo(media=media_data[0]))
-      elif media_data[1] == "audio":
-        media_group.append(InputMediaAudio(media=media_data[0]))
-      elif media_data[1] == "document":
-        media_group.append(InputMediaDocument(media=media_data[0]))
+      if media_data["media_type"] == "photo":
+        media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+      elif media_data["media_type"] == "video":
+        media_group.append(InputMediaVideo(media=media_data["media_id"]))
+      elif media_data["media_type"] == "audio":
+        media_group.append(InputMediaAudio(media=media_data["media_id"]))
+      elif media_data["media_type"] == "document":
+        media_group.append(InputMediaDocument(media=media_data["media_id"]))
     
-    media_group[0].caption = f"<b>{task[0]}</b>\n\n{str(task[1]).capitalize()}"
+    media_group[0].caption = f"<b>{hw_subject}</b>\n\n{str(hw_task)}"
     media_group[0].parse_mode = "html"
 
     await message.answer_media_group(media_group)
     await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
   else:
-    await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?\n<b>{task[0]}</b>\n\n{task[1]}", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
+    await message.answer(f"Удалить задание с <b>id {data['hw_id']}</b>?\n<b>{hw_subject}</b>\n\n{hw_task}", parse_mode="html", reply_markup=kb.remove_hw_by_id_keyboard)
 
 @dp.callback_query(F.data == "delete_hw")
 async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   # await call.message.delete()
   data = await state.get_data()
-  await delete_homework_by_id(data['hw_id'])
-  await delete_media_by_id(data['hw_id'])
+
+  print(type(data['hw_id']), data['hw_id'])
+  print(type(int(data['hw_id'])), int(data['hw_id']))
+  
+  await del_homework(int(data['hw_id']))
+  await del_media(int(data['hw_id']))
   await call.message.edit_text("Задание удалено.")
   await state.clear()
   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
@@ -841,7 +833,7 @@ async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
     await msg.edit_text("⏳ Парсинг значений расписания...")
     parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
     await msg.edit_text("⏳ Обновление значений базы данных...")
-    populate_schedule()
+    await populate_schedule()
     await msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e: 

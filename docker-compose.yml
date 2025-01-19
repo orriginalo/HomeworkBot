@@ -27,9 +27,9 @@ services:
 
   db:
     image: postgres:latest
-    restart: no
+    restart: always
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -38,6 +38,8 @@ services:
       - .env
     volumes:
       - ./data/database:/var/lib/postgresql/data
+    networks:
+      - internal
 
 networks:
   internal:

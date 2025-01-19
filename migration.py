@@ -59,7 +59,7 @@ async def main():
   homeworks = get_homeworks_from_sqlite()
   print("Adding homeworks...", end="")
   for homework in homeworks:
-    await add_homework(homework[2], homework[3], 1, 1, homework[1])
+    await add_homework(homework[2], homework[3], 1, 1, homework[1], to_date_ts=homework[4])
     # ! GROUP ID TEMPORARY IS 1
   print("| Done.")
 
