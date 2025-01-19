@@ -25,6 +25,25 @@ services:
     networks:
       - internal
 
+  db_admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "db_admin.py"]
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Europe/Samara
+    restart: no
+    env_file:
+      - .env
+    networks:
+      - internal
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
   db:
     image: postgres:latest
     restart: always

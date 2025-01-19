@@ -48,32 +48,32 @@ def get_media_from_sqlite():
 
     
 async def main():
-  await create_tables()
+  await create_tables(drop_tables=False)
   users = get_users_from_sqlite()
   
   print("Adding users...", end="")
   for user in users:
      await add_user(user[0], user[1], user[2], user[4], user[5], user[3])
-  print("| Done.")
+  print(" | Done.")
 
   homeworks = get_homeworks_from_sqlite()
   print("Adding homeworks...", end="")
   for homework in homeworks:
-    await add_homework(homework[2], homework[3], 1, 1, homework[1], to_date_ts=homework[4])
+    await add_homework(homework[2], homework[3], 1, 1, homework[1], to_date_ts=homework[4], uid=homework[0])
     # ! GROUP ID TEMPORARY IS 1
-  print("| Done.")
+  print(" | Done.")
 
   schedule = get_schedule_from_sqlite()
   print("Adding schedule...", end="")
   for schedule in schedule:
     await add_subject(schedule[1], schedule[2], schedule[3])
-  print("| Done.")
+  print(" | Done.")
   
   media = get_media_from_sqlite()
   print("Adding media...", end="")
   for media in media:
     await add_media(media[0], media[1], media[2])
-  print("| Done.")
+  print(" | Done.")
 
 if __name__ == "__main__":
   asyncio.run(main())

@@ -142,9 +142,9 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
   subject = data.get("subject")
   task = data.get("task")
 
-  homework_id = await add_homework(subject, task, 1, call.from_user.id, var.calculate_today()[1])
-  print(homework_id)
-  homework_id = homework_id["uid"]
+  homework = await add_homework(subject, task, 1, call.from_user.id, var.calculate_today()[1])
+  print(homework)
+  homework_id = homework["uid"]
   print(homework_id)
 
   print(data)
@@ -466,7 +466,10 @@ async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
       hw_uid = homework["uid"]
       hw_subject = homework["subject"]
       hw_task = homework["task"]
-      if await get_media_by_id(hw_uid) is not None and len(await get_media_by_id(hw_uid)) > 0:
+
+      hw_media = await get_media_by_id(hw_uid)
+      print(f"{hw_media=}")
+      if hw_media is not None and len(hw_media) > 0:
           media_group_data = await get_media_by_id(hw_uid)
           media_group = []
           for media_data in media_group_data:
@@ -854,7 +857,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     await reset_homework_deadline_by_id(data['hw_id'])
     await message.answer("✅ Дата сдачи сброшена.")
     # await update_homework_dates()
-    deadline = await get_homework_deadline_by_id(data['hw_id'])
+    deadline = (await get_homework_by_id(data['hw_id']))["to_date"]
     new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
     await message.answer(new_deadline_text)
     await state.clear()
@@ -868,12 +871,12 @@ async def repair_bot(message: Message, command: CommandObject, state: FSMContext
 @dp.message(Command("settings"))
 async def show_settings(message: Message, command: CommandObject, state: FSMContext):
   await state.clear()
-  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard(await get_user_notifications(message.from_user.id)))
+  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard((await get_user_by_id(message.from_user.id))["notifications"]))
 
 @dp.callback_query(F.data == "enable_notifications")
 async def enable_notifications(call: CallbackQuery):
     # Включаем рассылку
-    await set_notifications_by_id(call.from_user.id, True)
+    await update_user(call.from_user.id, notifications=True)
 
     updated_keyboard = await kb.get_settings_keyboard(True)
     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
@@ -882,7 +885,7 @@ async def enable_notifications(call: CallbackQuery):
 @dp.callback_query(F.data == "disable_notifications")
 async def disable_notifications(call: CallbackQuery):
     # Отключаем рассылку
-    await set_notifications_by_id(call.from_user.id, False)
+    await update_user(call.from_user.id, notifications=True)
 
     updated_keyboard = await kb.get_settings_keyboard(False)
     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
@@ -901,10 +904,10 @@ async def tell_all_users_state(message: Message, state: FSMContext):
   msg = message.text
   if msg:
     await message.answer("Отправляю сообщение всем пользователям...")
-    users = await get_all_users()
+    users = await get_users()
     for user in users:
       await message.answer(f"✉️ {user}...")
-      await message.bot.send_message(user, msg)
+      await message.bot.send_message(user["tg_id"], msg)
     await message.answer("✅ Сообщение отправлено всем пользователям.")
   await state.clear()
   await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))

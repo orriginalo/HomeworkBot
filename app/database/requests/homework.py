@@ -7,7 +7,7 @@ import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None):
+async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None, **kwargs):
   try:
     async with session() as s:
       homework = Homework(
@@ -18,15 +18,20 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
         added_by=added_by,
         to_date=datetime.datetime.fromtimestamp(to_date_ts) if to_date_ts else None
       )
+      
+      for key, value in kwargs.items():
+        if value is not None:
+          setattr(homework, key, value)
+
       s.add(homework)
       await s.commit()
       
       await s.refresh(homework)
       return vars(homework)
-    
+
   except Exception as e:
     logger.error(f"Error adding homework: {e}")
-    return None
+
   
 async def del_homework(homework_id: int):
   try:
