@@ -54,7 +54,7 @@ async def del_schedule_by_week(week_number: int):
     logger.error(f"Error deleting schedule {week_number}: {e}")
     return None
 
-  
+
 async def check_exists_subject(subject: str, timestamp: int):
   async with session() as s:
     stmt = select(Schedule).where(Schedule.subject == subject, Schedule.timestamp == datetime.datetime.fromtimestamp(timestamp))

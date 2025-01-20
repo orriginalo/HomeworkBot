@@ -3,6 +3,9 @@ from rich import print
 import asyncio
 import aiofiles
 import aiosqlite
+from sqlalchemy import text
+from app.database.db_setup import session
+
 
 db_file = "Database.db"
 
@@ -37,3 +40,17 @@ async def get_admins_chatid():
     async with conn.execute("SELECT id FROM users WHERE role = 3 OR role = 4") as cursor:
       result = await cursor.fetchall()
    return result
+
+async def sync_sequences():
+  tables = ["users", "homeworks", "schedule", "media", "groups"]
+  async with session() as s:
+    for table in tables:
+      stmt = text(f"""
+      SELECT setval(
+          pg_get_serial_sequence('{table}', 'uid'),
+          (SELECT MAX(uid) FROM {table})
+      )
+      """)
+      await session.execute(stmt)
+    await session.commit()
+

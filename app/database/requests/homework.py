@@ -82,20 +82,33 @@ async def get_homeworks_by_date(to_date_ts: int):
     return None
 
   
-async def get_homeworks_by_subject(subject: str):
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+import datetime
+from typing import List, Optional
+
+async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False) -> List[dict] | None:
   hw_list = []
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.subject == subject)
+      
+      if limit_last_two:
+        stmt = stmt.order_by(Homework.from_date.desc()).limit(2)
+
       result = await s.execute(stmt)
       homework = result.scalars().all()
+      
       for hw in homework:
         hw.from_date = datetime.datetime.timestamp(hw.from_date)
         hw_list.append(vars(hw))
+      
       return hw_list
+
   except Exception as e:
     logger.error(f"Error getting homework by subject {subject}: {e}")
     return None
+
   
 async def update_homework(homework_id: int, **kwargs):
   try:

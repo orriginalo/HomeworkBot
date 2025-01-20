@@ -106,7 +106,7 @@ async def load_new_week(message: Message, state: FSMContext):
     with open(f"{file_name}", "wb") as new_file:
       new_file.write(file_info.getvalue())
     n1_msg = await message.answer("✅ Файл загружен.")
-    time.sleep(0.5)
+    await asyncio.sleep(1)
     await n1_msg.edit_text("⏳ Обновление расписания...")
     await populate_schedule(file_name)
     await n1_msg.edit_text("✅ Расписание обновлено.")
@@ -456,7 +456,8 @@ async def check_hw_by_subject_handler(message: Message):
 async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
   user_role = (await get_user_by_id(call.from_user.id))["role"]
-  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", "")))
+  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", ""), limit_last_two=True))
+  homeworks.reverse()
   if len(homeworks) > 0:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
     # print(tasks)
