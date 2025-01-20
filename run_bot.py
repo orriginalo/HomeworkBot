@@ -8,7 +8,7 @@ from app.handlers import dp
 from app.database.core import create_tables
 from app.scheduler import start_scheduler
 from app.database.requests.user import get_users_with_notifications
-from other_scripts.timetable_downloader import download_timetable
+from utils.timetable_downloader import download_timetable
 from aiogram.types import FSInputFile
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger

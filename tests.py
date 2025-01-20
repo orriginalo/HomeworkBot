@@ -4,7 +4,7 @@ from app.database.requests.media import *
 from app.database.requests.user import *
 from app.database.requests.homework import *
 from app.database.requests.schedule import *
-from other_scripts.db_subject_populator import populate_schedule
+from utils.db_subject_populator import populate_schedule
 from rich import print
 
 async def tests():

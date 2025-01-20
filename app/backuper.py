@@ -1,7 +1,7 @@
 from app.database.requests.other import log
-from other_scripts.timetable_downloader import download_timetable
-from other_scripts.timetable_parser import parse_timetable
-from other_scripts.db_subject_populator import populate_schedule
+from utils.timetable_downloader import download_timetable
+from utils.timetable_parser import parse_timetable
+from utils.db_subject_populator import populate_schedule
 import shutil
 import datetime
 import os

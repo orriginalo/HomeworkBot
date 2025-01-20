@@ -21,10 +21,10 @@ from aiogram.fsm.context import FSMContext
 from app.excel_maker.db_to_excel import create_schedule
 from app.excel_maker.formatter import format_table
 
-from other_scripts.db_subject_populator import populate_schedule
-from other_scripts.timetable_downloader import download_timetable
-from other_scripts.timetable_parser import parse_timetable
-from other_scripts.db_subject_populator import populate_schedule
+from utils.db_subject_populator import populate_schedule
+from utils.timetable_downloader import download_timetable
+from utils.timetable_parser import parse_timetable
+from utils.db_subject_populator import populate_schedule
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
