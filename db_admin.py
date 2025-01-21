@@ -25,8 +25,8 @@ class MediaAdmin(ModelView, model=Media):
 
 class GroupsAdmin(ModelView, model=Groups):
   name = "Group"
+  column_list = ["uid", "name", "course"]
 
-  column_list = ["uid", "course"]
 
 admin.add_view(UserAdmin)
 admin.add_view(HomeworkAdmin)

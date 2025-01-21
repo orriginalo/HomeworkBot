@@ -49,4 +49,5 @@ class Media(Base):
 class Groups(Base):
   __tablename__ = "groups"
   uid: Mapped[intpk]
-  course: Mapped[int]
+  name: Mapped[str]
+  course: Mapped[int | None]

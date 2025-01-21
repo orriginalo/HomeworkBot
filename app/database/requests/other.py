@@ -51,6 +51,6 @@ async def sync_sequences():
           (SELECT MAX(uid) FROM {table})
       )
       """)
-      await session.execute(stmt)
-    await session.commit()
+      await s.execute(stmt)
+    await s.commit()
 

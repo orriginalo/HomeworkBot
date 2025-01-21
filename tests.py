@@ -4,14 +4,17 @@ from app.database.requests.media import *
 from app.database.requests.user import *
 from app.database.requests.homework import *
 from app.database.requests.schedule import *
+from utils.groups_parser import parse_groups_and_add_to_db
 from utils.db_subject_populator import populate_schedule
 from rich import print
 
 async def tests():
-  await populate_schedule()
+  
+  # await populate_schedule()
+
   print("USERS")
   # print(await get_user_by_id(1522039516)) # WORKING
-
+ 
   # print(await get_users_with_notifications()) # WORKING
 
   # print(await get_users_with_role(2)) # WORKING

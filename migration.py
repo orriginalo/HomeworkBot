@@ -9,6 +9,8 @@ from app.database.core import create_tables
 from rich import print
 import sqlite3
 
+from utils.groups_parser import parse_groups_and_add_to_db
+
 
 
 
@@ -21,7 +23,6 @@ def get_users_from_sqlite():
     conn.close()
     return data
 
-
 def get_homeworks_from_sqlite():
     conn = sqlite3.connect("Database.db")
     cursor = conn.cursor()
@@ -29,7 +30,6 @@ def get_homeworks_from_sqlite():
     data = cursor.fetchall()
     conn.close()
     return data
-
 
 def get_schedule_from_sqlite():
     conn = sqlite3.connect("Database.db")
@@ -48,7 +48,7 @@ def get_media_from_sqlite():
     return data
 
 async def main():
-  await create_tables(drop_tables=False)
+  await create_tables(drop_tables=True)
   users = get_users_from_sqlite()
   
   print("Adding users...", end="")
@@ -73,6 +73,10 @@ async def main():
   print("Adding media...", end="")
   for media in media:
     await add_media(media[0], media[1], media[2])
+  print(" | Done.")
+
+  print("Adding groups...", end="")
+  await parse_groups_and_add_to_db()
   print(" | Done.")
 
   print("Syncing sequences...", end="")
