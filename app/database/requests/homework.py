@@ -87,7 +87,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import datetime
 from typing import List, Optional
 
-async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False) -> List[dict] | None:
+async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False, group_id: int = None) -> List[dict] | None:
   hw_list = []
   try:
     async with session() as s:
@@ -95,6 +95,9 @@ async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] 
       
       if limit_last_two:
         stmt = stmt.order_by(Homework.from_date.desc()).limit(2)
+
+      if group_id is not None:
+        stmt = stmt.where(Homework.group_id == group_id)
 
       result = await s.execute(stmt)
       homework = result.scalars().all()

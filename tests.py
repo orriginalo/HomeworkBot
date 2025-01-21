@@ -56,6 +56,9 @@ async def tests():
   # print("get_media_by_id")
   # print(await get_media_by_id(39))
 
+  print("GROUPS")
+
+  # print(await get_all_groups())
 
 if __name__ == "__main__":
   asyncio.run(tests())

@@ -3,6 +3,7 @@ from app.database.requests.homework import *
 from app.database.requests.user import *
 from app.database.requests.other import *
 from app.database.requests.media import *
+from app.database.requests.groups import *
 import app.variables as var
 import app.keyboards as kb
 from app.backuper import create_backups
@@ -73,6 +74,9 @@ class adding_new_week(StatesGroup):
   file = State()
 
 
+class setting_group(StatesGroup):
+  group_name = State()
+
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
@@ -82,9 +86,39 @@ dp.message.middleware(MsgLoggerMiddleware())
 notifications_scheduler = AsyncIOScheduler()
 
 @dp.message(CommandStart())
-async def start(message: Message):
+async def start(message: Message, state: FSMContext):
   if (await get_user_by_id(message.from_user.id))["role"] != 0:
-    await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+    args = message.text.split()
+    if len(args) > 1 and args[0] == "/start":
+      ref_code = args[1]
+      ref_code = ref_code[4:]
+      group = await get_group_by_ref(ref_code)
+      print(group)
+      if group:
+        await message.answer(f"Вы присоединились к группе <b>{group['name']}</b>!", parse_mode="html") 
+        await state.set_state(setting_group.group_name)
+      else:
+        await message.answer("Недействительная реферальная ссылка")
+    
+    else:
+      if (await get_user_by_id(message.from_user.id))["group_id"] is None:
+        await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12)")
+        await state.set_state(setting_group.group_name)
+      else:
+        await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+
+
+@dp.message(setting_group.group_name)
+async def set_group_name(message: Message, state: FSMContext):
+  all_groups = await get_all_groups()
+  all_groups_names = [group["name"].lower() for group in all_groups]
+  if message.text.strip().lower() in all_groups_names:
+    await state.update_data(group_name=message.text)
+    await message.answer("✅ <b>Группа успешно задана</b>\n📆 Сменить группу можно будет через 2 дня.", parse_mode="html")
+    await update_user(message.from_user.id, group_id=(await get_group_by_name(message.text.strip()))["uid"])
+  else:
+    await message.answer("❌ Такая группа не найдена, попробуй еще раз.")
+
 
 @dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):
@@ -141,21 +175,20 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
 
   subject = data.get("subject")
   task = data.get("task")
+  user = await get_user_by_id(call.from_user.id)
 
-  homework = await add_homework(subject, task, 1, call.from_user.id, var.calculate_today()[1])
-  print(homework)
+  homework = await add_homework(subject, task, user["group_id"], call.from_user.id, var.calculate_today()[1])
   homework_id = homework["uid"]
-  print(homework_id)
 
-  print(data)
   if data.get("media_group") is not None:
     for media in data.get("media_group"):
       await add_media(homework_id, media.media, media.type)
 
-  await call.message.answer(f"✅ Домашнее задание добавлено.") # в базу
+  await call.message.answer(f"✅ <b>Домашнее задание добавлено.</b>", parse_mode="html") # в базу
   await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
   await call.message.delete()
-  admins = await get_admins_chatid()
+  admins = await get_users_with_role(3)
+  admins += await get_users_with_role(4)
   for admin_id in admins:
     if admin_id[0] != call.from_user.id:
       if data.get("media_group") is not None:
