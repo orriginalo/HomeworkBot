@@ -100,14 +100,12 @@ async def update_user(tg_id: int, **kwargs):
     return None
 
 async def get_users():
-  users_list = []
   async with session() as s:
     stmt = select(User)
     result = await s.execute(stmt)
     users = result.scalars().all()
-    for user in users:
-      users_list.append(vars(user))
-    return users_list
+    users = [vars(user) for user in users]
+    return users
 
 async def get_users_with_role(role: int):
   users_list = []

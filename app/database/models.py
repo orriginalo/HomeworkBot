@@ -51,3 +51,8 @@ class Groups(Base):
   uid: Mapped[intpk]
   name: Mapped[str]
   course: Mapped[int | None]
+  ref_code: Mapped[str | None] = mapped_column(unique=True)
+  is_equipped: Mapped[bool] = mapped_column(default=False)
+  leader_id: Mapped[int | None] = mapped_column(BIGINT)
+  member_conunt: Mapped[int] = mapped_column(default=0)
+  created_at: Mapped[created_at]
