@@ -34,9 +34,10 @@ async def create_backups():
   create_db_backup()
 
 async def download_timetable_job():
-  groups = get_all_groups(Groups.is_equipped == True)
+  groups = await get_all_groups(Groups.is_equipped == True)
   groups = [group["name"] for group in groups]
+  download_timetable(groups)
+  
   for group in groups:
-    download_timetable(group)
-    parse_timetable(f"./data/timetables/{group.lower()}-timetable.html", f"./data/timetables/timetables.json")
+    parse_timetable(f"./data/timetables/{group.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group)
   await populate_schedule()

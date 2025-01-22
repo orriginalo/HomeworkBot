@@ -7,13 +7,14 @@ import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def add_subject(timestamp: int, subject: str, week_number: int):
+async def add_subject(timestamp: int, subject: str, week_number: int, group_id: int):
   try:
     async with session() as s:
       schedule = Schedule(
         timestamp=datetime.datetime.fromtimestamp(timestamp), 
         subject=subject, 
-        week_number=week_number
+        week_number=week_number,
+        group_id=group_id
       )
       s.add(schedule)
       await s.commit()
@@ -55,9 +56,12 @@ async def del_schedule_by_week(week_number: int):
     return None
 
 
-async def check_exists_subject(subject: str, timestamp: int):
+async def check_exists_subject(subject: str, timestamp: int, group_id: int = None):
   async with session() as s:
     stmt = select(Schedule).where(Schedule.subject == subject, Schedule.timestamp == datetime.datetime.fromtimestamp(timestamp))
+    if group_id:
+      stmt = stmt.where(Schedule.group_id == group_id)
+      
     result = await s.execute(stmt)
     schedule = result.scalar_one_or_none()
     if schedule:

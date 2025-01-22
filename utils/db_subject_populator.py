@@ -4,9 +4,8 @@ import datetime as dt
 from bs4 import BeautifulSoup
 import sqlite3 as sql
 import json
+from app.database.requests.groups import get_group_by_name
 from app.database.requests.schedule import add_subject, del_schedule_by_week, check_exists_subject
-# Для удачной генерации нужно удалить все лишние расписания кроме нужного (от корня будут >1 <div>, нужно чтобы остался один)
-# А также удалить верхнюю строку с "пара/время" (Удалить самый первый )
 
 # 34 + СУПЕРЧИСЛО
 
@@ -33,13 +32,18 @@ async def populate_schedule():
   timetable_json = json.load(open("./data/timetables/timetables.json", "r", encoding="utf-8"))
 
 # Проход по JSON
-  for week, days in timetable_json.items():
-    await del_schedule_by_week(int(week))
-    for timestamp, lessons in days.items():
-      for pair_number, subject in lessons.items():
-        if subject != "-" and await check_exists_subject(subject, int(timestamp)) == False:
-          await add_subject(int(timestamp), subject, int(week))
-
-
-# await populate_schedule()
-# await populate_schedule("schedule-12.html")
+  # for week, days in timetable_json.items():
+  #   await del_schedule_by_week(int(week))
+  #   for timestamp, lessons in days.items():
+  #     for pair_number, subject in lessons.items():
+  #       if subject != "-" and await check_exists_subject(subject, int(timestamp)) == False:
+  #         await add_subject(int(timestamp), subject, int(week))
+  for group, weeks in timetable_json.items():
+    print(group)
+    group = await get_group_by_name(group)
+    for week, days in weeks.items():
+      await del_schedule_by_week(int(week))
+      for timestamp, lessons in days.items():
+        for pair_number, subject in lessons.items():
+          if subject != "-" and await check_exists_subject(subject, int(timestamp), group["uid"]) == False:
+            await add_subject(int(timestamp), subject, int(week), group["uid"])
