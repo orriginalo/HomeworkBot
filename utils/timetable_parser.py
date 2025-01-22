@@ -34,7 +34,7 @@ def process_subject(subject: str) -> str:
     :param subject: Название предмета из расписания.
     :return: Обработанное название.
     """
-    subject = subject.lower()
+
     # Разделяем префикс и основной текст
     if '.' in subject:
         prefix, main_subject = subject.split('.', 1)
