@@ -1,3 +1,4 @@
+from typing import List, Optional
 from sqlalchemy import func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
@@ -63,7 +64,7 @@ async def get_homework_by_id(homework_id: int):
     logger.error(f"Error getting homework by ID {homework_id}: {e}")
     return None
   
-async def get_homeworks_by_date(to_date_ts: int):
+async def get_homeworks_by_date(to_date_ts: int, group_id: int = None):
   hw_list = []
   try:
     async with session() as s:
@@ -72,6 +73,9 @@ async def get_homeworks_by_date(to_date_ts: int):
         Homework.to_date >= iso_time,
         Homework.to_date < iso_time + datetime.timedelta(seconds=1)
       )
+      if group_id:
+        stmt = stmt.where(Homework.group_id == group_id)
+        
       result = await s.execute(stmt)
       homework = result.scalars().all()
       for hw in homework:
@@ -80,12 +84,6 @@ async def get_homeworks_by_date(to_date_ts: int):
   except Exception as e:
     logger.error(f"Error getting homework by date {to_date_ts}: {e}")
     return None
-
-  
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-import datetime
-from typing import List, Optional
 
 async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False, group_id: int = None) -> List[dict] | None:
   hw_list = []
@@ -96,7 +94,7 @@ async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] 
       if limit_last_two:
         stmt = stmt.order_by(Homework.from_date.desc()).limit(2)
 
-      if group_id is not None:
+      if group_id:
         stmt = stmt.where(Homework.group_id == group_id)
 
       result = await s.execute(stmt)

@@ -93,12 +93,23 @@ class MsgLoggerMiddleware(BaseException):
         user = await get_user_by_id(event.from_user.id)
         if user is None:
             print("ADDING USER")
-            await add_user(event.from_user.id, 1, event.from_user.username, event.from_user.first_name, event.from_user.last_name, False, 1, False)
+            await add_user(
+                tg_id=event.from_user.id,
+                role=1,
+                username=event.from_user.username,
+                firstname=event.from_user.first_name,
+                lastname=event.from_user.last_name,
+                notifications=False,
+                group_id=None,
+                is_leader=False
+            )
+                
         else:
             if user["role"] == 0:
                 return
         await update_user(event.from_user.id, username=event.from_user.username, firstname=event.from_user.first_name, lastname=event.from_user.last_name)
-
+        
+        data["user"] = user
         msg = event.text
         user_name = event.from_user.first_name
         try:

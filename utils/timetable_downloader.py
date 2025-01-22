@@ -24,10 +24,10 @@ firefox_options.add_argument("--window-size=1920,1600")
 # Логин и пароль из .env
 login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
-group = "Пдо-16"
+# group = "Пдо-16"
 # Настройки для Chrome
 
-def download_timetable(make_screenshot: bool = False): # new
+def download_timetable(group: str, make_screenshot: bool = False): # new
 
     driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 
     # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options)
@@ -94,7 +94,7 @@ def download_timetable(make_screenshot: bool = False): # new
 
             driver.execute_script("arguments[0].scrollIntoView();", parent_container)
             
-            screenshot_path = "./data/screenshots/timetable.png"
+            screenshot_path = f"./data/screenshots/{group.lower()}.png"
             driver.save_screenshot(screenshot_path)
             print(f"Скриншот сохранён: {screenshot_path}")
             
@@ -117,7 +117,7 @@ def download_timetable(make_screenshot: bool = False): # new
         page_html = driver.page_source
         
         # Сохраняем HTML в файл
-        with open("./data/timetables/timetable.html", "w", encoding="utf-8") as file:
+        with open(f"./data/timetables/{group.lower()}-timetable.html", "w", encoding="utf-8") as file:
             file.write(page_html)
         print("HTML успешно сохранён!")
 

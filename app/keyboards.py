@@ -85,6 +85,12 @@ donate_keyboard = InlineKeyboardMarkup(
 ]
 )
 
+create_group_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="Создать группу ➕", callback_data="create_group")],
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="back_to_start")]
+]
+)
 
 async def get_settings_keyboard(notifications: bool):
   
