@@ -22,6 +22,7 @@ from aiogram.fsm.context import FSMContext
 from app.excel_maker.db_to_excel import create_schedule
 from app.excel_maker.formatter import format_table
 
+from utils.referal import generate_unique_code, get_referal_link
 from utils.db_subject_populator import populate_schedule
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
@@ -86,20 +87,29 @@ dp.message.middleware(MsgLoggerMiddleware())
 notifications_scheduler = AsyncIOScheduler()
 
 @dp.message(CommandStart())
-async def start(message: Message, state: FSMContext):
+async def start(message: Message, state: FSMContext, user):
+  print(user)
   if (await get_user_by_id(message.from_user.id))["role"] != 0:
+
+    # If referal
     args = message.text.split()
     if len(args) > 1 and args[0] == "/start":
       ref_code = args[1]
       ref_code = ref_code[4:]
       group = await get_group_by_ref(ref_code)
-      print(group)
+
       if group:
-        await message.answer(f"Вы присоединились к группе <b>{group['name']}</b>!", parse_mode="html") 
-        await state.set_state(setting_group.group_name)
+        if user["group_id"]:
+          if group["uid"] == user["group_id"]:
+            await message.answer("Вы уже присоеденены к этой группе!")
+          else:
+            await message.answer("Вы хотите присоединиться к другой группе? Менять группу можно раз в 48 часов.")
+        else:
+          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html") 
       else:
         await message.answer("Недействительная реферальная ссылка")
-    
+
+
     else:
       if (await get_user_by_id(message.from_user.id))["group_id"] is None:
         await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12)")
@@ -114,11 +124,38 @@ async def set_group_name(message: Message, state: FSMContext):
   all_groups_names = [group["name"].lower() for group in all_groups]
   if message.text.strip().lower() in all_groups_names:
     await state.update_data(group_name=message.text)
-    await message.answer("✅ <b>Группа успешно задана</b>\n📆 Сменить группу можно будет через 2 дня.", parse_mode="html")
-    await update_user(message.from_user.id, group_id=(await get_group_by_name(message.text.strip()))["uid"])
+    group = await get_group_by_name(message.text.strip())
+    if group:
+      if group["is_equipped"]:
+        await message.answer("Эта группа уже зарегистрирована в системе. Запросите реферальную ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
+      else:
+        await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /info)", parse_mode="html", reply_markup=kb.create_group_keyboard)
   else:
     await message.answer("❌ Такая группа не найдена, попробуй еще раз.")
 
+@dp.callback_query(F.data == "create_group")
+async def create_group_handler(callback: CallbackQuery, state: FSMContext):
+  await callback.message.delete()
+
+  data = await state.get_data()
+  group = await get_group_by_name(data["group_name"])
+
+  referal_code = await generate_unique_code()
+  referal_link = await get_referal_link(referal_code)
+  
+  await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
+  await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
+
+  await callback.message.answer(f"✅ Группа создана!")
+  await callback.message.answer(f"🔗 <b>Реферальная ссылка для вступления:</b> {referal_link}", parse_mode="html")
+
+  await state.clear()
+
+@dp.callback_query(F.data == "back_to_start")
+async def back_to_start(callback: CallbackQuery, state: FSMContext):
+  await callback.message.answer("❌ Действие отменено")
+
+  await state.clear()
 
 @dp.message(F.text == "Админ-панель 😈")
 async def show_admin_panel(message: Message):
@@ -486,10 +523,11 @@ async def check_hw_by_subject_handler(message: Message):
   await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(var.allowed_subjects))
 
 @dp.callback_query(F.data.contains("-check-hw"))
-async def check_hw_by_subject_handler(call: CallbackQuery, state: FSMContext):
+async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
   await call.message.delete()
   user_role = (await get_user_by_id(call.from_user.id))["role"]
-  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", ""), limit_last_two=True))
+  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", ""), limit_last_two=True, group_id=user["group_id"]))
   homeworks.reverse()
   if len(homeworks) > 0:
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")

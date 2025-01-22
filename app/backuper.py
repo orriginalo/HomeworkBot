@@ -1,7 +1,9 @@
+from app.database.models import Groups
 from app.database.requests.other import log
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
+from app.database.requests.groups import get_all_groups
 import shutil
 import datetime
 import os
@@ -32,12 +34,9 @@ async def create_backups():
   create_db_backup()
 
 async def download_timetable_job():
-  print("Starting downloading the timetable...")
-  download_timetable()
-  print("Downloading Ended")
-  print("Parsing Started")
-  parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
-  print("Parsing Ended")
-  print("Populating Started")
+  groups = get_all_groups(Groups.is_equipped == True)
+  groups = [group["name"] for group in groups]
+  for group in groups:
+    download_timetable(group)
+    parse_timetable(f"./data/timetables/{group.lower()}-timetable.html", f"./data/timetables/timetables.json")
   await populate_schedule()
-  print("Populating Ended")

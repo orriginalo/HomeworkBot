@@ -1,6 +1,6 @@
 from app.database.db_setup import session
 from app.database.models import Groups
-from sqlalchemy import select
+from sqlalchemy import and_, select
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +19,25 @@ async def add_group(name: str, course: int):
       return group
   except Exception as e:
     logger.error(f"Error adding group: {e}")
+    return None
+
+async def update_group(group_id: int, **kwargs):
+  try:
+    async with session() as s:
+      stmt = select(Groups).where(Groups.uid == group_id)
+      result = await s.execute(stmt)
+      group = result.scalar_one_or_none()
+      if group:
+        for key, value in kwargs.items():
+          setattr(group, key, value)
+        await s.commit()
+        logger.info(f"Group {group_id} successfully updated!")
+        await s.refresh(group)
+        return vars(group) if group else None
+      else:
+        logger.info(f"Group with uid={group_id} not found.")
+  except Exception as e:
+    logger.error(f"Error updating group {group_id}: {e}")
     return None
 
 async def del_group(group_id: int):
@@ -57,10 +76,13 @@ async def get_group_by_name(group_name: str):
     return None
   
 
-async def get_all_groups():
+async def get_all_groups(*filters):
   try:
     async with session() as s:
       stmt = select(Groups)
+      if filters:
+        stmt = stmt.where(and_(*filters))
+        
       result = await s.execute(stmt)
       groups = result.scalars().all()
       groups = [vars(group) for group in groups]

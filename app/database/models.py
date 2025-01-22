@@ -38,6 +38,7 @@ class Schedule(Base):
   timestamp: Mapped[int] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
   week_number: Mapped[int]
+  group_id: Mapped[int | None]
 
 class Media(Base):
   __tablename__ = "media"
@@ -54,5 +55,5 @@ class Groups(Base):
   ref_code: Mapped[str | None] = mapped_column(unique=True)
   is_equipped: Mapped[bool] = mapped_column(default=False)
   leader_id: Mapped[int | None] = mapped_column(BIGINT)
-  member_conunt: Mapped[int] = mapped_column(default=0)
+  member_count: Mapped[int] = mapped_column(default=0)
   created_at: Mapped[created_at]

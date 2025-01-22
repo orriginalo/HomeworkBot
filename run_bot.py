@@ -12,8 +12,11 @@ from utils.timetable_downloader import download_timetable
 from aiogram.types import FSInputFile
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
 
-from config import API_KEY
+load_dotenv()
+
+API_KEY = os.getenv('API_KEY')
 
 bot = Bot(token=API_KEY)
 disp = Dispatcher()

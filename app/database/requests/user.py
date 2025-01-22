@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from app.database.db_setup import session
 from app.database.models import User
 import logging
@@ -99,9 +99,15 @@ async def update_user(tg_id: int, **kwargs):
     logger.error(f"Error updating user {tg_id}: {e}")
     return None
 
-async def get_users():
+async def get_users(*filters):
+  """
+  example:
+  admins = await get_users(User.role >= 3)
+  """
   async with session() as s:
     stmt = select(User)
+    if filters:
+      stmt = stmt.where(and_(*filters))
     result = await s.execute(stmt)
     users = result.scalars().all()
     users = [vars(user) for user in users]
