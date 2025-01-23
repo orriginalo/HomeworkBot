@@ -140,18 +140,24 @@ async def set_group_name(message: Message, state: FSMContext):
 @dp.callback_query(F.data == "create_group")
 async def create_group_handler(callback: CallbackQuery, state: FSMContext):
   await callback.message.delete()
+  msg = await callback.message.answer(f"⌛ Создание группы...")
+  try:
+    data = await state.get_data()
+    group = await get_group_by_name(data["group_name"])
 
-  data = await state.get_data()
-  group = await get_group_by_name(data["group_name"])
+    referal_code = await generate_unique_code()
+    referal_link = await get_referal_link(referal_code)
+    
+    await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
+    await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
 
-  referal_code = await generate_unique_code()
-  referal_link = await get_referal_link(referal_code)
-  
-  await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
-  await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
+    await update_timetable_job()
 
-  await callback.message.answer(f"✅ Группа создана!")
-  await callback.message.answer(f"🔗 <b>Реферальная ссылка для вступления:</b> {referal_link}", parse_mode="html")
+    await msg.edit_text("✅ Группа создана!")
+    
+    await callback.message.answer(f"🔗 <b>Реферальная ссылка для вступления:</b> {referal_link}", parse_mode="html")
+  except Exception as e:
+    await msg.edit_text(f"❌ Ошибка создания группы: {e}")
 
   await state.clear()
 
@@ -198,10 +204,11 @@ async def back(call: CallbackQuery, state: FSMContext):
   await state.clear()
 
 @dp.callback_query(F.data == "change_subject")
-async def change_subject(call: CallbackQuery, state: FSMContext):
+async def change_subject(call: CallbackQuery, state: FSMContext, user):
   await state.set_state(adding_homework.subject)
   await call.message.delete()
-  await call.message.answer("🔄 Выберите предмет:", reply_markup=await kb.allowed_subjects_change_keyboard(var.allowed_subjects))
+  subjects = (await get_group_by_id(user["group_id"]))["subjects"]
+  await call.message.answer("🔄 Выберите предмет:", reply_markup=await kb.allowed_subjects_change_keyboard(subjects))
 
 @dp.callback_query(F.data == "change_task")
 async def change_task(call: CallbackQuery, state: FSMContext):
@@ -523,8 +530,12 @@ async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
 
 # @dp.callback_query(F.data == "by_subject")
 @dp.message(F.text == "Посмотреть по предмету")
-async def check_hw_by_subject_handler(message: Message):
-  await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(var.allowed_subjects))
+async def check_hw_by_subject_handler(message: Message, user):
+  group = await get_group_by_id(user["group_id"])
+  print(group)
+  subjects = group["subjects"]
+  print(subjects) 
+  await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(subjects))
 
 @dp.callback_query(F.data.contains("-check-hw"))
 async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
@@ -734,18 +745,20 @@ async def show_hw_by_date(message: Message, state: FSMContext, user):
     await state.clear()
 
 @dp.message(F.text == 'Добавить Д/З ➕')
-async def add_hw_one(message: Message, state: FSMContext):
+async def add_hw_one(message: Message, state: FSMContext, user):
   if (await get_user_by_id(message.from_user.id))["role"] >= 2:
     await state.set_state(adding_homework.subject)
-    await message.answer("Выберите предмет:", reply_markup=await kb.allowed_subjects_keyboard(var.allowed_subjects))
+    subjects = (await get_group_by_id(user["group_id"]))["subjects"]
+    await message.answer("Выберите предмет:", reply_markup=await kb.allowed_subjects_keyboard(subjects))
     kb.ReplyKeyboardRemove(remove_keyboard=True)
 
-@dp.message(adding_homework.subject)
-@dp.callback_query(F.data.in_(var.allowed_subjects))
+@dp.callback_query(adding_homework.subject)
+@dp.callback_query(F.data.contains("-add"))
 async def add_hw_two(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
-  await call.message.answer(f"Предмет <b>{call.data}</b> выбран.", parse_mode="html")
-  await state.update_data(subject=call.data)
+  subject = call.data.replace("-add", "")
+  await call.message.answer(f"Предмет <b>{subject}</b> выбран.", parse_mode="html")
+  await state.update_data(subject=subject)
   await state.set_state(adding_homework.task)
   await call.message.answer("Напишите домашнее задание <b>(текст обязателен, можно прикрепить медиа)</b>:", parse_mode="html", reply_markup=types.ReplyKeyboardRemove())
 

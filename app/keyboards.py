@@ -107,7 +107,7 @@ async def get_settings_keyboard(notifications: bool):
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}"))
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-add"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 

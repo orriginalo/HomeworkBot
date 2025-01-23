@@ -10,7 +10,7 @@ updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4',
 class User(Base):
   __tablename__ = "users"
   uid: Mapped[intpk]
-  tg_id: Mapped[int] = mapped_column(BIGINT)
+  tg_id: Mapped[int] = mapped_column(BIGINT, unique=True)
   role: Mapped[int]
   username: Mapped[str | None]
   firstname: Mapped[str | None]

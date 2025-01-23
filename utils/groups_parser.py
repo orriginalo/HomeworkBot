@@ -16,8 +16,8 @@ load_dotenv()
 
 firefox_options = webdriver.ChromeOptions() # for local testing
 # firefox_options = webdriver.FirefoxOptions()
-# firefox_options.add_argument("--headless")
-# firefox_options.add_argument("--disable-gpu")
+firefox_options.add_argument("--headless")
+firefox_options.add_argument("--disable-gpu")
 firefox_options.add_argument("--window-size=1920,1600")
 
 # Логин и пароль из .env

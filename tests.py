@@ -62,6 +62,9 @@ async def tests():
 
   # print(await get_all_groups())
 
+  # group = await get_group_by_name("пдо-16")
+  # print(group["subjects"])
+
 async def main():
   await create_tables(drop_tables=True)
   await parse_groups_and_add_to_db()
