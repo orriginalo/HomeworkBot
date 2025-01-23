@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import re
 import json
 import os
-
+from variables import prefixes_map, subjects_map
 START_STUDY_WEEK_NUM = 34 # Неделя с которой началась учеба в 2024 году
 
 ADDED_WEEKS = 20 # В переходе на 2 семестр 2024/2025 срезали 20 недель (теперь над расписанием пишется неделя начиная с 1)
@@ -17,21 +17,19 @@ short_subjects = {
 }
 
 # Вы можете задать значение ключа на "" чтобы префикс был удален
-prefix_map = {
-    "пр.": "",
-    "лек.": "",
-    "лаб.": "лаб."
-}
+# prefix_map = {
+#     "пр.": "",
+#     "лек.": "",
+#     "лаб.": "лаб."
+# }
 
-# Флаг для включения/отключения обработки префиксов
-process_prefixes = True
-
-
-def process_subject(subject: str) -> str:
+def process_subject_name(subject: str, subjects_map: dict, prefixes_map: dict = None) -> str:
     """
     Обрабатывает название предмета, заменяя префиксы и длинные названия.
     
     :param subject: Название предмета из расписания.
+    :param subjects_map: Словарь с заменами названий предметов.
+    :param prefixes_map: Словарь с заменами префиксов.
     :return: Обработанное название.
     """
 
@@ -43,14 +41,15 @@ def process_subject(subject: str) -> str:
         prefix, main_subject = '', subject
 
     # Заменяем префикс, если флаг включен
-    if process_prefixes:
-        prefix = prefix_map.get(prefix, prefix)
-    else:
-        prefix = ''
-
+    if prefixes_map is not None:
+        prefix = prefixes_map.get(prefix, prefix)
+    
+    if subjects_map is not None:
+        main_subject = subjects_map.get(main_subject.strip().lower(), main_subject)
+        
     # Соединяем обработанный префикс и основной текст
     if len(list(prefix)) > 0:
-        if list(prefix)[-1] == "." in prefix:
+        if list(prefix)[-1] == ".":
             return f"{prefix}{main_subject}".strip()
     return f"{prefix} {main_subject}".strip()
 
@@ -145,11 +144,13 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
 
 
                 # Заменяем длинные названия на более короткие
-                if replace_subject_to_short:
-                    subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
+                # if replace_subject_to_short:
+                #     subject = short_subjects.get(subject.replace("пр.", "").lower(), subject)
 
-                if process_prefixes:
-                    subject = process_subject(subject)
+                # if do_process_prefixes:
+                #     subject = process_subject_name(subject)
+
+                subject = process_subject_name(subject, subjects_map=subjects_map, prefixes_map=prefixes_map)
 
                 if add_groupname_to_json:
                     timetable[group_name][week_num_real][date][pair_label] = subject

@@ -12,6 +12,8 @@ from selenium.webdriver.common.keys import Keys
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+
 firefox_options = webdriver.ChromeOptions() # for local testing
 # firefox_options = webdriver.FirefoxOptions()
 # firefox_options.add_argument("--headless")
