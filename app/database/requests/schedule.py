@@ -37,10 +37,13 @@ async def get_schedule_by_week(week_number: int):
     logger.error(f"Error getting schedule by week {week_number}: {e}")
     return None
   
-async def del_schedule_by_week(week_number: int):
+async def del_schedule_by_week(week_number: int, group_id: int = None):
   try:
     async with session() as s:
       stmt = select(Schedule).where(Schedule.week_number == week_number)
+      if group_id:
+        stmt = stmt.where(Schedule.group_id == group_id)
+        
       result = await s.execute(stmt)
       schedules = result.scalars().all()  # Получаем все записи для этой недели
       

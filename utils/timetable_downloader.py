@@ -15,22 +15,19 @@ import os
 
 load_dotenv()
 
-firefox_options = webdriver.ChromeOptions() # for local testing
-# firefox_options = webdriver.FirefoxOptions()
-firefox_options.add_argument("--headless")  # Чтобы браузер работал без UI
-firefox_options.add_argument("--disable-gpu")
-firefox_options.add_argument("--window-size=1920,1600")
-
-# Логин и пароль из .env
 login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
-# group = "Пдо-16"
-# Настройки для Chrome
 
 def download_timetable(groups: list[str], make_screenshot: bool = False): # new
 
-    # driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options)
+    # firefox_options = webdriver.ChromeOptions() # for local testing
+    firefox_options = webdriver.FirefoxOptions()
+    firefox_options.add_argument("--headless")
+    firefox_options.add_argument("--disable-gpu")
+    firefox_options.add_argument("--window-size=1920,1600")
+
+    driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 
+    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) # for local testing
 
     try:
         # Открываем страницу для логина
