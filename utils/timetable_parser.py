@@ -32,7 +32,10 @@ def process_subject_name(subject: str, subjects_map: dict, prefixes_map: dict = 
     :param prefixes_map: Словарь с заменами префиксов.
     :return: Обработанное название.
     """
-
+    
+    if subject.startswith("Лаб.Информатика"):
+        subject = subject.replace("Лаб.Информатика", "Информатика")
+        
     # Разделяем префикс и основной текст
     if '.' in subject:
         prefix, main_subject = subject.split('.', 1)

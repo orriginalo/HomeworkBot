@@ -58,8 +58,9 @@ async def get_group_by_id(group_id: int):
   try:
     async with session() as s:
       stmt = select(Groups).where(Groups.uid == group_id)
-      result = await s.execute(stmt).scalar_one_or_none()
-      return result
+      result = await s.execute(stmt)
+      result = result.scalar_one_or_none()
+      return vars(result) if result else None
   except Exception as e:
     logger.error(f"Error getting group by ID {group_id}: {e}")
     return None
