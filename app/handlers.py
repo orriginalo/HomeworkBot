@@ -4,9 +4,9 @@ from app.database.requests.user import *
 from app.database.requests.other import *
 from app.database.requests.media import *
 from app.database.requests.groups import *
-import app.variables as var
+import variables as var
 import app.keyboards as kb
-from app.backuper import create_backups, download_timetable_job
+from app.backuper import create_backups, update_timetable_job
 from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware, MsgLoggerMiddleware
 import os
 import sys
@@ -905,7 +905,7 @@ async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
   # msg = await call.message.answer("⏳ Скачивание расписания...")
   msg = await call.message.answer("⏳ Обновление расписания...")
   try:
-    await download_timetable_job()
+    await update_timetable_job()
     # download_timetable()
     # await msg.edit_text("⏳ Парсинг значений расписания...")
     # parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")

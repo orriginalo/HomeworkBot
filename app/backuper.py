@@ -1,8 +1,10 @@
 from app.database.models import Groups
 from app.database.requests.other import log
+from app.database.requests.groups import update_group, get_group_by_name
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
+from utils.group_subjects_parser import get_group_unique_subjects
 from app.database.requests.groups import get_all_groups
 import shutil
 import datetime
@@ -33,11 +35,14 @@ async def create_backups():
   await log("Database backuped", "BACKUP")
   create_db_backup()
 
-async def download_timetable_job():
+async def update_timetable_job():
   groups = await get_all_groups(Groups.is_equipped == True)
-  groups = [group["name"] for group in groups]
-  download_timetable(groups)
-  
+  download_timetable([group["name"] for group in groups])
+  print("bob")
   for group in groups:
-    parse_timetable(f"./data/timetables/{group.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group)
+    group_name = group["name"]
+    parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)
+    subjects = get_group_unique_subjects(group_name)
+    await update_group(group["uid"], subjects=subjects)
+
   await populate_schedule()
