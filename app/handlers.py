@@ -89,6 +89,7 @@ notifications_scheduler = AsyncIOScheduler()
 @dp.message(CommandStart())
 async def start(message: Message, state: FSMContext, user):
   print(user)
+  await state.clear()
   if (await get_user_by_id(message.from_user.id))["role"] != 0:
 
     # If referal
@@ -105,7 +106,9 @@ async def start(message: Message, state: FSMContext, user):
           else:
             await message.answer("Вы хотите присоединиться к другой группе? Менять группу можно раз в 48 часов.")
         else:
-          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html") 
+          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html")
+          await update_user(user["tg_id"], group_id=group["uid"])
+          await state.clear()
       else:
         await message.answer("Недействительная реферальная ссылка")
 
@@ -128,6 +131,7 @@ async def set_group_name(message: Message, state: FSMContext):
     if group:
       if group["is_equipped"]:
         await message.answer("Эта группа уже зарегистрирована в системе. Запросите реферальную ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
+        await state.clear()
       else:
         await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /info)", parse_mode="html", reply_markup=kb.create_group_keyboard)
   else:
@@ -564,11 +568,11 @@ async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
     await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
 
 @dp.message(view_homework.day and F.text == "На сегодня")
-async def show_hw_today_handler(message: Message, state: FSMContext):
+async def show_hw_today_handler(message: Message, state: FSMContext, user):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
-    tasks = await get_homeworks_by_date(var.calculate_today()[1])
+    tasks = await get_homeworks_by_date(var.calculate_today()[1], group_id=user["group_id"])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
@@ -601,11 +605,11 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На завтра")
-async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
+async def show_hw_tomorrow_handler(message: Message, state: FSMContext, user):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
-    tasks = await get_homeworks_by_date(var.calculate_tomorrow()[1])
+    tasks = await get_homeworks_by_date(var.calculate_tomorrow()[1], group_id=user["group_id"])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
@@ -638,11 +642,11 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На послезавтра")
-async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
+async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext, user):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
-    tasks = await get_homeworks_by_date(var.calculate_aftertomorrow()[1])
+    tasks = await get_homeworks_by_date(var.calculate_aftertomorrow()[1], group_id=user["group_id"])
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
@@ -686,7 +690,7 @@ async def back_handler(message: Message, state: FSMContext):
   await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
 
 @dp.message(view_homework.with_date)
-async def show_hw_by_date(message: Message, state: FSMContext):
+async def show_hw_by_date(message: Message, state: FSMContext, user):
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     try:
       inted_date_from_user = [int(num) for num in message.text.split(" ")]
@@ -696,12 +700,8 @@ async def show_hw_by_date(message: Message, state: FSMContext):
     while len(inted_date_from_user) > 2:
       await message.answer("Попробуй еще раз.")
     date_time = datetime.strptime(f"{inted_date_from_user[1]}/{inted_date_from_user[0]}/2024, 00:00:00", "%d/%m/%Y, %H:%M:%S")
-    # print(inted_date_from_user)
-    # print(date_time)
-    # print(datetime.timestamp(date_time))
     date_time_timestamp = datetime.timestamp(date_time)
-    tasks = await get_homeworks_by_date(date_time_timestamp)
-    # print(f"TASKS\t {tasks}")
+    tasks = await get_homeworks_by_date(date_time_timestamp, group_id=user["group_id"])
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     if tasks is None:
