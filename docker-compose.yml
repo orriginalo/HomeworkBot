@@ -8,8 +8,6 @@ services:
       - ./data:/app/data
     environment:
       - TZ=Europe/Samara
-    container_name: domashkatgbot
-    image: domashkatgbot
     restart: no
     networks:
       - internal
