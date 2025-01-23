@@ -66,7 +66,7 @@ async def main():
   schedule = get_schedule_from_sqlite()
   print("Adding schedule...", end="")
   for schedule in schedule:
-    await add_subject(schedule[1], schedule[2], schedule[3])
+    await add_subject(schedule[1], schedule[2], schedule[3], 313)
   print(" | Done.")
   
   media = get_media_from_sqlite()
