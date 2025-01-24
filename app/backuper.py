@@ -1,6 +1,7 @@
 from app.database.models import Groups
 from app.database.requests.other import log
 from app.database.requests.groups import update_group, get_group_by_name
+from app.browser_driver import driver
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
@@ -37,7 +38,7 @@ async def create_backups():
 
 async def update_timetable_job():
   groups = await get_all_groups(Groups.is_equipped == True)
-  download_timetable([group["name"] for group in groups])
+  download_timetable(driver, [group["name"] for group in groups])
   for group in groups:
     group_name = group["name"]
     parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)

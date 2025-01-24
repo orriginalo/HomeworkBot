@@ -107,23 +107,23 @@ async def get_settings_keyboard(notifications: bool):
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-add : {len(subject.encode("utf-8")) + len("-add".encode("utf-8"))}")
-    # kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-add"))
+    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-add : {len(subject.encode("utf-8")) + len("-add".encode("utf-8"))}")
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-add"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_change_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-changed : {len(subject.encode("utf-8")) + len("-changed".encode("utf-8"))}")
-    # kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-changed"))
+    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-changed : {len(subject.encode("utf-8")) + len("-changed".encode("utf-8"))}")
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-changed"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_check_hw_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-check-hw : {len(subject.encode("utf-8")) + len("-check-hw".encode("utf-8"))}")
-    # kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-check-hw"))
+    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-check-hw : {len(subject.encode("utf-8")) + len("-check-hw".encode("utf-8"))}")
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-check-hw"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
