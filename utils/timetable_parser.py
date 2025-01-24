@@ -125,7 +125,10 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
         week_container = week_section.find_next("div", class_="container")
         day_rows = week_container.find_all("div", class_="row")
         
-        day_rows.pop(0)
+        try:
+            day_rows.pop(0)
+        except:
+            return {}
 
         first_day_of_the_week = get_monday_timestamp(int(week_num) + START_STUDY_WEEK_NUM + ADDED_WEEKS, 2024)
         for day_row in day_rows:

@@ -1,6 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
+from app.database.requests.subjects import get_subject_by_name
+
 start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
   [KeyboardButton(text="❌ Удалить Д/З"), KeyboardButton(text="Админ-панель 😈")],
@@ -107,23 +109,23 @@ async def get_settings_keyboard(notifications: bool):
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-add : {len(subject.encode("utf-8")) + len("-add".encode("utf-8"))}")
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-add"))
+    subject_id = (await get_subject_by_name(subject))["uid"]
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-add"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_change_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-changed : {len(subject.encode("utf-8")) + len("-changed".encode("utf-8"))}")
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-changed"))
+    subject_id = (await get_subject_by_name(subject))["uid"]
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-changed"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_check_hw_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    # print(f"{subject}: {len(subject.encode("utf-8"))} | {subject}-check-hw : {len(subject.encode("utf-8")) + len("-check-hw".encode("utf-8"))}")
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject}-check-hw"))
+    subject_id = (await get_subject_by_name(subject))["uid"]
+    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-check-hw"))
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()

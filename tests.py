@@ -5,6 +5,7 @@ from app.database.requests.user import *
 from app.database.requests.homework import *
 from app.database.requests.schedule import *
 from app.browser_driver import driver
+from utils.all_subjects_parser import parse_all_subjects
 from utils.groups_parser import parse_groups_and_add_to_db
 from utils.db_subject_populator import populate_schedule
 from rich import print
@@ -70,6 +71,10 @@ async def main():
   await create_tables(drop_tables=True)
   await parse_groups_and_add_to_db(driver)
 
+async def main2():
+  await parse_all_subjects()
+
 if __name__ == "__main__":
   # asyncio.run(tests())
-  asyncio.run(main())
+  # asyncio.run(main())
+  asyncio.run(main2())
