@@ -63,4 +63,4 @@ class Groups(Base):
 class Subjects(Base):
   __tablename__ = "subjects"
   uid: Mapped[intpk]
-  name: Mapped[str]
+  name: Mapped[str] = mapped_column(unique=True)

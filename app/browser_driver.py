@@ -9,7 +9,6 @@ import time
 
 class Driver:
     def __init__(self, headless=True, remote=False):
-        # Инициализируем опции
         chrome_options = webdriver.ChromeOptions()
         
         if headless:

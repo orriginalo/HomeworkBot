@@ -24,6 +24,15 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
             # Ждём загрузки страницы с расписанием
             
             crop_box=(370, 50, 1530, 800)
+            
+            try:
+                parent_container = WebDriverWait(driver, 2).until(
+                    EC.visibility_of_all_elements_located((By.XPATH, "/html/body/div/div/div/div[2]/div/div[3]"))
+                )
+            except:
+                pass
+
+            page_html = driver.page_source
             # Убираем ненужные элементы с помощью JavaScript для того чтобы скриншот вмещал в себя все нужное
             if make_screenshot:
                 driver.execute_script("""
@@ -48,13 +57,6 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
                         weekNums[0].parentElement.remove();
                     }
                 """)
-            
-                week_num_element = driver.find_element(By.CLASS_NAME, "week-num")
-        
-                # Получаем родительский контейнер
-                parent_container = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located(By.XPATH, "./..")
-                )
 
                 rect: dict = parent_container.rect
 
@@ -79,9 +81,6 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
                 cropped_image.save(screenshot_path)
                 print(f"Обрезанный скриншот сохранён: {screenshot_path}")
 
-            # Получаем HTML-код страницы
-            page_html = driver.page_source
-            
             # Сохраняем HTML в файл
             with open(f"./data/timetables/{group.lower()}-timetable.html", "w", encoding="utf-8") as file:
                 file.write(page_html)
@@ -89,4 +88,4 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
 
     except Exception as e:
         logging.error(f"Error downloading timetable for group {group}: {str(e)}")
-        
+

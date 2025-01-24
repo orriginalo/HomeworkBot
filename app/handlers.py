@@ -1,5 +1,6 @@
 import aiogram.exceptions
 from app.database.requests.homework import *
+from app.database.requests.subjects import get_subject_by_id
 from app.database.requests.user import *
 from app.database.requests.other import *
 from app.database.requests.media import *
@@ -126,8 +127,8 @@ async def set_group_name(message: Message, state: FSMContext):
   all_groups = await get_all_groups()
   all_groups_names = [group["name"].lower() for group in all_groups]
   if message.text.strip().lower() in all_groups_names:
-    await state.update_data(group_name=message.text)
-    group = await get_group_by_name(message.text.strip())
+    await state.update_data(group_name=message.text.strip().lower())
+    group = await get_group_by_name(message.text.strip().lower())
     if group:
       if group["is_equipped"]:
         await message.answer("Эта группа уже зарегистрирована в системе. Запросите реферальную ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
@@ -495,8 +496,10 @@ async def get_data_excel(call: CallbackQuery):
 @dp.callback_query(F.data.contains("-changed"))
 async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
-  await state.update_data(subject=call.data.replace("-changed", ""))
-  await call.message.answer(f"Предмет был изменен на <b>{call.data.replace('-changed', '')}</b>.", parse_mode="html")
+  subject = await get_subject_by_id(int(call.data.replace("-changed", "")))
+  subject_name = subject["name"]
+  await state.update_data(subject=subject_name)
+  await call.message.answer(f"Предмет был изменен на <b>{subject_name}</b>.", parse_mode="html")
   data = await state.get_data()
 
   subject = data.get("subject")
@@ -541,11 +544,13 @@ async def check_hw_by_subject_handler(message: Message, user):
 async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
   user = await get_user_by_id(call.from_user.id)
   await call.message.delete()
+  subject = await get_subject_by_id(int(call.data.replace("-check-hw", "")))
+  subject_name = subject["name"]
   user_role = (await get_user_by_id(call.from_user.id))["role"]
-  homeworks = (await get_homeworks_by_subject(call.data.replace("-check-hw", ""), limit_last_two=True, group_id=user["group_id"]))
+  homeworks = (await get_homeworks_by_subject(subject_name, limit_last_two=True, group_id=user["group_id"]))
   homeworks.reverse()
   if len(homeworks) > 0:
-    await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b>", parse_mode="html")
+    await call.message.answer(f"Домашнее задание по <b>{subject_name}</b>", parse_mode="html")
     # print(tasks)
     for homework in homeworks:
       # if await get_all_media_by_id(task[2]) is not None:
@@ -756,9 +761,11 @@ async def add_hw_one(message: Message, state: FSMContext, user):
 @dp.callback_query(F.data.contains("-add"))
 async def add_hw_two(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
-  subject = call.data.replace("-add", "")
-  await call.message.answer(f"Предмет <b>{subject}</b> выбран.", parse_mode="html")
-  await state.update_data(subject=subject)
+  subject = await get_subject_by_id(int(call.data.replace("-add", "")))
+  subject_name = subject["name"]
+  
+  await call.message.answer(f"Предмет <b>{subject_name}</b> выбран.", parse_mode="html")
+  await state.update_data(subject=subject_name)
   await state.set_state(adding_homework.task)
   await call.message.answer("Напишите домашнее задание <b>(текст обязателен, можно прикрепить медиа)</b>:", parse_mode="html", reply_markup=types.ReplyKeyboardRemove())
 
