@@ -1,60 +1,68 @@
+import logging
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
 import json
 import os
-from variables import prefixes_map, subjects_map
+from variables import prefixes_map, subjects_map, postfixes
 START_STUDY_WEEK_NUM = 34 # Неделя с которой началась учеба в 2024 году
 
 ADDED_WEEKS = 20 # В переходе на 2 семестр 2024/2025 срезали 20 недель (теперь над расписанием пишется неделя начиная с 1)
 
-remove_all_before_dot = False
-
-replace_subject_to_short = True
-
-short_subjects = {
-    "основы безопасности и защиты родины": "ОБЗР",
-}
-
-# Вы можете задать значение ключа на "" чтобы префикс был удален
-# prefix_map = {
-#     "пр.": "",
-#     "лек.": "",
-#     "лаб.": "лаб."
-# }
-
 def process_subject_name(subject: str, subjects_map: dict, prefixes_map: dict = None) -> str:
+
     """
     Обрабатывает название предмета, заменяя префиксы и длинные названия.
-    
-    :param subject: Название предмета из расписания.
-    :param subjects_map: Словарь с заменами названий предметов.
-    :param prefixes_map: Словарь с заменами префиксов.
-    :return: Обработанное название.
+
+    Args:
+        subject (str): Название предмета из расписания.
+        subjects_map (dict): Словарь с заменами названий предметов.
+        prefixes_map (dict, optional): Словарь с заменами префиксов.
+
+    Returns:
+        str: Обработанное название.
     """
+    if subject == "-":
+        return subject
     
     if subject.startswith("Лаб.Информатика"):
         subject = subject.replace("Лаб.Информатика", "Информатика")
         
-    # Разделяем префикс и основной текст
-    if '.' in subject:
-        prefix, main_subject = subject.split('.', 1)
-        prefix += '.'  # Восстанавливаем точку
-    else:
-        prefix, main_subject = '', subject
+    prefix: str = None
+    subject_name: str = subject
+    postfix: str = None
 
-    # Заменяем префикс, если флаг включен
-    if prefixes_map is not None:
-        prefix = prefixes_map.get(prefix, prefix)
-    
-    if subjects_map is not None:
-        main_subject = subjects_map.get(main_subject.strip().lower(), main_subject)
-        
-    # Соединяем обработанный префикс и основной текст
-    if len(list(prefix)) > 0:
-        if list(prefix)[-1] == ".":
-            return f"{prefix}{main_subject}".strip()
-    return f"{prefix} {main_subject}".strip()
+    for pr, _ in prefixes_map.items():
+        if pr in subject.lower():
+            prefix = subject_name[:len(pr)]
+            break
+
+    for pf in postfixes:
+        if pf in subject:
+            postfix = pf
+            break
+        else:
+            postfix = ""
+
+    if prefix:
+        subject_name = subject_name.replace(prefix, "")
+
+    if postfix:
+        subject_name = subject_name.replace(postfix, "")
+
+    processed_prefix: str = prefixes_map.get(prefix.lower(), prefix) if (prefixes_map is not None and prefix is not None) else ""
+    processed_subject_name: str = subjects_map.get(subject_name.lower(), subject_name) if (subjects_map is not None) else ""
+
+    if processed_prefix is not None:
+        if processed_prefix.endswith("."):
+            processed_prefix += " "
+
+    processed_prefix = "" if prefix is None else processed_prefix
+    postfix = "" if postfix is None else postfix
+
+    processed_subject = f"{processed_prefix}{processed_subject_name}{postfix}"
+
+    return processed_subject
 
 def get_monday_timestamp(week_number: int, year: int) -> int:
     """
@@ -163,6 +171,6 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
     if json_file is not None:
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(timetable, file, ensure_ascii=False, indent=4)
-        print(f"Расписание сохранено в {json_file}")
+        logging.info(f"Timetable saved to {json_file}")
 
     return timetable
