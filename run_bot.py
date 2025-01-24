@@ -13,8 +13,12 @@ from aiogram.types import FSInputFile
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
+from app.browser_driver import driver
 
 load_dotenv()
+
+login = os.getenv('LOGIN')
+password = os.getenv('PASSWORD')
 
 API_KEY = os.getenv('API_KEY')
 
@@ -62,7 +66,7 @@ async def check_paths():
 
 async def send_new_timetable():
     await log("Sending new timetable", "NOTIFICATIONS")
-    download_timetable(make_screenshot=True)
+    download_timetable(driver=driver, make_screenshot=True)
 
     photo = FSInputFile("./data/screenshots/timetable.png")
     for user_id in await get_users_with_notifications():
@@ -70,22 +74,46 @@ async def send_new_timetable():
 
 
 async def main():
+  logging.info("Bot starting...")
+
   await create_tables()
+  logging.info("Tables created")
+
   await check_paths()
+  logging.info("Paths checked")
+
   disp.include_router(dp)
-  await log("Bot started", "RUNNER")
+  logging.info("Dispatcher included")
+
   # notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=16, minute=00)) 
   # notifications_scheduler.add_job(send_new_timetable, 'interval', seconds=30)
   # await send_new_timetable()
   notifications_scheduler.start()
   await start_scheduler()
+  logging.info("Schedulers started")
+
+  driver.auth(login, password)
+  logging.info("Driver authenticated")
+
+  logging.info("Bot started")
+  await log("Bot started", "RUNNER")
   await disp.start_polling(bot)
 
 
 if __name__ == "__main__":
-  logging.basicConfig(level=logging.INFO)
+  logging.basicConfig(
+    level=logging.INFO,
+    filename="data/logs/bot.log",
+    filemode="a",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%d.%m.%Y %H:%M:%S",
+    force=True,
+    encoding="utf-8"
+    )
   try:
     asyncio.run(main())
   except (KeyboardInterrupt, SystemExit):
-    asyncio.run(log("Bot stopped", "RUNNER"))
+    asyncio.run(log("Bot stopping...", "RUNNER"))
+    logging.info("Bot stopping...")
+    driver.quit()
     print ("[bold red]Bot stopped")

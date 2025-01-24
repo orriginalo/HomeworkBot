@@ -57,4 +57,10 @@ class Groups(Base):
   leader_id: Mapped[int | None] = mapped_column(BIGINT)
   member_count: Mapped[int] = mapped_column(default=0)
   created_at: Mapped[created_at]
+  updated_at: Mapped[updated_at]
   subjects: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True, default=None)
+
+class Subjects(Base):
+  __tablename__ = "subjects"
+  uid: Mapped[intpk]
+  name: Mapped[str]

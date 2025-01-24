@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message
@@ -111,12 +112,14 @@ class MsgLoggerMiddleware(BaseException):
         
         data["user"] = user
         msg = event.text
-        user_name = event.from_user.first_name
+        user_name = f"{event.from_user.first_name} {event.from_user.last_name}"
         try:
             if event.content_type == "text":
                 await log(f'[{user_name}] - "{msg}"', "MSGLOGGER")
+                logging.info(f'[{user_name}] - "{msg}"')
             else:
                 await log(f'[{user_name}] - "some <{event.content_type}>"', "MSGLOGGER")
+                logging.info(f'[{user_name}] - "some <{event.content_type}>"')
         except Exception as e:
             print(e)
         return await handler(event, data)

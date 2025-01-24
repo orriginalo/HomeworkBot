@@ -1,11 +1,7 @@
-import time
-from selenium import webdriver
+import logging
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from PIL import Image
 
 from rich import print
@@ -18,46 +14,14 @@ load_dotenv()
 login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
 
-def download_timetable(groups: list[str], make_screenshot: bool = False): # new
-    
-    print(f"{groups=}")
-    firefox_options = webdriver.ChromeOptions() # for local testing
-    # firefox_options = webdriver.FirefoxOptions()
-    firefox_options.add_argument("--headless")
-    firefox_options.add_argument("--disable-gpu")
-    firefox_options.add_argument("--window-size=1920,1600")
-
-    # driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) # for local testing
-
+def download_timetable(driver, groups: list[str], make_screenshot: bool = False): # new
     try:
-        # Открываем страницу для логина
-        driver.get("https://lk.ulstu.ru/?q=auth/login")
-        
-        # Ждём загрузки страницы
-        time.sleep(2)
-        
-        # Находим элементы логина и пароля
-        username_input = driver.find_element(By.NAME, "login")
-        password_input = driver.find_element(By.NAME, "password")
-        
-        # Вводим логин и пароль
-        username_input.send_keys(login)
-        password_input.send_keys(password)
-        
-        # Отправляем форму
-        password_input.send_keys(Keys.RETURN)
-        
-        # Ждём, пока сайт авторизует пользователя
-        time.sleep(3)
-        
         for group in groups:
             # Открываем страницу с расписанием
             print(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
             driver.get(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
             
             # Ждём загрузки страницы с расписанием
-            time.sleep(2)
             
             crop_box=(370, 50, 1530, 800)
             # Убираем ненужные элементы с помощью JavaScript для того чтобы скриншот вмещал в себя все нужное
@@ -87,8 +51,10 @@ def download_timetable(groups: list[str], make_screenshot: bool = False): # new
             
                 week_num_element = driver.find_element(By.CLASS_NAME, "week-num")
         
-        # Получаем родительский контейнер
-                parent_container = week_num_element.find_element(By.XPATH, "./..")  # Поднимаемся на уровень выше в DOM
+                # Получаем родительский контейнер
+                parent_container = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located(By.XPATH, "./..")
+                )
 
                 rect: dict = parent_container.rect
 
@@ -121,5 +87,6 @@ def download_timetable(groups: list[str], make_screenshot: bool = False): # new
                 file.write(page_html)
             print("HTML успешно сохранён!")
 
-    finally:
-        driver.quit()
+    except Exception as e:
+        logging.error(f"Error downloading timetable for group {group}: {str(e)}")
+        

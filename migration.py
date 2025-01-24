@@ -6,6 +6,7 @@ from app.database.requests.homework import add_homework, get_homeworks_by_date, 
 from app.database.requests.other import sync_sequences
 from app.database.requests.schedule import add_subject, get_schedule_by_week
 from app.database.core import create_tables
+from app.browser_driver import driver
 from rich import print
 import sqlite3
 
@@ -76,7 +77,7 @@ async def main():
   print(" | Done.")
 
   print("Adding groups...", end="")
-  await parse_groups_and_add_to_db()
+  await parse_groups_and_add_to_db(driver)
   print(" | Done.")
 
   print("Syncing sequences...", end="")
