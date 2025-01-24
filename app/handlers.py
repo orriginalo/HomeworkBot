@@ -581,7 +581,7 @@ async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
       else:
         await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f" <i>id {hw_uid}</i>" if user_role >= 3 else "") + f"\n\n{hw_task}", parse_mode="html")
   else:
-    await call.message.answer(f"Домашнее задание по <b>{call.data.replace('-check-hw', '')}</b> отсутствует", parse_mode="html")
+    await call.message.answer(f"Домашнее задание по <b>{subject_name}</b> отсутствует", parse_mode="html")
 
 @dp.message(view_homework.day and F.text == "На сегодня")
 async def show_hw_today_handler(message: Message, state: FSMContext, user):
@@ -720,7 +720,7 @@ async def show_hw_by_date(message: Message, state: FSMContext, user):
     tasks = await get_homeworks_by_date(date_time_timestamp, group_id=user["group_id"])
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
-    if tasks is None:
+    if tasks is None or len(tasks) == 0:
       await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")

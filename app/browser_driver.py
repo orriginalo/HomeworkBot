@@ -9,23 +9,29 @@ import time
 
 class Driver:
     def __init__(self, headless=True, remote=False):
-        chrome_options = webdriver.ChromeOptions()
+        
+        browser_options = None
+
+        if remote:
+          browser_options = webdriver.FirefoxOptions()
+        else:
+          browser_options = webdriver.ChromeOptions()
         
         if headless:
-            chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1600")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
+          browser_options.add_argument("--headless")
+        browser_options.add_argument("--disable-gpu")
+        browser_options.add_argument("--window-size=1920,1600")
+        browser_options.add_argument("--no-sandbox")
+        browser_options.add_argument("--disable-dev-shm-usage")
 
         # Инициализируем драйвер один раз при создании объекта
         self._driver = None
         if remote:
-          self._driver = webdriver.Remote("http://selenium:4444/wd/hub", options=chrome_options)
+          self._driver = webdriver.Remote("http://selenium:4444/wd/hub", options=browser_options)
         else:
           self._driver = webdriver.Chrome(
               service=Service(ChromeDriverManager().install()),
-              options=chrome_options
+              options=browser_options
           )
         self._wait = WebDriverWait(self._driver, 10)
 
@@ -73,4 +79,4 @@ class Driver:
         if self._driver:
             self._driver.quit()
 
-driver = Driver(True)
+driver = Driver(headless=True, remote=True)
