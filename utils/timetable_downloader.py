@@ -23,8 +23,8 @@ def download_timetable(groups: list[str], make_screenshot: bool = False): # new
     print(f"{groups=}")
     firefox_options = webdriver.ChromeOptions() # for local testing
     # firefox_options = webdriver.FirefoxOptions()
-    # firefox_options.add_argument("--headless")
-    # firefox_options.add_argument("--disable-gpu")
+    firefox_options.add_argument("--headless")
+    firefox_options.add_argument("--disable-gpu")
     firefox_options.add_argument("--window-size=1920,1600")
 
     # driver = webdriver.Remote("http://selenium:4444/wd/hub", options=firefox_options) 

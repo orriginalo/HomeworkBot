@@ -38,7 +38,6 @@ async def create_backups():
 async def update_timetable_job():
   groups = await get_all_groups(Groups.is_equipped == True)
   download_timetable([group["name"] for group in groups])
-  print("bob")
   for group in groups:
     group_name = group["name"]
     parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)
