@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 allowed_subjects = ["Математика", "Информатика", "Физика", "Химия", "Биология", "География", "История", "Обществознание", "Литература", "Русский язык", "Иностранный язык- 1 п/г", "	Иностранный язык- 2 п/г", "ОБЗР"]
 cur_month = datetime.now()
@@ -21,6 +25,9 @@ prefixes_map = {
 }
 
 postfixes = ["- 1 п/г", "- 2 п/г"]
+
+login = os.getenv("LOGIN")
+password = os.getenv("PASSWORD")
 
 def calculate_yesterday():
   """

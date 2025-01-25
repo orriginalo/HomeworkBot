@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 import aiogram.exceptions
 from app.database.requests.homework import *
 from app.database.requests.subjects import get_subject_by_id
@@ -93,6 +94,15 @@ notifications_scheduler = AsyncIOScheduler()
 @dp.message(CommandStart())
 async def start(message: Message, state: FSMContext, user):
   print(user)
+
+  def check_time_moved(user):
+    last_moved_at = user["moved_at"]
+    current_time = datetime.now()
+    if last_moved_at is not None and current_time - last_moved_at > timedelta(days=2):
+      return True
+    else:
+      return False
+
   await state.clear()
   if (await get_user_by_id(message.from_user.id))["role"] != 0:
 
@@ -108,11 +118,16 @@ async def start(message: Message, state: FSMContext, user):
           if group["uid"] == user["group_id"]:
             await message.answer("Вы уже присоеденены к этой группе!")
           else:
-            await message.answer("Вы хотите присоединиться к другой группе? Менять группу можно раз в 48 часов.")
+            if user["is_leader"]:
+              await message.answer("Вы сможете присоединиться к другой группе как только передадите права лидерства другому человеку.") 
+            else:
+              if check_time_moved(user):
+                await message.answer(f"Вы хотите присоединиться к другой группе (<b>{group['name']}</b>)?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
+              else:
+                await message.answer(f"Вы временно не можете изменять группу\n<i>Ограничение на 48 часов</i>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
         else:
           await message.answer(f"Вы хотите присоединиться к группе <b>{group['name']}</b>?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
           
-          await update_user(user["tg_id"], group_id=group["uid"])
           await state.clear()
       else:
         await message.answer("Недействительная ссылка на вступление в группу.")
@@ -130,12 +145,12 @@ async def join_group_handler(call: CallbackQuery):
   user = await get_user_by_id(call.from_user.id)
   group = await get_group_by_id(user["group_id"])
   await call.message.delete()
+  await update_user(user["tg_id"], moved_at=datetime.now(), group_id=group["uid"])
   await call.message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.callback_query(F.data == "transfer_leadership")
 async def transfer_leadership_handler(call: CallbackQuery, state: FSMContext):
   user = await get_user_by_id(call.from_user.id)
-  group = await get_group_by_id(user["group_id"])
   await call.message.delete()
   await call.message.answer(f"Отправьте телеграм id человека или перешлите его сообщение для передачи прав лидерства.", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   await state.set_state(transferring_leadership.user_id)
@@ -214,7 +229,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     referal_link = await get_referal_link(referal_code)
     
     await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
-    user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
+    user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True, moved_at=datetime.now())
 
     await update_timetable_job()
 
@@ -223,7 +238,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   except Exception as e:
     await msg.edit_text(f"❌ Ошибка создания группы")
-    logging.ERROR("Error creating group: ", e)
+    logging.error("Error creating group: ", e)
 
   await state.clear()
 

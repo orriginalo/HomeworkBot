@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, String, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,7 +19,7 @@ class User(Base):
   notifications: Mapped[bool]
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
-  moved_at: Mapped[str | None] = mapped_column(String, nullable=True)
+  moved_at: Mapped[datetime | None]
   group_id: Mapped[int | None]
   is_leader: Mapped[bool]
 
