@@ -39,7 +39,8 @@ async def add_user(
             )
             s.add(user)
             await s.commit()
-            return user
+            await s.refresh(user)
+            return vars(user) if user else None
     except Exception as e:
         logger.error(f"Error adding user: {e}")
         return None
@@ -94,7 +95,8 @@ async def update_user(tg_id: int, **kwargs):
         if value is not None:
           setattr(user, key, value)
       await s.commit()
-      return user
+      await s.refresh(user)
+      return vars(user) if user else None
   except Exception as e:
     logger.error(f"Error updating user {tg_id}: {e}")
     return None

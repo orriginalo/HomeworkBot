@@ -107,11 +107,11 @@ async def start(message: Message, state: FSMContext, user):
           else:
             await message.answer("Вы хотите присоединиться к другой группе? Менять группу можно раз в 48 часов.")
         else:
-          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html")
+          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=kb.get_start_keyboard(user))
           await update_user(user["tg_id"], group_id=group["uid"])
           await state.clear()
       else:
-        await message.answer("Недействительная реферальная ссылка")
+        await message.answer("Недействительная ссылка на вступление в группу.")
 
 
     else:
@@ -119,11 +119,13 @@ async def start(message: Message, state: FSMContext, user):
         await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12)")
         await state.set_state(setting_group.group_name)
       else:
-        await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+        await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
 
 
 @dp.message(setting_group.group_name)
 async def set_group_name(message: Message, state: FSMContext):
+  if (await state.get_data()).get("group_name") is not None:
+    return
   all_groups = await get_all_groups()
   all_groups_names = [group["name"].lower() for group in all_groups]
   if message.text.strip().lower() in all_groups_names:
@@ -131,7 +133,7 @@ async def set_group_name(message: Message, state: FSMContext):
     group = await get_group_by_name(message.text.strip().lower())
     if group:
       if group["is_equipped"]:
-        await message.answer("Эта группа уже зарегистрирована в системе. Запросите реферальную ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
+        await message.answer("Эта группа уже зарегистрирована в системе. Запросите ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
         await state.clear()
       else:
         await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /info)", parse_mode="html", reply_markup=kb.create_group_keyboard)
@@ -140,6 +142,7 @@ async def set_group_name(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "create_group")
 async def create_group_handler(callback: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(callback.from_user.id)
   await callback.message.delete()
   msg = await callback.message.answer(f"⌛ Создание группы...")
   try:
@@ -150,15 +153,16 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     referal_link = await get_referal_link(referal_code)
     
     await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
-    await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
+    user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True)
 
     await update_timetable_job()
 
     await msg.edit_text("✅ Группа создана!")
     
-    await callback.message.answer(f"🔗 <b>Реферальная ссылка для вступления:</b> {referal_link}", parse_mode="html")
+    await callback.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   except Exception as e:
-    await msg.edit_text(f"❌ Ошибка создания группы: {e}")
+    await msg.edit_text(f"❌ Ошибка создания группы")
+    logging.ERROR("Error creating group: ", e)
 
   await state.clear()
 
@@ -199,13 +203,15 @@ async def load_new_week(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "back")
 async def back(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
   await call.message.delete()
   await call.message.answer("❌ Действие отменено.")
-  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
+  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
   await state.clear()
 
 @dp.callback_query(F.data == "change_subject")
-async def change_subject(call: CallbackQuery, state: FSMContext, user):
+async def change_subject(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
   await state.set_state(adding_homework.subject)
   await call.message.delete()
   subjects = (await get_group_by_id(user["group_id"]))["subjects"]
@@ -234,7 +240,7 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
       await add_media(homework_id, media.media, media.type)
 
   await call.message.answer(f"✅ <b>Домашнее задание добавлено.</b>", parse_mode="html") # в базу
-  await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
+  await call.message.answer(f"Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
   await call.message.delete()
   admins = await get_users_with_role(3)
   admins += await get_users_with_role(4)
@@ -328,6 +334,7 @@ async def add_adder_handler(call: CallbackQuery, state: FSMContext):
 
 @dp.message(adding_adder.user_id)
 async def add_adder_id(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     if message.forward_from:
       await state.update_data(user_id=message.forward_from.id)
       data = await state.get_data()
@@ -335,21 +342,32 @@ async def add_adder_id(message: Message, state: FSMContext):
       await state.update_data(user_id=message.text)
       data = await state.get_data()
     
-    user_id = data.get("user_id")
+    adding_user_id = data.get("user_id")
 
-    user_role = (await get_user_by_id(user_id))["role"]
-    if user_role == None:
-      await message.answer(f"❌ Пользователь не существует или скрыл id.")
-      await state.clear()
-      return
-    
-    elif user_role <= 1:
-      await update_user(user_id, role=2)
-      await message.answer(f"✅ Пользователь добавлен в добавлятелей.")
+    adding_user = (await get_user_by_id(adding_user_id))
+
+    if adding_user:
+      if user["role"] <= 3:
+        if adding_user["group_id"] != user["group_id"]:
+          await message.answer("❌ Вы не можете сделать этого пользователя добавлятелем, поскольку он не входит в вашу группу.")
+          await state.clear()
+          return
+
+      if adding_user["role"] == None:
+        await message.answer(f"❌ Пользователь не существует или скрыл id.")
+        await state.clear()
+        return
+      
+      elif adding_user["role"] <= 1:
+        await update_user(adding_user_id, role=2)
+        await message.answer(f"✅ Пользователь добавлен в добавлятелей.")
+      else:
+        await message.answer(f"❌ Пользователь уже является добавлятелем.")
     else:
-      await message.answer(f"❌ Пользователь уже является добавлятелем.")
+      await message.answer(f"❌ Пользователь не существует, или его нет в базе (пусть напишет боту).")
 
     await state.clear()
+
 
 @dp.callback_query(F.data == "remove_adder")
 async def remove_adder_handler(call: CallbackQuery, state: FSMContext):
@@ -358,6 +376,7 @@ async def remove_adder_handler(call: CallbackQuery, state: FSMContext):
 
 @dp.message(removing_adder.user_id)
 async def remove_adder_id(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     if message.forward_from:
       await state.update_data(user_id=message.forward_from.id)
       data = await state.get_data()
@@ -365,19 +384,29 @@ async def remove_adder_id(message: Message, state: FSMContext):
       await state.update_data(user_id=message.text)
       data = await state.get_data()
     
-    user_id = data.get("user_id")
+    adding_user_id = data.get("user_id")
 
-    user_role = (await get_user_by_id(user_id))["role"]
-    if user_role == None:
-      await message.answer(f"❌ Пользователь не существует или скрыл id.")
-      await state.clear()
-      return
+    adding_user = (await get_user_by_id(adding_user_id))
 
-    elif user_role == 2:
-      await update_user(user_id, role=1)
-      await message.answer(f"✅ Пользователь удален из добавлятелей.", parse_mode="html")
+    if adding_user:
+      if user["role"] <= 3:
+        if adding_user["group_id"] != user["group_id"]:
+          await message.answer("❌ Вы не можете удалить роль добавлятеля у этого пользователя, поскольку он не входит в вашу группу.")
+          await state.clear()
+          return
+
+      if adding_user["role"] == None:
+        await message.answer(f"❌ Пользователь скрыл id.")
+        await state.clear()
+        return
+ 
+      elif adding_user["role"] == 2:
+        await update_user(adding_user_id, role=1)
+        await message.answer(f"✅ Пользователь удален из добавлятелей.", parse_mode="html")
+      else:
+        await message.answer(f"❌ Пользователь не является добавлятелем.", parse_mode="html")
     else:
-      await message.answer(f"❌ Пользователь не является добавлятелем.", parse_mode="html")
+      await message.answer(f"❌ Пользователь не существует, или его нет в базе (пусть напишет боту).")
 
     await state.clear()
 
@@ -524,7 +553,6 @@ async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
 async def show_homework_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.day)
   await message.answer ("Выбери вариант.", reply_markup=kb.see_hw_keyboard)
-  # await message.answer("В каком форматике?", reply_markup=kb.v_kakom_formatike_keyboard)
 
 @dp.callback_query(F.data == "by_date")
 async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
@@ -533,7 +561,8 @@ async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
 
 # @dp.callback_query(F.data == "by_subject")
 @dp.message(F.text == "Посмотреть по предмету")
-async def check_hw_by_subject_handler(message: Message, user):
+async def check_hw_by_subject_handler(message: Message):
+  user = await get_user_by_id(message.from_user.id)
   group = await get_group_by_id(user["group_id"])
   print(group)
   subjects = group["subjects"]
@@ -584,7 +613,8 @@ async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
     await call.message.answer(f"Домашнее задание по <b>{subject_name}</b> отсутствует", parse_mode="html")
 
 @dp.message(view_homework.day and F.text == "На сегодня")
-async def show_hw_today_handler(message: Message, state: FSMContext, user):
+async def show_hw_today_handler(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
@@ -621,7 +651,8 @@ async def show_hw_today_handler(message: Message, state: FSMContext, user):
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На завтра")
-async def show_hw_tomorrow_handler(message: Message, state: FSMContext, user):
+async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
@@ -658,7 +689,8 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext, user):
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "На послезавтра")
-async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext, user):
+async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     # tasks = await get_tasks_by_date(var.calculate_today()[1])
@@ -702,12 +734,14 @@ async def show_hw_by_date_handler(message: Message, state: FSMContext):
 
 @dp.message(F.text == "Назад ↩️")
 async def back_handler(message: Message, state: FSMContext):
+  user = await get_user_by_id(message.from_user.id)
   await state.clear()
-  await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+  await message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.message(view_homework.with_date)
-async def show_hw_by_date(message: Message, state: FSMContext, user):
-    user_role = (await get_user_by_id(message.from_user.id))["role"]
+async def show_hw_by_date(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
+    user_role = user["role"]
     try:
       inted_date_from_user = [int(num) for num in message.text.split(" ")]
     except:
@@ -750,7 +784,8 @@ async def show_hw_by_date(message: Message, state: FSMContext, user):
     await state.clear()
 
 @dp.message(F.text == 'Добавить Д/З ➕')
-async def add_hw_one(message: Message, state: FSMContext, user):
+async def add_hw_one(message: Message, state: FSMContext):
+  user = await get_user_by_id(message.from_user.id)
   if (await get_user_by_id(message.from_user.id))["role"] >= 2:
     await state.set_state(adding_homework.subject)
     subjects = (await get_group_by_id(user["group_id"]))["subjects"]
@@ -900,6 +935,7 @@ async def remove_hw_by_id(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "delete_hw")
 async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
   # await call.message.delete()
   data = await state.get_data()
 
@@ -910,33 +946,48 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   await del_media(int(data['hw_id']))
   await call.message.edit_text("Задание удалено.")
   await state.clear()
-  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
-
-
-# @dp.callback_query(F.data == "add_photo")
-# async def add_hw_photo_handler(call: CallbackQuery, state: FSMContext):
-#   await call.message.delete()
-#   await state.set_state(adding_homework.media_group)
-#   await call.message.answer("Отправьте медиа (сгруппированно, одним сообщением)", reply_markup=types.ReplyKeyboardRemove())
-
+  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.callback_query(F.data == "update_timetable")
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
-  # msg = await call.message.answer("⏳ Скачивание расписания...")
   msg = await call.message.answer("⏳ Обновление расписания...")
   try:
     await update_timetable_job()
-    # download_timetable()
-    # await msg.edit_text("⏳ Парсинг значений расписания...")
-    # parse_timetable("./data/timetables/timetable.html", "./data/timetables/timetables.json")
-    # await msg.edit_text("⏳ Обновление значений базы данных...")
-    # await populate_schedule()
     await msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e: 
     await msg.edit_text("❌ Ошибка при обновлении расписания.")
 
+@dp.message(F.text == "👑 Управление группой 👑")
+async def show_group_controller_handler(message: CallbackQuery):
+  user = await get_user_by_id(message.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  all_users_in_group = await get_users(User.group_id == user["group_id"])
 
+  all_users_in_group_id = [user["tg_id"] for user in all_users_in_group]
+
+  def get_link(user_id, firstname, lastname):
+    if firstname == None:
+      return f"<a href='tg://user?id={user_id}'>{lastname}</a>"
+    elif lastname == None:
+      return f"<a href='tg://user?id={user_id}'>{firstname}</a>"
+    elif firstname == None and lastname == None:
+      return f"<a href='tg://user?id={user_id}'>{user_id}</a>"
+    else:
+      # return f"[{firstname} {lastname}](tg://user?id={user_id})\n"
+      return f"<a href='tg://user?id={user_id}'>{firstname} {lastname}</a>"
+
+  users_links = [get_link(user_id, user["firstname"], user["lastname"]) for user_id in all_users_in_group_id]
+  users_links = "\n".join(users_links)
+
+  await message.answer(f"<b>👑 Управление группой</b>\n\nГруппа:  <b>{group['name']}</b>\nУчастники:\n{users_links}", parse_mode="html", reply_markup=kb.group_controller_keyboard)
+
+@dp.callback_query(F.data == "get_group_link")
+async def get_group_link_handler(call: CallbackQuery):
+  user = await get_user_by_id(call.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  referal_link = await get_referal_link(group["ref_code"])
+  await call.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.message(F.text == "🔄 Сбросить дедлайн Д/З 🔄")
 async def reset_deadline_handler(message: Message, state: FSMContext):
@@ -946,6 +997,7 @@ async def reset_deadline_handler(message: Message, state: FSMContext):
 
 @dp.message(resetting_deadline.hw_id)
 async def reset_deadline(message: Message, state: FSMContext):
+    user = await get_user_by_id(message.from_user.id)
     await state.update_data(hw_id=message.text)
     data = await state.get_data()
     await reset_homework_deadline_by_id(data['hw_id'])
@@ -955,7 +1007,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
     await message.answer(new_deadline_text)
     await state.clear()
-    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.message(Command("repair"))
 async def repair_bot(message: Message, command: CommandObject, state: FSMContext):
@@ -1004,14 +1056,14 @@ async def tell_all_users_state(message: Message, state: FSMContext):
       await message.bot.send_message(user["tg_id"], msg)
     await message.answer("✅ Сообщение отправлено всем пользователям.")
   await state.clear()
-  await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(message.from_user.id))["role"]))
+  await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 
 # @dp.callback_query(F.data == "donate_cancel")
 # async def donate_cancel_handler(call: CallbackQuery):
 #   await call.message.delete()
 #   await call.message.answer("❌ Действие отменено.")
-#   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard((await get_user_by_id(call.from_user.id))["role"]))
+#   await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 
 # @dp.message(Command("donate", "donat", "донат"))
@@ -1030,19 +1082,3 @@ async def tell_all_users_state(message: Message, state: FSMContext):
 #     payload=f"{amount} stars",
 #     currency="XTR",
 #     reply_markup=kb.donate_keyboard)
-
-# @dp.message(adding_homework.media_group and F.content_type.in_([CT.PHOTO, CT.VIDEO, CT.AUDIO, CT.DOCUMENT]))
-# async def handle_albums(message: Message, album: list[Message], state: FSMContext):
-#     media_group = []
-#     for msg in album:
-#         if msg.photo:
-#             file_id = msg.photo[-1].file_id
-#             media_group.append(InputMediaPhoto(media=file_id))
-#         else:
-#             obj_dict = msg.model_dump()
-#             file_id = obj_dict[msg.content_type]['file_id']
-#             media_group.append(InputMedia(media=file_id))
-
-#     print("MEDIA GROUP: ", media_group)
-#     await message.answer_media_group(media_group)
-#     await state.update_data(media_group=media_group)

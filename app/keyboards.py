@@ -3,6 +3,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from app.database.requests.subjects import get_subject_by_name
 
+from copy import deepcopy
+
 start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
   [KeyboardButton(text="❌ Удалить Д/З"), KeyboardButton(text="Админ-панель 😈")],
@@ -17,16 +19,28 @@ start_keyboard = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="👀 Посмотреть Д/З")]
 ], resize_keyboard=True, input_field_placeholder="Выберите пункт меню")
 
-async def get_start_keyboard(role):
-  global start_keyboard
-  global start_keyboard_adder
+async def get_start_keyboard(user):
+  admin_kb = deepcopy(start_keyboard_admin)
+  adder_kb = deepcopy(start_keyboard_adder)
+  default_kb = deepcopy(start_keyboard)
 
-  if role == 2:
-    return start_keyboard_adder
-  elif role >= 3:
-    return start_keyboard_admin
-  else:
-    return start_keyboard
+  user_role = user["role"]
+  user_is_leader = user["is_leader"]
+
+  user_keyboard = None
+
+  match user_role:
+    case 2:
+      user_keyboard = adder_kb
+    case 3 | 4:
+      user_keyboard = admin_kb
+    case _:
+      user_keyboard = default_kb
+
+  if user_is_leader:
+    user_keyboard.keyboard.append([KeyboardButton(text="👑 Управление группой 👑")])
+
+  return user_keyboard
 
 see_hw_keyboard = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="Посмотреть по предмету")],
@@ -57,7 +71,6 @@ check_hw_before_apply_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
     [InlineKeyboardButton(text="Да ✅", callback_data="all_right")],
     [InlineKeyboardButton(text="🔄 Изменить предмет", callback_data="change_subject"), InlineKeyboardButton(text="Изменить задание 🔄", callback_data="change_task")],
-    # [InlineKeyboardButton(text="🖼 Добавить фото 🖼", callback_data="add_photo")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
   ]
 )
@@ -65,12 +78,6 @@ remove_hw_by_id_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
     [InlineKeyboardButton(text="Да ✅", callback_data="delete_hw")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
-  ]
-)
-
-v_kakom_formatike_keyboard = InlineKeyboardMarkup(
-  inline_keyboard=[
-    [InlineKeyboardButton(text="На день", callback_data="by_date"), InlineKeyboardButton(text="По предмету", callback_data="by_subject")],
   ]
 )
 
@@ -92,6 +99,14 @@ create_group_keyboard = InlineKeyboardMarkup(
     [InlineKeyboardButton(text="Создать группу ➕", callback_data="create_group")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back_to_start")]
 ]
+)
+
+group_controller_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="➕ Добавить добавлятеля", callback_data="add_adder"), InlineKeyboardButton(text="Удалить добавлятеля ❌", callback_data="remove_adder")],
+    [InlineKeyboardButton(text="🔗 Cсылка для вступления 🔗", callback_data="get_group_link")], 
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
+  ]
 )
 
 async def get_settings_keyboard(notifications: bool):
