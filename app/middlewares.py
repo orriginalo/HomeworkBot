@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from cachetools import TTLCache
 
@@ -92,9 +92,10 @@ class MsgLoggerMiddleware(BaseException):
         
         
         user = await get_user_by_id(event.from_user.id)
+        print("User is none?")
         if user is None:
-            print("ADDING USER")
-            await add_user(
+            print("User is none!")
+            user = await add_user(
                 tg_id=event.from_user.id,
                 role=1,
                 username=event.from_user.username,
@@ -104,6 +105,7 @@ class MsgLoggerMiddleware(BaseException):
                 group_id=None,
                 is_leader=False
             )
+            print(f"{user} ADDED YOOOY")
                 
         else:
             if user["role"] == 0:
@@ -112,13 +114,11 @@ class MsgLoggerMiddleware(BaseException):
         
         data["user"] = user
         msg = event.text
-        user_name = f"{event.from_user.first_name} {event.from_user.last_name}"
+        user_name = f"{event.from_user.first_name if event.from_user.first_name else ''} {event.from_user.last_name if event.from_user.last_name else ''}"
         try:
             if event.content_type == "text":
-                await log(f'[{user_name}] - "{msg}"', "MSGLOGGER")
                 logging.info(f'[{user_name}] - "{msg}"')
             else:
-                await log(f'[{user_name}] - "some <{event.content_type}>"', "MSGLOGGER")
                 logging.info(f'[{user_name}] - "some <{event.content_type}>"')
         except Exception as e:
             print(e)
