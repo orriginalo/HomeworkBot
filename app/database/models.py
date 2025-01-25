@@ -5,7 +5,7 @@ from app.database.db_setup import Base
 
 intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
 created_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
-updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('utc', CURRENT_TIMESTAMP)"))]
+updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
 
 class User(Base):
   __tablename__ = "users"
@@ -18,6 +18,7 @@ class User(Base):
   notifications: Mapped[bool]
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
+  moved_at: Mapped[str | None] = mapped_column(String, nullable=True)
   group_id: Mapped[int | None]
   is_leader: Mapped[bool]
 

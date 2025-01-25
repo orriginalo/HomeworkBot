@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
 import logging
@@ -52,6 +52,16 @@ async def del_homework(homework_id: int):
         logger.info(f"Homework with uid={homework_id} not found.")
   except Exception as e:
     logger.error(f"Error deleting homework {homework_id}: {e}")
+
+async def get_homeworks(*filters):
+  async with session() as s:
+    stmt = select(Homework)
+    if filters:
+      stmt = stmt.where(and_(*filters))
+    result = await s.execute(stmt)
+    homeworks = result.scalars().all()
+    homeworks = [vars(homework) for homework in homeworks]
+    return homeworks
 
 async def get_homework_by_id(homework_id: int):
   try:

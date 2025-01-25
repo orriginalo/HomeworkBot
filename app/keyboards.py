@@ -103,9 +103,24 @@ create_group_keyboard = InlineKeyboardMarkup(
 
 group_controller_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
-    [InlineKeyboardButton(text="➕ Добавить добавлятеля", callback_data="add_adder"), InlineKeyboardButton(text="Удалить добавлятеля ❌", callback_data="remove_adder")],
-    [InlineKeyboardButton(text="🔗 Cсылка для вступления 🔗", callback_data="get_group_link")], 
+    [InlineKeyboardButton(text="➕ Доб. добавлятеля", callback_data="add_adder"), InlineKeyboardButton(text="❌ Удал. добавлятеля", callback_data="remove_adder")],
+    [InlineKeyboardButton(text="🔗 Cсылка для вступления 🔗", callback_data="get_group_link")],
+    [InlineKeyboardButton(text="🔀 Передать права лидерства 🔀", callback_data="transfer_leadership")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back")]
+  ]
+)
+
+do_join_to_group_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="✅ Присоединиться к группе", callback_data="join_group")],
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="back_to_start")]
+  ]
+)
+
+transfer_leadership_confirm_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="✅ Передать права лидерства", callback_data="transfer_leadership_confirm")],
+    [InlineKeyboardButton(text="Отмена ❌", callback_data="back_to_start")]
   ]
 )
 

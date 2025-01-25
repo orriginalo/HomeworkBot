@@ -79,6 +79,9 @@ class adding_new_week(StatesGroup):
 class setting_group(StatesGroup):
   group_name = State()
 
+class transferring_leadership(StatesGroup):
+  user_id = State()
+
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
@@ -107,7 +110,8 @@ async def start(message: Message, state: FSMContext, user):
           else:
             await message.answer("Вы хотите присоединиться к другой группе? Менять группу можно раз в 48 часов.")
         else:
-          await message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=kb.get_start_keyboard(user))
+          await message.answer(f"Вы хотите присоединиться к группе <b>{group['name']}</b>?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
+          
           await update_user(user["tg_id"], group_id=group["uid"])
           await state.clear()
       else:
@@ -116,11 +120,68 @@ async def start(message: Message, state: FSMContext, user):
 
     else:
       if (await get_user_by_id(message.from_user.id))["group_id"] is None:
-        await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12)")
+        await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12, исдо-22)")
         await state.set_state(setting_group.group_name)
       else:
         await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
 
+@dp.callback_query(F.data == "join_group")
+async def join_group_handler(call: CallbackQuery):
+  user = await get_user_by_id(call.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  await call.message.delete()
+  await call.message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
+
+@dp.callback_query(F.data == "transfer_leadership")
+async def transfer_leadership_handler(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  await call.message.delete()
+  await call.message.answer(f"Отправьте телеграм id человека или перешлите его сообщение для передачи прав лидерства.", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
+  await state.set_state(transferring_leadership.user_id)
+
+@dp.message(transferring_leadership.user_id)
+async def transfer_leadership(message: Message, state: FSMContext):
+  user = await get_user_by_id(message.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  
+  future_leader_id = None
+  if message.forward_from:
+    future_leader_id = message.forward_from.id
+  else:
+    future_leader_id = message.text
+
+  try:
+    future_leader = await get_user_by_id(int(future_leader_id))
+  except:
+    await message.answer("❌ Неверный id пользователя.")
+  if future_leader is None:
+    await message.answer("❌ Пользователь не существует, или его нет в базе.")
+    await state.clear()
+    return
+  elif future_leader["group_id"] != user["group_id"]:
+    await message.answer("❌ Вы не можете передать права лидерства человеку который находится в другой группе.")
+    await state.clear()
+    return
+  
+  await state.update_data(user_id=future_leader["tg_id"])
+  await message.answer(f"❗Вы уверены что хотите передать права лидерства <a href='tg://user?id={future_leader['tg_id']}'>{future_leader['firstname'] if future_leader['firstname'] else ''} {future_leader['lastname'] if future_leader['lastname'] else ''}</a>❓", parse_mode="html", reply_markup=kb.transfer_leadership_confirm_keyboard)
+
+@dp.callback_query(F.data == "transfer_leadership_confirm")
+async def transfer_leadership_confirm_handler(call: CallbackQuery, state: FSMContext):
+  user = await get_user_by_id(call.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  data = await state.get_data()
+  future_leader_id = data["user_id"]
+
+  future_leader = await get_user_by_id(future_leader_id)
+
+  await call.message.delete()
+  await update_user(user["tg_id"], is_leader=False)
+  await update_user(future_leader_id, is_leader=True, role=2)
+  await update_group(group["uid"], leader_id=future_leader_id)
+  await call.message.answer("✅ Права лидерства переданы.", reply_markup=await kb.get_start_keyboard(user))
+  await state.clear()
 
 @dp.message(setting_group.group_name)
 async def set_group_name(message: Message, state: FSMContext):
@@ -205,8 +266,7 @@ async def load_new_week(message: Message, state: FSMContext):
 async def back(call: CallbackQuery, state: FSMContext):
   user = await get_user_by_id(call.from_user.id)
   await call.message.delete()
-  await call.message.answer("❌ Действие отменено.")
-  await call.message.answer("Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
+  await call.message.answer("❌ Действие отменено.", reply_markup=await kb.get_start_keyboard(user))
   await state.clear()
 
 @dp.callback_query(F.data == "change_subject")
