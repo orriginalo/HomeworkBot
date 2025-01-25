@@ -1,6 +1,7 @@
-from app.database.models import Groups
+from app.database.models import Groups, Homework
 from app.database.requests.other import log
 from app.database.requests.groups import update_group, get_group_by_name
+from app.database.requests.homework import get_homeworks
 from app.browser_driver import driver
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
@@ -42,7 +43,16 @@ async def update_timetable_job():
   for group in groups:
     group_name = group["name"]
     parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)
-    subjects = get_group_unique_subjects(group_name)
-    await update_group(group["uid"], subjects=subjects)
+    necessary_subjects = await get_homeworks(Homework.group_id == group["uid"])
+    necessary_subjects = [homework["subject"] for homework in necessary_subjects]
+    necessary_subjects = set(necessary_subjects)
+    group_subjects = get_group_unique_subjects(group_name)
+    for subject in group_subjects:
+      if subject not in necessary_subjects:
+        necessary_subjects.add(subject)
+  
+    necessary_subjects = list(necessary_subjects)
+    necessary_subjects.sort()
+    await update_group(group["uid"], subjects=necessary_subjects)
 
   await populate_schedule()
