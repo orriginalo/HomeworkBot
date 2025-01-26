@@ -22,6 +22,7 @@ subjects_map = {
 prefixes_map = {
     "пр.": "",
     "лек.": "",
+    "конс.": "",
 }
 
 postfixes = ["- 1 п/г", "- 2 п/г"]
