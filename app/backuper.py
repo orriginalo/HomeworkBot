@@ -46,7 +46,7 @@ async def update_timetable_job():
     necessary_subjects = await get_homeworks(Homework.group_id == group["uid"])
     necessary_subjects = [homework["subject"] for homework in necessary_subjects]
     necessary_subjects = set(necessary_subjects)
-    group_subjects = get_group_unique_subjects(group_name)
+    group_subjects = get_group_unique_subjects(group_name, f"./data/timetables/all-timetables.json")
     for subject in group_subjects:
       if subject not in necessary_subjects:
         necessary_subjects.add(subject)

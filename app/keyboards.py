@@ -1,3 +1,4 @@
+import logging
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
@@ -139,23 +140,35 @@ async def get_settings_keyboard(notifications: bool):
 async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    subject_id = (await get_subject_by_name(subject))["uid"]
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-add"))
+    try:
+      subject_id = (await get_subject_by_name(subject))["uid"]
+      kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-add"))
+    except Exception as e:
+      logging.warning(f"Building keyboard ({subject}): {e}")
+      pass
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_change_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    subject_id = (await get_subject_by_name(subject))["uid"]
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-changed"))
+    try:
+      subject_id = (await get_subject_by_name(subject))["uid"]
+      kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-changed"))
+    except Exception as e:
+      logging.warning(f"Building keyboard ({subject}): {e}")
+      pass
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_check_hw_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
-    subject_id = (await get_subject_by_name(subject))["uid"]
-    kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-check-hw"))
+    try:
+      subject_id = (await get_subject_by_name(subject))["uid"]
+      kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-check-hw"))
+    except Exception as e:
+      logging.warning(f"Building keyboard ({subject}): {e}")
+      pass
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()

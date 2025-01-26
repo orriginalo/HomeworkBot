@@ -7,6 +7,7 @@ from app.database.requests.other import sync_sequences
 from app.database.requests.schedule import add_subject, get_schedule_by_week
 from app.database.core import create_tables
 from app.browser_driver import driver
+from utils.all_subjects_parser import parse_all_subjects
 from variables import login, password
 from rich import print
 import sqlite3
@@ -55,14 +56,13 @@ async def main():
   
   print("Adding users...", end="")
   for user in users:
-     await add_user(user[0], user[1], user[2], user[4], user[5], user[3])
+     await add_user(user[0], user[1], user[2], user[4], user[5], user[3], group_id=313)
   print(" | Done.")
 
   homeworks = get_homeworks_from_sqlite()
   print("Adding homeworks...", end="")
   for homework in homeworks:
     await add_homework(homework[2], homework[3], 313, 1, homework[1], to_date_ts=homework[4], uid=homework[0])
-    # ! GROUP ID TEMPORARY IS 1
   print(" | Done.")
 
   schedule = get_schedule_from_sqlite()
@@ -80,6 +80,10 @@ async def main():
   print("Adding groups...", end="")
   driver.auth(login, password)
   await parse_groups_and_add_to_db(driver)
+  print(" | Done.")
+
+  print("Adding subjects...", end="")
+  await parse_all_subjects(driver)
   print(" | Done.")
 
   print("Syncing sequences...", end="")
