@@ -52,8 +52,8 @@ def get_media_from_sqlite():
 
 async def main():
   await create_tables(drop_tables=True)
-  users = get_users_from_sqlite()
   
+  users = get_users_from_sqlite()
   print("Adding users...", end="")
   for user in users:
      await add_user(user[0], user[1], user[2], user[4], user[5], user[3], group_id=313)
@@ -83,7 +83,7 @@ async def main():
   print(" | Done.")
 
   print("Adding subjects...", end="")
-  await parse_all_subjects(driver)
+  await parse_all_subjects(driver, "./data/timetables/all-timetables.json", do_download_timetable=False)
   print(" | Done.")
 
   print("Syncing sequences...", end="")

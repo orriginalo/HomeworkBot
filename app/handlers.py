@@ -1019,9 +1019,8 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   
   await del_homework(int(data['hw_id']))
   await del_media(int(data['hw_id']))
-  await call.message.edit_text("Задание удалено.")
+  await call.message.edit_text("Задание удалено.", reply_markup=await kb.get_start_keyboard(user))
   await state.clear()
-  await call.message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.callback_query(F.data == "update_timetable")
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
@@ -1082,7 +1081,6 @@ async def reset_deadline(message: Message, state: FSMContext):
     new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
     await message.answer(new_deadline_text)
     await state.clear()
-    await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.message(Command("repair"))
 async def repair_bot(message: Message, command: CommandObject, state: FSMContext):
