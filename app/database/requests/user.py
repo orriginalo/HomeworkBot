@@ -1,10 +1,7 @@
 from sqlalchemy import select, and_
 from app.database.db_setup import session
 from app.database.models import User
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 async def add_user(
     tg_id: int,

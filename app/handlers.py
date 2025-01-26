@@ -333,7 +333,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await update_group(group["uid"], ref_code=None, is_equipped=False, member_count=0 , leader_id=None)
     await update_user(start_user["tg_id"], role=start_user["role"], group_id=None, is_leader=False, moved_at=None)
     await msg.edit_text(f"❌ Ошибка создания группы. Попробуйте еще раз (/start).")
-    logging.error(f"Error creating group: {e}")
+    logger.error(f"Error creating group: {e}")
 
   await state.clear()
 
@@ -669,7 +669,7 @@ async def get_db_backup_handler(call: CallbackQuery):
 
 @dp.callback_query(F.data == "get_logs_backup")
 async def get_logs_backup_handler(call: CallbackQuery):
-  await log("Uploading .log file", "FILEMANAGER")
+  logger.info(f"Uploading .log file to user {call.message.from_user.id}")
   logs_backups_path = "data/logs"
   logs_backup_files = os.listdir(logs_backups_path)
   logs_backup_files.sort()

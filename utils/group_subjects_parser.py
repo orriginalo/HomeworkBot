@@ -1,4 +1,4 @@
-import logging
+from utils.logger import logger
 import json
 from utils.timetable_parser import process_subject_name
 from variables import prefixes_map, subjects_map
@@ -8,7 +8,7 @@ def get_group_unique_subjects(group_name: str, from_json_path: str):
       with open(from_json_path, "r", encoding="utf-8") as file:
         timetable = json.load(file)
     except Exception as e:
-      logging.error(f"Error reading timetables.json file: {e}")
+      logger.error(f"Error reading timetables.json file: {e}")
       return []
     
     group_subjects = []
@@ -21,7 +21,7 @@ def get_group_unique_subjects(group_name: str, from_json_path: str):
               group_subjects.append(process_subject_name(subject, subjects_map=subjects_map, prefixes_map=prefixes_map))
 
     except Exception as e:
-      logging.error(f"Error parsing timetables.json file: {e}")
+      logger.error(f"Error parsing timetables.json file: {e}")
       return []
     
     group_subjects.sort()

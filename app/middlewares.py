@@ -1,5 +1,5 @@
 import asyncio
-import logging
+from utils.logger import logger
 from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
@@ -117,9 +117,9 @@ class MsgLoggerMiddleware(BaseException):
         user_name = f"{event.from_user.first_name if event.from_user.first_name else ''} {event.from_user.last_name if event.from_user.last_name else ''}"
         try:
             if event.content_type == "text":
-                logging.info(f'[{user_name}] - "{msg}"')
+                logger.info(f'[{user_name}] - "{msg}"')
             else:
-                logging.info(f'[{user_name}] - "some <{event.content_type}>"')
+                logger.info(f'[{user_name}] - "some <{event.content_type}>"')
         except Exception as e:
             print(e)
         return await handler(event, data)
