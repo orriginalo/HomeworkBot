@@ -42,11 +42,11 @@ async def update_timetable_job():
   download_timetable(driver, [group["name"] for group in groups])
   for group in groups:
     group_name = group["name"]
-    parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", f"./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)
+    parse_timetable(f"./data/timetables/{group_name.lower()}-timetable.html", "./data/timetables/timetables.json", add_groupname_to_json=True, group_name=group_name)
     necessary_subjects = await get_homeworks(Homework.group_id == group["uid"])
     necessary_subjects = [homework["subject"] for homework in necessary_subjects]
     necessary_subjects = set(necessary_subjects)
-    group_subjects = get_group_unique_subjects(group_name, f"./data/timetables/all-timetables.json")
+    group_subjects = get_group_unique_subjects(group_name, "./data/timetables/all-timetables.json")
     for subject in group_subjects:
       if subject not in necessary_subjects:
         necessary_subjects.add(subject)

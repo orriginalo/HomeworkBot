@@ -1,3 +1,4 @@
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -10,6 +11,8 @@ import time
 class Driver:
     def __init__(self, headless=True, remote=False):
         
+        logging.info("Driver starting...")
+
         browser_options = None
 
         if remote:
@@ -43,6 +46,7 @@ class Driver:
       return getattr(self._driver, name)
     
     def auth(self, login: str, password: str) -> bool:
+        logging.info("Driver authenticating...")
         try:
             self.driver.get("https://lk.ulstu.ru/?q=auth/login")
             
@@ -68,7 +72,7 @@ class Driver:
             return True
             
         except Exception as e:
-            print(f"Authentication failed: {str(e)}")
+            logging.error(f"Driver authentication failed: {str(e)}")
             return False
         finally:
             # Не закрываем браузер здесь, чтобы можно было работать с ним после авторизации
