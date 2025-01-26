@@ -102,7 +102,7 @@ async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] 
       stmt = select(Homework).where(Homework.subject == subject)
       
       if limit_last_two:
-        stmt = stmt.order_by(Homework.from_date.desc()).limit(2)
+        stmt = stmt.order_by(Homework.created_at.desc()).limit(2)
 
       if group_id:
         stmt = stmt.where(Homework.group_id == group_id)

@@ -156,29 +156,25 @@ async def show_info(message: Message):
 
 1. <b>👤 Обычный пользователь</b>:
    - Может просматривать домашние задания.
-   - Может присоединяться к группам.
    - Не может добавлять или удалять задания.
+   - Может менять группу. 
 
 2. <b>➕ Добавлятель</b>:
-   - Может добавлять домашние задания.
-   - Может просматривать и редактировать свои задания.
-   - Не может удалять задания других пользователей.
+   - Может просматривать, добавлять и удалять домашние задания.
+   - Может сбрасывать дедлайны заданий.
+   - Может менять группу.
 
 3. <b>👑 Лидер группы</b>:
-   - Может добавлять, удалять и редактировать любые задания.
-   - Может управлять добавлятелями в своей группе.
+   - Может просматривать, добавлять и удалять домашние задания.
    - Может сбрасывать дедлайны заданий.
-
-4. <b>⚡ Администратор</b>:
-   - Может добавлять, удалять и редактировать любые задания.
    - Может управлять добавлятелями в своей группе.
-   - Может сбрасывать дедлайны заданий.
+   - Не может перейти в другую группу пока не передаст права лидера.
 
 <b>🔧 Основные функции:</b>
 
 - <b>📅 Просмотр домашних заданий</b> на сегодня, завтра и послезавтра (в связке с расписанием вашей группы).
 - <b>➕ Добавление заданий</b> с возможностью прикрепления медиафайлов.
-- <b>❌ Удаление заданий</b> (доступно администраторам и суперпользователям).
+- <b>❌ Удаление заданий</b>.
 - <b>🔄 Сброс дедлайнов</b> для заданий (перенос Д/З на следующую пару).
 - <b>👑 Управление группой</b> (создание, присоединение, передача прав лидера).
 
@@ -202,22 +198,22 @@ async def show_help(message: Message, command: CommandObject, state: FSMContext)
 ▫️ <b>/start</b> - Начало работы с ботом
 ▫️ <b>/help</b> - Получить справку по командам
 ▫️ <b>/about</b> - Информация о ролях и возможностях
-▫️ <b>/settings</b> - Настройки уведомлений
+▫️ <b>/settings</b> - Настройки
 
 <b>📌 Основные функции:</b>
 • Добавление ДЗ ➕ - Создать новое задание
 • Просмотр ДЗ 👀 - Посмотреть задания
 • Управление группой 👑 - Настройки вашей учебной группы
-
-<b>🎥 Визуальная инструкция:</b>
-Посмотрите <a href="https://example.com/guide">гиф-инструкции</a> с примерами использования:
-👉 Как добавить задание
-👉 Как работать с расписанием
-👉 Как управлять группой
-
-<b>❓ Возникли проблемы?</b>
-Пишите @ваш_логин_поддержки
 """
+
+# <b>🎥 Визуальная инструкция:</b>
+# Посмотрите <a href="https://example.com/guide">гиф-инструкции</a> с примерами использования:
+# 👉 Как добавить задание
+# 👉 Как работать с расписанием
+# 👉 Как управлять группой
+
+# <b>❓ Возникли проблемы?</b>
+# Пишите @ваш_логин_поддержки
 
   await message.answer(help_text, 
     parse_mode="HTML", 
@@ -777,12 +773,12 @@ async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
             elif media_data["media_type"] == "document":
               media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f" <i>id {hw_uid}</i>" if user_role >= 3 else "") + f"\n\n{hw_task}"
+          media_group[0].caption = f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f' <span class="tg-spoiler">id {hw_uid}</span>' if user_role >= 2 else "") + f"\n\n{hw_task}" 
           media_group[0].parse_mode = "html"
 
           await call.message.answer_media_group(media_group)
       else:
-        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f" <i>id {hw_uid}</i>" if user_role >= 3 else "") + f"\n\n{hw_task}", parse_mode="html")
+        await call.message.answer(f"Добавлено <b>{datetime.fromtimestamp(homework["from_date"]).strftime("%d.%m.%Y")}</b> " + ("<i>(последнее)</i>" if homework == homeworks[-1] else "")  + (f' <span class="tg-spoiler">id {hw_uid}</span>' if user_role >= 2 else "") + f"\n\n{hw_task}", parse_mode="html")
   else:
     await call.message.answer(f"Домашнее задание по <b>{subject_name}</b> отсутствует", parse_mode="html")
 
@@ -819,12 +815,12 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
             elif media_data["media_type"] == "document":
               media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "📅 На завтра")
@@ -860,12 +856,12 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
             elif media_data["media_type"] == "document":
               media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "📅 На послезавтра")
@@ -901,12 +897,12 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
             elif media_data["media_type"] == "document":
               media_group.append(InputMediaDocument(media=media_data["media_id"]))
 
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
 @dp.message(view_homework.day and F.text == "🗓 По дате")
@@ -961,12 +957,12 @@ async def show_hw_by_date(message: Message, state: FSMContext):
             elif media_data["media_type"] == "document":
               media_group.append(InputMediaDocument(media=media_data["media_id"]))
           
-          media_group[0].caption = f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}"
+          media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
           media_group[0].parse_mode = "html"
 
           await message.answer_media_group(media_group)
         else:
-          await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
+          await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
     await state.clear()
 
 @dp.message(F.text == 'Добавить Д/З ➕')
@@ -1082,7 +1078,7 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
 
 @dp.message(F.text == "🗑️ Удалить Д/З")
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
-  if (await get_user_by_id(message.from_user.id))["role"] >= 2:
+  if (await get_user_by_id(message.from_user.id))["role"] >= 3:
     await state.set_state(removing_homework.hw_id)
     await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
 
