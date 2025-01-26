@@ -82,7 +82,7 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
                 print(f"Обрезанный скриншот сохранён: {screenshot_path}")
 
             # Сохраняем HTML в файл
-            with open(f"./data/timetables/{group.lower()}-timetable.html", "w", encoding="utf-8") as file:
+            with open(f"./data/timetables/html/{group.lower()}-timetable.html", "w", encoding="utf-8") as file:
                 file.write(page_html)
             print("HTML успешно сохранён!")
 

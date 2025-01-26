@@ -135,10 +135,94 @@ async def start(message: Message, state: FSMContext, user):
 
     else:
       if (await get_user_by_id(message.from_user.id))["group_id"] is None:
-        await message.answer("Привет! Напиши название своей группы (например пдо-16, рэсдо-12, исдо-22)")
+        await message.answer(
+            f"👋 <b>Добро пожаловать в DomashkaBot!</b>\n\n"
+            f"📝 Для начала работы укажи <i>название своей группы</i> (например: <code>пдо-16</code>, <code>рэсдо-12</code>):",
+            parse_mode="HTML"
+        )
         await state.set_state(setting_group.group_name)
       else:
         await message.answer("Тут можно посмотреть домашнее задание. Выбери опцию.", reply_markup=await kb.get_start_keyboard(user))
+
+@dp.message(Command("about"))
+async def show_info(message: Message):
+  print("About handled")
+  about_text = """
+<b>📚 О боте и ролях:</b>
+
+🤖 <b>Этот бот</b> создан для удобного управления домашними заданиями и расписанием. Он позволяет добавлять, просматривать и удалять задания, а также управлять группами и пользователями.
+
+<b>👥 Роли пользователей:</b>
+
+1. <b>👤 Обычный пользователь</b>:
+   - Может просматривать домашние задания.
+   - Может присоединяться к группам.
+   - Не может добавлять или удалять задания.
+
+2. <b>➕ Добавлятель</b>:
+   - Может добавлять домашние задания.
+   - Может просматривать и редактировать свои задания.
+   - Не может удалять задания других пользователей.
+
+3. <b>👑 Лидер группы</b>:
+   - Может добавлять, удалять и редактировать любые задания.
+   - Может управлять добавлятелями в своей группе.
+   - Может сбрасывать дедлайны заданий.
+
+4. <b>⚡ Администратор</b>:
+   - Может добавлять, удалять и редактировать любые задания.
+   - Может управлять добавлятелями в своей группе.
+   - Может сбрасывать дедлайны заданий.
+
+<b>🔧 Основные функции:</b>
+
+- <b>📅 Просмотр домашних заданий</b> на сегодня, завтра и послезавтра (в связке с расписанием вашей группы).
+- <b>➕ Добавление заданий</b> с возможностью прикрепления медиафайлов.
+- <b>❌ Удаление заданий</b> (доступно администраторам и суперпользователям).
+- <b>🔄 Сброс дедлайнов</b> для заданий (перенос Д/З на следующую пару).
+- <b>👑 Управление группой</b> (создание, присоединение, передача прав лидера).
+
+<b>📌 Важно:</b>
+- <i>Лидер группы</i> может передавать свои права другому пользователю.
+- Если вы не увидели <b>всех</b> предметов - ждите: расписание обновляется со временем и этот список зависит от расписания на сайте
+- Если вы добавили Д/З, но позже на сайте этого предмета не оказалось - предмет останется в списке.
+
+<b>📜 Для получения дополнительной информации</b> используйте команду /help.
+"""
+
+  await message.answer(about_text, parse_mode="HTML")
+
+@dp.message(Command("help"))
+async def show_help(message: Message, command: CommandObject, state: FSMContext):
+  await state.clear()
+  
+  help_text = """
+<b>🆘 Список доступных команд:</b>
+
+▫️ <b>/start</b> - Начало работы с ботом
+▫️ <b>/help</b> - Получить справку по командам
+▫️ <b>/about</b> - Информация о ролях и возможностях
+▫️ <b>/settings</b> - Настройки уведомлений
+
+<b>📌 Основные функции:</b>
+• Добавление ДЗ ➕ - Создать новое задание
+• Просмотр ДЗ 👀 - Посмотреть задания
+• Управление группой 👑 - Настройки вашей учебной группы
+
+<b>🎥 Визуальная инструкция:</b>
+Посмотрите <a href="https://example.com/guide">гиф-инструкции</a> с примерами использования:
+👉 Как добавить задание
+👉 Как работать с расписанием
+👉 Как управлять группой
+
+<b>❓ Возникли проблемы?</b>
+Пишите @ваш_логин_поддержки
+"""
+
+  await message.answer(help_text, 
+    parse_mode="HTML", 
+    disable_web_page_preview=True)
+
 
 @dp.callback_query(F.data == "join_group")
 async def join_group_handler(call: CallbackQuery):
@@ -195,7 +279,12 @@ async def transfer_leadership_confirm_handler(call: CallbackQuery, state: FSMCon
   await update_user(user["tg_id"], is_leader=False)
   await update_user(future_leader_id, is_leader=True, role=2)
   await update_group(group["uid"], leader_id=future_leader_id)
-  await call.message.answer("✅ Права лидерства переданы.", reply_markup=await kb.get_start_keyboard(user))
+  await call.message.answer(
+    f"🔄 <b>Права лидера переданы!</b>\n\n"
+    f"👤 Новый лидер: <a href='tg://user?id={future_leader_id}'>{future_leader['firstname']} {future_leader['lastname']}</a>\n"
+    f"⚠️ Теперь вы <i>обычный участник</i> группы",
+    parse_mode="HTML"
+  )
   await state.clear()
 
 @dp.message(setting_group.group_name)
@@ -212,18 +301,18 @@ async def set_group_name(message: Message, state: FSMContext):
         await message.answer("Эта группа уже зарегистрирована в системе. Запросите ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
         await state.clear()
       else:
-        await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /info)", parse_mode="html", reply_markup=kb.create_group_keyboard)
+        await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /about)", parse_mode="html", reply_markup=kb.create_group_keyboard)
   else:
     await message.answer("❌ Такая группа не найдена, попробуй еще раз.")
 
 @dp.callback_query(F.data == "create_group")
 async def create_group_handler(callback: CallbackQuery, state: FSMContext):
-  user = await get_user_by_id(callback.from_user.id)
+  start_user = await get_user_by_id(callback.from_user.id)
   await callback.message.delete()
   msg = await callback.message.answer(f"⌛ Создание группы...")
+  data = await state.get_data()
+  group = await get_group_by_name(data["group_name"])
   try:
-    data = await state.get_data()
-    group = await get_group_by_name(data["group_name"])
 
     referal_code = await generate_unique_code()
     referal_link = await get_referal_link(referal_code)
@@ -233,12 +322,22 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
 
     await update_timetable_job()
 
-    await msg.edit_text("✅ Группа создана!")
+    await msg.edit_text(
+        f"🎉 <b>Группа успешно создана!</b>\n\n"
+        f"▫️ Вы стали <i>лидером группы</i>\n"
+        f"▫️ Теперь вы можете:\n"
+        f"   ➕ Добавлять задания\n"
+        f"   👥 Приглашать участников\n"
+        f"   👑 Управлять группой",
+        parse_mode="HTML",
+    )
     
-    await callback.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
+    await callback.message.answer(f"🔗 <b>Пригласительная ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   except Exception as e:
-    await msg.edit_text(f"❌ Ошибка создания группы")
-    logging.error("Error creating group: ", e)
+    await update_group(group["uid"], ref_code=None, is_equipped=False, member_count=0 , leader_id=None)
+    await update_user(start_user["tg_id"], role=start_user["role"], group_id=None, is_leader=False, moved_at=None)
+    await msg.edit_text(f"❌ Ошибка создания группы. Попробуйте еще раз (/start).")
+    logging.error(f"Error creating group: {e}")
 
   await state.clear()
 
@@ -248,7 +347,7 @@ async def back_to_start(callback: CallbackQuery, state: FSMContext):
 
   await state.clear()
 
-@dp.message(F.text == "Админ-панель 😈")
+@dp.message(F.text == "Админ-панель ⚡")
 async def show_admin_panel(message: Message):
   if (await get_user_by_id(message.from_user.id))["role"] == 3:
     await message.answer("Админ-панель:", reply_markup=kb.adminka_keyboard)
@@ -624,7 +723,7 @@ async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
   except aiogram.exceptions.TelegramBadRequest:
     await call.message.answer("Произошла ошибка. Попробуйте снова.")
 
-@dp.message(F.text == '👀 Посмотреть Д/З')
+@dp.message(F.text == '📚 Посмотреть Д/З')
 async def show_homework_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.day)
   await message.answer ("Выбери вариант.", reply_markup=kb.see_hw_keyboard)
@@ -635,7 +734,7 @@ async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
   await call.message.answer("Выберите день", reply_markup=kb.see_hw_keyboard)
 
 # @dp.callback_query(F.data == "by_subject")
-@dp.message(F.text == "Посмотреть по предмету")
+@dp.message(F.text == "📚 По предмету")
 async def check_hw_by_subject_handler(message: Message):
   user = await get_user_by_id(message.from_user.id)
   group = await get_group_by_id(user["group_id"])
@@ -687,7 +786,7 @@ async def check_hw_by_subject_handler_2(call: CallbackQuery, state: FSMContext):
   else:
     await call.message.answer(f"Домашнее задание по <b>{subject_name}</b> отсутствует", parse_mode="html")
 
-@dp.message(view_homework.day and F.text == "На сегодня")
+@dp.message(view_homework.day and F.text == "📅 На сегодня")
 async def show_hw_today_handler(message: Message, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
@@ -697,7 +796,10 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
-      await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
+      await sent_message.edit_text(
+        f"📭 <b>Заданий на сегодня нет!</b>",
+        parse_mode="HTML"
+      )
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_today()[1])}</b>:", parse_mode="html")
       for homework in tasks:
@@ -725,7 +827,7 @@ async def show_hw_today_handler(message: Message, state: FSMContext):
           await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
-@dp.message(view_homework.day and F.text == "На завтра")
+@dp.message(view_homework.day and F.text == "📅 На завтра")
 async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
@@ -735,7 +837,10 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
-      await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
+      await sent_message.edit_text(
+          f"📭 <b>Заданий на завтра нет!</b>",
+          parse_mode="HTML"
+      )
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_tomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
@@ -763,7 +868,7 @@ async def show_hw_tomorrow_handler(message: Message, state: FSMContext):
           await message.answer(f"<b>{subject}</b>" + (f" <i>id {task_id}</i>" if user_role >= 3 else "") + f"\n\n{str(task)}", parse_mode="html")
       await state.clear()
 
-@dp.message(view_homework.day and F.text == "На послезавтра")
+@dp.message(view_homework.day and F.text == "📅 На послезавтра")
 async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
@@ -773,7 +878,10 @@ async def show_hw_after_tomorrow_handler(message: Message, state: FSMContext):
     user_role = (await get_user_by_id(message.from_user.id))["role"]
     # print(f"TASKS\t {tasks}")
     if tasks is None or len(tasks) == 0:
-      await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
+      await sent_message.edit_text(
+        f"📭 <b>Заданий на послезавтра нет!</b>",
+        parse_mode="HTML"
+      )
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(var.calculate_aftertomorrow()[1])}</b>:", parse_mode="html")
       for homework in tasks:
@@ -807,7 +915,7 @@ async def show_hw_by_date_handler(message: Message, state: FSMContext):
   await message.answer(f'Введи дату в виде "номер_месяца число" без кавычек. Сейчас <b>{datetime.fromtimestamp(var.calculate_today()[1]).strftime("%m")}</b> месяц', parse_mode="html")
 
 
-@dp.message(F.text == "Назад ↩️")
+@dp.message(F.text == "◀️ Назад")
 async def back_handler(message: Message, state: FSMContext):
   user = await get_user_by_id(message.from_user.id)
   await state.clear()
@@ -830,7 +938,10 @@ async def show_hw_by_date(message: Message, state: FSMContext):
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
     await update_homework_dates()
     if tasks is None or len(tasks) == 0:
-      await sent_message.edit_text(f"Домашние задания на этот день отсутствуют")
+      await sent_message.edit_text(
+        f"📭 <b>Заданий на этот день нет!</b>",
+        parse_mode="HTML"
+      )
     else:
       await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
       for homework in tasks:
@@ -969,9 +1080,9 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
     await message.answer("Произошла ошибка. Попробуйте снова.")
 
 
-@dp.message(F.text == "❌ Удалить Д/З")
+@dp.message(F.text == "🗑️ Удалить Д/З")
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
-  if (await get_user_by_id(message.from_user.id))["role"] >= 3:
+  if (await get_user_by_id(message.from_user.id))["role"] >= 2:
     await state.set_state(removing_homework.hw_id)
     await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
 
@@ -1017,9 +1128,16 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   print(type(data['hw_id']), data['hw_id'])
   print(type(int(data['hw_id'])), int(data['hw_id']))
   
+  homework = await get_homework_by_id(int(data['hw_id']))
   await del_homework(int(data['hw_id']))
   await del_media(int(data['hw_id']))
-  await call.message.edit_text("Задание удалено.", reply_markup=await kb.get_start_keyboard(user))
+  await call.message.edit_text(
+    f"🗑️ <b>Задание успешно удалено!</b>\n\n"
+    f"▫️ ID: <code>{data['hw_id']}</code>\n"
+    f"▫️ Предмет: {homework['subject']}\n"
+    f"▫️ Текст: <i>{homework['task'][:30] + '...' if len(homework['task']) > 30 else homework['task']}</i>",
+    parse_mode="HTML"
+  )
   await state.clear()
 
 @dp.callback_query(F.data == "update_timetable")
@@ -1030,7 +1148,13 @@ async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
     await msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e: 
-    await msg.edit_text("❌ Ошибка при обновлении расписания.")
+    await msg.edit_text(
+      f"🚨 <b>Ошибка обновления расписания!</b>\n\n"
+      f"▫️ Проверьте формат файла\n"
+      f"▫️ Убедитесь в корректности данных\n"
+      f"▫️ Попробуйте снова через 5 минут",
+      parse_mode="HTML"
+    )
 
 @dp.message(F.text == "👑 Управление группой 👑")
 async def show_group_controller_handler(message: CallbackQuery):
@@ -1054,7 +1178,17 @@ async def show_group_controller_handler(message: CallbackQuery):
   users_links = [get_link(user_id, user["firstname"], user["lastname"]) for user_id in all_users_in_group_id]
   users_links = "\n".join(users_links)
 
-  await message.answer(f"<b>👑 Управление группой</b>\n\nГруппа:  <b>{group['name']}</b>\nУчастники:\n{users_links}", parse_mode="html", reply_markup=kb.group_controller_keyboard)
+  leader_user = await get_user_by_id(group["leader_id"])
+
+  await message.answer(
+      f"👑 <b>Панель управления группой</b>\n\n"
+      f"▫️ Название: <code>{group['name']}</code>\n"
+      f"▫️ Участников: {len(all_users_in_group)}\n"
+      f"▫️ Лидер: <a href='tg://user?id={group['leader_id']}'>{leader_user['firstname'] if leader_user['firstname'] else ''} {leader_user['lastname'] if leader_user['lastname'] else ''}</a>\n\n"
+      f"🛠 <i>Доступные действия:</i>",
+      parse_mode="HTML",
+      reply_markup=kb.group_controller_keyboard
+  )
 
 @dp.callback_query(F.data == "get_group_link")
 async def get_group_link_handler(call: CallbackQuery):
@@ -1063,10 +1197,13 @@ async def get_group_link_handler(call: CallbackQuery):
   referal_link = await get_referal_link(group["ref_code"])
   await call.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
-@dp.message(F.text == "🔄 Сбросить дедлайн Д/З 🔄")
+
+@dp.message(F.text == "Сбросить дедлайн 🔄" )
+@dp.message(F.text == "🔄 Сбросить дедлайн 🔄" )
 async def reset_deadline_handler(message: Message, state: FSMContext):
-  await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
-  await state.set_state(resetting_deadline.hw_id)
+  if (await get_user_by_id(message.from_user.id))["role"] >= 2:
+    await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
+    await state.set_state(resetting_deadline.hw_id)
 
 
 @dp.message(resetting_deadline.hw_id)
