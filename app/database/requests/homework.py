@@ -2,11 +2,8 @@ from typing import List, Optional
 from sqlalchemy import and_, func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
-import logging
+from utils.logger import logger
 import datetime
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None, **kwargs):
   try:
@@ -155,40 +152,6 @@ async def update_homework_dates():
       await s.commit()
   except Exception as e:
     logger.error(f"Error updating homework dates: {e}")
-
-
-
-# async def reset_homework_deadline_by_id(homework_id):
-#     await log(f"Resetting to_date for homework ID: {homework_id}...")
-#     current_timestamp = calculate_today()[1]  # Текущая дата в формате timestamp
-#     print(current_timestamp)
-
-#     async with aiosqlite.connect(db_file) as conn:
-#         # Получаем from_date и subject для указанного домашнего задания
-#         async with conn.execute("SELECT from_date, subject FROM homeworks WHERE id = ?", (homework_id,)) as cursor:
-#             homework_entry = await cursor.fetchone()
-
-#         if homework_entry is None:
-#             await log(f"No homework found with ID: {homework_id}")
-#             return  # Если домашнее задание не найдено, выходим из функции
-
-#         from_date, subject = homework_entry
-#         print(from_date, subject)
-#         # Находим ближайшую дату занятия для предмета относительно текущей даты
-#         async with conn.execute("SELECT MIN(timestamp) FROM schedule WHERE subject = ? AND timestamp > ?", 
-#                                 (subject, current_timestamp)) as cursor:
-#             next_class_date = await cursor.fetchone()
-#             print(next_class_date)
-
-#         if next_class_date[0] is not None:
-#             # Сбрасываем to_date и устанавливаем ближайшую дату занятия
-#             await conn.execute("UPDATE homeworks SET to_date = ? WHERE id = ?", 
-#                                (next_class_date[0], homework_id))
-#             await log(f"Updated to_date for homework ID: {homework_id} to {next_class_date[0]}")
-
-#         # Фиксируем изменения
-#         await conn.commit()
-#     await log("Homework to_date has been reset and updated.")
 
 async def reset_homework_deadline_by_id(homework_id: int):
   try:

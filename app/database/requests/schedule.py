@@ -1,11 +1,8 @@
 from app.database.db_setup import session
 from app.database.models import Schedule
 from sqlalchemy import select
-import logging
+from utils.logger import logger
 import datetime
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 async def add_subject(timestamp: int, subject: str, week_number: int, group_id: int):
   try:

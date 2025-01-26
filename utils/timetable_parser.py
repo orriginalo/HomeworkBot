@@ -1,4 +1,4 @@
-import logging
+from utils.logger import logger
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
@@ -174,6 +174,6 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
     if json_file is not None:
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(timetable, file, ensure_ascii=False, indent=4)
-        logging.info(f"Timetable saved to {json_file}")
+        logger.info(f"Timetable saved to {json_file}")
 
     return timetable

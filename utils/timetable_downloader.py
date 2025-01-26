@@ -1,4 +1,4 @@
-import logging
+from utils.logger import logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -87,5 +87,5 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
             print("HTML успешно сохранён!")
 
     except Exception as e:
-        logging.error(f"Error downloading timetable for group {group}: {str(e)}")
+        logger.error(f"Error downloading timetable for group {group}: {str(e)}")
 

@@ -1,5 +1,6 @@
+import datetime
 from rich import print
-import logging
+from utils.logger import logger
 from aiogram import Bot, Dispatcher
 import asyncio
 import os
@@ -28,44 +29,21 @@ disp = Dispatcher()
 notifications_scheduler = AsyncIOScheduler()
 
 async def check_paths():
-  try:
-    if os.path.exists("data") == False:
-      os.mkdir("data")
-  except FileExistsError:
-    await log("Error creating ./data directory", "DIRCREATOR")
-
-  try:
-    if os.path.exists("data") == False:
-      os.mkdir("data")
-  except FileExistsError:
-    await log("Error creating ./data directory", "DIRCREATOR")
-
-  try:
-    if os.path.exists("data\\backups") == False:
-      os.mkdir("data/backups")
-  except FileExistsError:
-    await log("Error creating ./data/backups directory", "DIRCREATOR")
-
-  try:
-    if os.path.exists("data\\backups\\html_schedules") == False:
-      os.mkdir("data/backups/html_schedules")
-  except FileExistsError:
-    await log("Error creating ./data/backups/html_schedules directory", "DIRCREATOR")
-
-  try:
-    if os.path.exists("data\\backups\\databases") == False:
-      os.mkdir("data/backups/databases")
-  except FileExistsError:
-    await log("Error creating ./data/backups/databases directory", "DIRCREATOR")
-
-  try:
-    if os.path.exists("data\\logs") == False:
-      os.mkdir("data/logs")
-  except FileExistsError:
-    await log("Error creating ./data/logs directory", "DIRCREATOR")
+    paths = [
+        "data",
+        "data/backups",
+        "data/backups/html_schedules",
+        "data/backups/databases",
+        "data/logs"
+    ]
+    for path in paths:
+        try:
+            os.makedirs(path, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Error creating {path}: {e}")
 
 async def send_new_timetable():
-    await log("Sending new timetable", "NOTIFICATIONS")
+    logger.info("Sending new timetable")
     download_timetable(driver=driver, make_screenshot=True)
 
     photo = FSInputFile("./data/screenshots/timetable.png")
@@ -74,45 +52,35 @@ async def send_new_timetable():
 
 
 async def main():
-  logging.info("Bot starting...")
+  logger.info("Bot starting...")
 
   await create_tables()
-  logging.info("Tables created")
+  logger.info("Tables created")
 
   await check_paths()
-  logging.info("Paths checked")
+  logger.info("Paths checked")
 
   disp.include_router(dp)
-  logging.info("Dispatcher included")
+  logger.info("Dispatcher included")
 
   # notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=16, minute=00)) 
   # notifications_scheduler.add_job(send_new_timetable, 'interval', seconds=30)
   # await send_new_timetable()
   notifications_scheduler.start()
   await start_scheduler()
-  logging.info("Schedulers started")
+  logger.info("Schedulers started")
 
   driver.auth(login, password)
-  logging.info("Driver authenticated")
+  logger.info("Driver authenticated")
 
-  logging.info("Bot started")
-  await log("Bot started", "RUNNER")
+  logger.info("Bot started")
   await disp.start_polling(bot)
 
-
 if __name__ == "__main__":
-  logging.basicConfig(
-    level=logging.INFO,
-    filename="data/logs/bot.log",
-    filemode="a",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%d.%m.%Y %H:%M:%S",
-    encoding="utf-8"
-    )
   try:
     asyncio.run(main())
   except (KeyboardInterrupt, SystemExit):
     asyncio.run(log("Bot stopping...", "RUNNER"))
-    logging.info("Bot stopping...")
+    logger.info("Bot stopping...")
     driver.quit()
     print ("[bold red]Bot stopped")

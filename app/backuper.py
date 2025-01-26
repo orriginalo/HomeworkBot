@@ -3,6 +3,7 @@ from app.database.requests.other import log
 from app.database.requests.groups import update_group, get_group_by_name
 from app.database.requests.homework import get_homeworks
 from app.browser_driver import driver
+from utils.logger import logger
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
@@ -34,7 +35,7 @@ def create_db_backup():
   
 # @scheduler.add_job("interval", seconds = 1)
 async def create_backups():
-  await log("Database backuped", "BACKUP")
+  logger.info("Database backuped")
   create_db_backup()
 
 async def update_timetable_job():
