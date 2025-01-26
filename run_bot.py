@@ -4,7 +4,6 @@ from utils.logger import logger
 from aiogram import Bot, Dispatcher
 import asyncio
 import os
-from app.database.requests.other import log
 from app.handlers import dp
 from app.database.core import create_tables
 from app.scheduler import start_scheduler
@@ -52,8 +51,6 @@ async def send_new_timetable():
 
 
 async def main():
-  logger.info("Bot starting...")
-
   await create_tables()
   logger.info("Tables created")
 
@@ -77,10 +74,10 @@ async def main():
   await disp.start_polling(bot)
 
 if __name__ == "__main__":
+  logger.info("Bot starting...")
   try:
     asyncio.run(main())
   except (KeyboardInterrupt, SystemExit):
-    asyncio.run(log("Bot stopping...", "RUNNER"))
     logger.info("Bot stopping...")
     driver.quit()
     print ("[bold red]Bot stopped")

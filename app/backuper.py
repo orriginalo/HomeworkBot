@@ -1,5 +1,4 @@
 from app.database.models import Groups, Homework
-from app.database.requests.other import log
 from app.database.requests.groups import update_group, get_group_by_name
 from app.database.requests.homework import get_homeworks
 from app.browser_driver import driver

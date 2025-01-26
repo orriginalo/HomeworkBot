@@ -46,37 +46,36 @@ class Driver:
       return getattr(self._driver, name)
     
     def auth(self, login: str, password: str) -> bool:
-        logger.info("Driver authenticating...")
-        try:
-            self.driver.get("https://lk.ulstu.ru/?q=auth/login")
-            
-            # Явное ожидание вместо time.sleep
-            login_field = self._wait.until(
-                EC.presence_of_element_located((By.NAME, "login"))
-            )
-            password_field = self.driver.find_element(By.NAME, "password")
+      logger.info("Driver authenticating...")
+      try:
+          self.driver.get("https://lk.ulstu.ru/?q=auth/login")
 
-            login_field.send_keys(login)
-            password_field.send_keys(password)
-            password_field.send_keys(Keys.RETURN)
+          login_field = self._wait.until(
+              EC.presence_of_element_located((By.NAME, "login"))
+          )
+          password_field = self.driver.find_element(By.NAME, "password")
 
-            # Проверка успешной авторизации
-            self._wait.until(
-                lambda d: d.current_url != "https://lk.ulstu.ru/?q=auth/login"
-            )
-            
-            # Дополнительная проверка на наличие элемента личного кабинета
-            self._wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, ".user-menu"))
-            )
-            return True
-            
-        except Exception as e:
-            logger.error(f"Driver authentication failed: {str(e)}")
-            return False
-        finally:
-            # Не закрываем браузер здесь, чтобы можно было работать с ним после авторизации
-            time.sleep(1)  # Краткая пауза для стабилизации
+          login_field.send_keys(login)
+          password_field.send_keys(password)
+          password_field.send_keys(Keys.RETURN)
+
+          # Проверяем успешную авторизацию
+          self._wait.until(
+              lambda d: d.current_url != "https://lk.ulstu.ru/?q=auth/login"
+          )
+
+          # Дополнительная проверка элемента
+          self._wait.until(
+              EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div"))
+          )
+          return True
+
+      except Exception as e:
+          logger.error(f"Driver authentication failed: {str(e)}")
+          return False
+      finally:
+          time.sleep(1)
+
 
     def quit(self):
         """Закрыть браузер и завершить сессию"""
