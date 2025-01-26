@@ -6,7 +6,6 @@ from aiogram.types import Message, CallbackQuery
 
 from cachetools import TTLCache
 
-from app.database.requests.other import log
 from app.database.requests.user import add_user, get_user_by_id, update_user
 
 from rich import print
@@ -105,7 +104,6 @@ class MsgLoggerMiddleware(BaseException):
                 group_id=None,
                 is_leader=False
             )
-            print(f"{user} ADDED YOOOY")
                 
         else:
             if user["role"] == 0:
@@ -114,7 +112,7 @@ class MsgLoggerMiddleware(BaseException):
         
         data["user"] = user
         msg = event.text
-        user_name = f"{event.from_user.first_name if event.from_user.first_name else ''} {event.from_user.last_name if event.from_user.last_name else ''}"
+        user_name = f"{event.from_user.first_name if event.from_user.first_name else ''}{(" " + event.from_user.last_name) if event.from_user.last_name else ''}"
         try:
             if event.content_type == "text":
                 logger.info(f'[{user_name}] - "{msg}"')

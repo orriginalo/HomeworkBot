@@ -1,6 +1,5 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from app.database.requests.other import log
 from app.backuper import create_backups, update_timetable_job
 from utils.logger import logger
 
