@@ -30,14 +30,19 @@ disp = Dispatcher()
 notifications_scheduler = AsyncIOScheduler()
 
 async def check_paths():
-    paths = [
-        "data",
-        "data/backups",
-        "data/backups/html_schedules",
-        "data/backups/databases",
-        "data/logs"
+    folder_paths = [
+      "data/backups",
+      "data/databases",
+      "data/database",
+      "data/logs",
+      "data/screenshots",
+      "data/timetables/html"
     ]
-    for path in paths:
+    file_paths = [
+      "data/timetables/timetables.json"
+      "data/timetables/all-timetables.json"
+    ]
+    for path in folder_paths:
         try:
             os.makedirs(path, exist_ok=True)
         except Exception as e:

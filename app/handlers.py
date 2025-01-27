@@ -93,8 +93,6 @@ notifications_scheduler = AsyncIOScheduler()
 
 @dp.message(CommandStart())
 async def start(message: Message, state: FSMContext, user):
-  print(user)
-
   def check_time_moved(user):
     last_moved_at = user["moved_at"]
     current_time = datetime.now()
@@ -222,10 +220,10 @@ async def show_help(message: Message, command: CommandObject, state: FSMContext)
 
 @dp.callback_query(F.data == "join_group")
 async def join_group_handler(call: CallbackQuery):
-  user = await get_user_by_id(call.from_user.id)
-  group = await get_group_by_id(user["group_id"])
   await call.message.delete()
   await update_user(user["tg_id"], moved_at=datetime.now(), group_id=group["uid"])
+  user = await get_user_by_id(call.from_user.id)
+  group = await get_group_by_id(user["group_id"])
   await call.message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.callback_query(F.data == "transfer_leadership")
@@ -440,7 +438,7 @@ async def show_favs(call: CallbackQuery):
 @dp.callback_query(F.data == "add_admin")
 async def adding_admin_handler(call: CallbackQuery, state: FSMContext):
     await state.set_state(adding_admin.user_id)
-    await call.message.answer("Перешлите сообщение или введите id пользователя для добавления:", reply_markup=types.ReplyKeyboardRemove())
+    await call.message.answer("Перешлите сообщение или введите id пользователя для добавления:", reply_markup=kb.back_keyboard)
 
 @dp.message(adding_admin.user_id)
 async def add_admin_id(message: Message, state: FSMContext):
@@ -500,7 +498,7 @@ async def remove_admin_id(message: Message, state: FSMContext):
 @dp.callback_query(F.data == "add_adder")
 async def add_adder_handler(call: CallbackQuery, state: FSMContext):
     await state.set_state(adding_adder.user_id)
-    await call.message.answer("Перешлите сообщение или введите id пользователя для добавления:", reply_markup=types.ReplyKeyboardRemove())
+    await call.message.answer("Перешлите сообщение или введите id пользователя для добавления:", reply_markup=kb.back_keyboard)
 
 @dp.message(adding_adder.user_id)
 async def add_adder_id(message: Message, state: FSMContext):
@@ -1208,12 +1206,15 @@ async def reset_deadline(message: Message, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
     await state.update_data(hw_id=message.text)
     data = await state.get_data()
-    await reset_homework_deadline_by_id(data['hw_id'])
-    await message.answer("✅ Дата сдачи сброшена.")
-    # await update_homework_dates()
-    deadline = (await get_homework_by_id(data['hw_id']))["to_date"]
-    new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace("00:00:00", "")}"
-    await message.answer(new_deadline_text)
+    if get_homework_by_id(data['hw_id']):
+        await reset_homework_deadline_by_id(data['hw_id'])
+        await message.answer("✅ Дата сдачи сброшена.")
+        # await update_homework_dates()
+        deadline = (await get_homework_by_id(data['hw_id']))["to_date"]
+        new_deadline_text = f"Новая дата сдачи: {(str(datetime.fromtimestamp(deadline)) if deadline is not None else 'отсутствует').replace('00:00:00', '')}"
+        await message.answer(new_deadline_text)
+    else:
+        await message.answer("❌ Задания с таким id не существует.")
     await state.clear()
 
 @dp.message(Command("repair"))

@@ -9,8 +9,11 @@ load_dotenv()
 
 def setup_logger():
   
-  log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"))
-  
+  try:
+    log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"))
+  except AttributeError:
+    print("Log level not found (check LOG_LEVEL in .env), defaulting to INFO")
+    log_level = logging.INFO
   """
   Настраивает логгер, который пишет в файл и выводит сообщения в консоль.
   """
