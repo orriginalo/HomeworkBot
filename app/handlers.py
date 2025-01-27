@@ -333,7 +333,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await update_group(group["uid"], ref_code=None, is_equipped=False, member_count=0 , leader_id=None)
     await update_user(start_user["tg_id"], role=start_user["role"], group_id=None, is_leader=False, moved_at=None)
     await msg.edit_text(f"❌ Ошибка создания группы. Попробуйте еще раз (/start).")
-    logger.error(f"Error creating group: {e}")
+    logger.exception(f"Error creating group: {e}")
 
   await state.clear()
 
@@ -369,7 +369,7 @@ async def load_new_week(message: Message, state: FSMContext):
     await n1_msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e:
-    print(e)
+    logger.exception(f"Error updating schedule: {e}")
     await message.answer("❌ Не удалось обновить расписание.")
 
 @dp.callback_query(F.data == "back")
@@ -719,7 +719,7 @@ async def add_changed_homework_subject(call: CallbackQuery, state: FSMContext):
   except aiogram.exceptions.TelegramBadRequest:
     await call.message.answer("Произошла ошибка. Попробуйте снова.")
 
-@dp.message(F.text == '📚 Посмотреть Д/З')
+@dp.message(F.text == '👀 Посмотреть Д/З')
 async def show_homework_handler(message: Message, state: FSMContext):
   await state.set_state(view_homework.day)
   await message.answer ("Выбери вариант.", reply_markup=kb.see_hw_keyboard)
@@ -1151,6 +1151,7 @@ async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
       f"▫️ Попробуйте снова через 5 минут",
       parse_mode="HTML"
     )
+    logger.exception(f"Error updating schedule: {e}")
 
 @dp.message(F.text == "👑 Управление группой 👑")
 async def show_group_controller_handler(message: CallbackQuery):

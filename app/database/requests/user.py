@@ -1,7 +1,7 @@
 from sqlalchemy import select, and_
 from app.database.db_setup import session
 from app.database.models import User
-from utils.logger import logger
+from utils.log import logger
 
 async def add_user(
     tg_id: int,
@@ -21,7 +21,7 @@ async def add_user(
             existing_user = result.scalar_one_or_none()
 
             if existing_user:
-                logger.info(f"User with tg_id {tg_id} already exists.")
+                logger.debug(f"User with tg_id {tg_id} already exists.")
                 return existing_user  # Возвращаем существующего пользователя
 
             user = User(
@@ -53,9 +53,9 @@ async def del_user(tg_id: int):
         await s.delete(user)
         await s.commit()
       else:
-        logger.info(f"User with tg_id={tg_id} not found.")
+        logger.debug(f"User with tg_id={tg_id} not found.")
   except Exception as e:
-    logger.error(f"Error deleting user {tg_id}: {e}")
+    logger.exception(f"Error deleting user {tg_id}: {e}")
     return None
 
 async def get_users_with_notifications():
@@ -79,7 +79,7 @@ async def get_user_by_id(tg_id: int):
       else:
         return None
   except Exception as e:
-    logger.error(f"Error getting user by ID {tg_id}: {e}")
+    logger.exception(f"Error getting user by ID {tg_id}: {e}")
     return None
 
 async def update_user(tg_id: int, **kwargs):
@@ -95,7 +95,7 @@ async def update_user(tg_id: int, **kwargs):
       await s.refresh(user)
       return vars(user) if user else None
   except Exception as e:
-    logger.error(f"Error updating user {tg_id}: {e}")
+    logger.exception(f"Error updating user {tg_id}: {e}")
     return None
 
 async def get_users(*filters):

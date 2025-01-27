@@ -1,4 +1,4 @@
-from utils.logger import logger
+from utils.log import logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,6 +15,7 @@ login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
 
 def download_timetable(driver, groups: list[str], make_screenshot: bool = False): # new
+    logger.debug(f"Started downloading timetable for groups: {groups}...")
     try:
         for group in groups:
             # Открываем страницу с расписанием
@@ -84,8 +85,8 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
             # Сохраняем HTML в файл
             with open(f"./data/timetables/html/{group.lower()}-timetable.html", "w", encoding="utf-8") as file:
                 file.write(page_html)
-            print("HTML успешно сохранён!")
+            logger.debug(f"Html saved to: {f'./data/timetables/html/{group.lower()}-timetable.html'}")
 
     except Exception as e:
-        logger.error(f"Error downloading timetable for group {group}: {str(e)}")
+        logger.exception(f"Error downloading timetable for group {group}: {str(e)}")
 

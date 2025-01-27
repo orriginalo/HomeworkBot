@@ -1,7 +1,7 @@
 from sqlalchemy import select, and_
 from app.database.db_setup import session
 from app.database.models import Subjects
-from utils.logger import logger
+from utils.log import logger
 
 async def add_subject_to_subjects(subject: str):
   try:
@@ -11,7 +11,7 @@ async def add_subject_to_subjects(subject: str):
       await s.commit()
       return subject
   except Exception as e:
-    logger.error(f"Error adding subject {subject}: {e}")
+    logger.exception(f"Error adding subject {subject}: {e}")
     return None
 
 async def get_subject_by_name(subject: str):
@@ -22,7 +22,7 @@ async def get_subject_by_name(subject: str):
       subject = result.scalar_one_or_none()
       return vars(subject) if subject else None
   except Exception as e:
-    logger.error(f"Error getting subject by name {subject}: {e}")
+    logger.exception(f"Error getting subject by name {subject}: {e}")
     return None
   
 async def get_subject_by_id(uid: int):
@@ -33,5 +33,5 @@ async def get_subject_by_id(uid: int):
       subject = result.scalar_one_or_none()
       return vars(subject) if subject else None
   except Exception as e:
-    logger.error(f"Error getting subject by id {uid}: {e}")
+    logger.exception(f"Error getting subject by id {uid}: {e}")
     return None

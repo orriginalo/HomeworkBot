@@ -1,5 +1,5 @@
 import asyncio
-from utils.logger import logger
+from utils.log import logger
 from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery

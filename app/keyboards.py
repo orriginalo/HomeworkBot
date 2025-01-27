@@ -1,4 +1,4 @@
-from utils.logger import logger
+from utils.log import logger
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
@@ -22,26 +22,26 @@ from copy import deepcopy
 
 # Основные клавиатуры
 start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="📚 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
+    [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
     [KeyboardButton(text="🗑️ Удалить Д/З"), KeyboardButton(text="Админ-панель ⚡")],
     [KeyboardButton(text="🔄 Сбросить дедлайн 🔄")]
 ], resize_keyboard=True, input_field_placeholder="Выберите действие")
 
 start_keyboard_adder = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="📚 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
+    [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
     [KeyboardButton(text="🗑️ Удалить Д/З"), KeyboardButton(text="Сбросить дедлайн 🔄")],
     [KeyboardButton(text="👥 Моя группа")]
 ], resize_keyboard=True, input_field_placeholder="Выберите действие")
 
 start_keyboard = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="📚 Посмотреть Д/З"), KeyboardButton(text="👥 Моя группа")]
+    [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="👥 Моя группа")]
 ], resize_keyboard=True, input_field_placeholder="Выберите действие")
 
 # Суперпользовательская клавиатура
 superuser_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="👑 Добавить админа", callback_data="add_admin"), InlineKeyboardButton(text="🗑️ Удалить админа", callback_data="remove_admin")],
+    [InlineKeyboardButton(text="👑 Добавить админа", callback_data="add_admin"), InlineKeyboardButton(text="🔻 Удалить админа", callback_data="remove_admin")],
     [InlineKeyboardButton(text="🌟 Добавить добавлятеля", callback_data="add_adder"), InlineKeyboardButton(text="🔻 Удалить добавлятеля", callback_data="remove_adder")],
-    [InlineKeyboardButton(text="📥 Добавить пользователя", callback_data="add_user"), InlineKeyboardButton(text="📤 Удалить пользователя", callback_data="remove_user")],
+    [InlineKeyboardButton(text="➕ Добавить пользователя", callback_data="add_user"), InlineKeyboardButton(text="📤 Удалить пользователя", callback_data="remove_user")],
     [InlineKeyboardButton(text="📜 Список избранных", callback_data="show_favs")],
     [InlineKeyboardButton(text="📢 Написать всем", callback_data="tell_all_users_call")],
     [InlineKeyboardButton(text="📊 Статистика сервера", callback_data="server_status")],
