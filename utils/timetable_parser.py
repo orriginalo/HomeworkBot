@@ -1,4 +1,4 @@
-from utils.logger import logger
+from utils.log import logger
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re

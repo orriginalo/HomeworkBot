@@ -1,7 +1,7 @@
 from app.database.db_setup import session
 from app.database.models import Schedule
 from sqlalchemy import select
-from utils.logger import logger
+from utils.log import logger
 import datetime
 
 async def add_subject(timestamp: int, subject: str, week_number: int, group_id: int):
@@ -16,9 +16,9 @@ async def add_subject(timestamp: int, subject: str, week_number: int, group_id: 
       s.add(schedule)
       await s.commit()
       return schedule
-    logger.info(f"Schedule with week={week_number} and subject={subject} added.")
+    logger.debug(f"Schedule with week={week_number} and subject={subject} added.")
   except Exception as e:
-    logger.error(f"Error adding schedule: {e}")
+    logger.exception(f"Error adding schedule: {e}")
 
 async def get_schedule_by_week(week_number: int):
   schedule_list = []
@@ -31,7 +31,7 @@ async def get_schedule_by_week(week_number: int):
         schedule_list.append(vars(sch))
       return schedule_list
   except Exception as e:
-    logger.error(f"Error getting schedule by week {week_number}: {e}")
+    logger.exception(f"Error getting schedule by week {week_number}: {e}")
     return None
   
 async def del_schedule_by_week(week_number: int, group_id: int = None):
@@ -48,11 +48,11 @@ async def del_schedule_by_week(week_number: int, group_id: int = None):
         for schedule in schedules:
           await s.delete(schedule)
         await s.commit()
-        logger.info(f"Schedules for week_number={week_number} deleted.")
+        logger.debug(f"Schedules for week_number={week_number} deleted.")
       else:
-        logger.info(f"Schedule with week_number={week_number} not found.")
+        logger.debug(f"Schedule with week_number={week_number} not found.")
   except Exception as e:
-    logger.error(f"Error deleting schedule {week_number}: {e}")
+    logger.exception(f"Error deleting schedule {week_number}: {e}")
     return None
 
 

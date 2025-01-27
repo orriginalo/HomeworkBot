@@ -1,7 +1,7 @@
 from app.database.db_setup import session
 from app.database.models import Groups
 from sqlalchemy import and_, select
-from utils.logger import logger
+from utils.log import logger
 
 async def add_group(name: str, course: int):
   try:
@@ -12,10 +12,10 @@ async def add_group(name: str, course: int):
       )
       s.add(group)
       await s.commit()
-      logger.info(f"Group {name} successfully added!")
+      logger.debug(f"Group {name} successfully added!")
       return group
   except Exception as e:
-    logger.error(f"Error adding group: {e}")
+    logger.exception(f"Error adding group: {e}")
     return None
 
 async def update_group(group_id: int, **kwargs):
@@ -28,13 +28,13 @@ async def update_group(group_id: int, **kwargs):
         for key, value in kwargs.items():
           setattr(group, key, value)
         await s.commit()
-        logger.info(f"Group {group_id} successfully updated!")
+        logger.debug(f"Group {group_id} successfully updated!")
         await s.refresh(group)
         return vars(group) if group else None
       else:
-        logger.info(f"Group with uid={group_id} not found.")
+        logger.debug(f"Group with uid={group_id} not found.")
   except Exception as e:
-    logger.error(f"Error updating group {group_id}: {e}")
+    logger.exception(f"Error updating group {group_id}: {e}")
     return None
 
 async def del_group(group_id: int):
@@ -46,9 +46,9 @@ async def del_group(group_id: int):
         s.delete(group)
         await s.commit()
       else:
-        logger.info(f"Group with uid={group_id} not found.")
+        logger.debug(f"Group with uid={group_id} not found.")
   except Exception as e:
-    logger.error(f"Error deleting group {group_id}: {e}")
+    logger.exception(f"Error deleting group {group_id}: {e}")
     return None
 
 async def get_group_by_id(group_id: int):
@@ -59,7 +59,7 @@ async def get_group_by_id(group_id: int):
       result = result.scalar_one_or_none()
       return vars(result) if result else None
   except Exception as e:
-    logger.error(f"Error getting group by ID {group_id}: {e}")
+    logger.exception(f"Error getting group by ID {group_id}: {e}")
     return None
   
 async def get_group_by_name(group_name: str):
@@ -70,7 +70,7 @@ async def get_group_by_name(group_name: str):
       group = result.scalar_one_or_none()
       return vars(group)
   except Exception as e:
-    logger.error(f"Error getting group by name {group_name}: {e}")
+    logger.exception(f"Error getting group by name {group_name}: {e}")
     return None
   
 
@@ -86,7 +86,7 @@ async def get_all_groups(*filters):
       groups = [vars(group) for group in groups]
       return groups
   except Exception as e:
-    logger.error(f"Error getting all groups: {e}")
+    logger.exception(f"Error getting all groups: {e}")
     return None
   
 async def get_group_by_ref(ref: str):
@@ -98,5 +98,5 @@ async def get_group_by_ref(ref: str):
       print(f"ref: {ref}, group: {group}")
       return vars(group) if group else None
   except Exception as e:
-    logger.error(f"Error getting group by ref: {e}")
+    logger.exception(f"Error getting group by ref: {e}")
     return None

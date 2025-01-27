@@ -2,7 +2,7 @@ from app.database.models import Groups, Homework
 from app.database.requests.groups import update_group, get_group_by_name
 from app.database.requests.homework import get_homeworks
 from app.browser_driver import driver
-from utils.logger import logger
+from utils.log import logger
 from utils.timetable_downloader import download_timetable
 from utils.timetable_parser import parse_timetable
 from utils.db_subject_populator import populate_schedule

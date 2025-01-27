@@ -1,9 +1,16 @@
 # log.py
 import logging
-import os
 import datetime
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 def setup_logger():
+  
+  log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"))
+  
   """
   Настраивает логгер, который пишет в файл и выводит сообщения в консоль.
   """
@@ -16,13 +23,13 @@ def setup_logger():
 
   # Создаём главный логгер
   logger = logging.getLogger("DomashkaBot")
-  logger.setLevel(logging.INFO)
+  logger.setLevel(log_level)
 
   # Проверяем, чтобы обработчики не дублировались
   if not logger.hasHandlers():
     # Настраиваем обработчик для записи в файл
     file_handler = logging.FileHandler(log_filename, encoding="utf-8")
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(log_level)
     file_handler.setFormatter(logging.Formatter(
       "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
       datefmt="%d.%m.%Y %H:%M:%S"
@@ -30,7 +37,7 @@ def setup_logger():
 
     # Настраиваем обработчик для вывода в консоль
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(logging.Formatter(
       "[%(levelname)s] %(message)s"
     ))

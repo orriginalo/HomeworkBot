@@ -1,4 +1,4 @@
-from utils.logger import logger
+from utils.log import logger
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -53,25 +53,30 @@ class Driver:
           login_field = self._wait.until(
               EC.presence_of_element_located((By.NAME, "login"))
           )
+          logger.debug(f"Login field found")
           password_field = self.driver.find_element(By.NAME, "password")
+          logger.debug(f"Password field found")
 
           login_field.send_keys(login)
           password_field.send_keys(password)
           password_field.send_keys(Keys.RETURN)
+          logger.debug(f"Form with password and login sent")
 
           # Проверяем успешную авторизацию
           self._wait.until(
               lambda d: d.current_url != "https://lk.ulstu.ru/?q=auth/login"
           )
+          logger.debug("Driver redirected",)
 
           # Дополнительная проверка элемента
           self._wait.until(
               EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div"))
           )
+          logger.debug("Profile element will find")
           return True
 
       except Exception as e:
-          logger.error(f"Driver authentication failed: {str(e)}")
+          logger.exception(f"Driver authentication failed: {str(e)}")
           return False
       finally:
           time.sleep(1)

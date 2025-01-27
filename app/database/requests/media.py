@@ -1,7 +1,7 @@
 from app.database.db_setup import session
 from app.database.models import Media
 from sqlalchemy import select
-from utils.logger import logger
+from utils.log import logger
 
 async def add_media(homework_id: int, media_id: str, media_type: str):
   try:
@@ -15,7 +15,7 @@ async def add_media(homework_id: int, media_id: str, media_type: str):
       await s.commit()
       return media
   except Exception as e:
-    logger.error(f"Error adding media: {e}")
+    logger.exception(f"Error adding media: {e}")
     return None
   
 async def del_media(media_id: int):
@@ -28,9 +28,9 @@ async def del_media(media_id: int):
         await s.delete(media)
         await s.commit()
       else:
-        logger.info(f"Media with uid={media_id} not found.")
+        logger.debug(f"Media with uid={media_id} not found.")
   except Exception as e:
-    logger.error(f"Error deleting media {media_id}: {e}")
+    logger.exception(f"Error deleting media {media_id}: {e}")
     return None
 
 async def get_media_by_id(media_id: int):
@@ -45,5 +45,5 @@ async def get_media_by_id(media_id: int):
       
       return media_list if len(media_list) > 0 else None
   except Exception as e:
-    logger.error(f"Error getting media by ID {media_id}: {e}")
+    logger.exception(f"Error getting media by ID {media_id}: {e}")
     return None

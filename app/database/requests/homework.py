@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy import and_, func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
-from utils.logger import logger
+from utils.log import logger
 import datetime
 
 async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None, **kwargs):
@@ -28,7 +28,7 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
       return vars(homework)
 
   except Exception as e:
-    logger.error(f"Error adding homework: {e}")
+    logger.exception(f"Error adding homework: {e}")
 
   
 async def del_homework(homework_id: int):
@@ -46,9 +46,9 @@ async def del_homework(homework_id: int):
         await s.delete(homework)
         await s.commit()
       else:
-        logger.info(f"Homework with uid={homework_id} not found.")
+        logger.debug(f"Homework with uid={homework_id} not found.")
   except Exception as e:
-    logger.error(f"Error deleting homework {homework_id}: {e}")
+    logger.exception(f"Error deleting homework {homework_id}: {e}")
 
 async def get_homeworks(*filters):
   async with session() as s:
@@ -68,7 +68,7 @@ async def get_homework_by_id(homework_id: int):
       homework = result.scalar_one_or_none()
       return vars(homework)
   except Exception as e:
-    logger.error(f"Error getting homework by ID {homework_id}: {e}")
+    logger.exception(f"Error getting homework by ID {homework_id}: {e}")
     return None
   
 async def get_homeworks_by_date(to_date_ts: int, group_id: int = None):
@@ -89,7 +89,7 @@ async def get_homeworks_by_date(to_date_ts: int, group_id: int = None):
         hw_list.append(vars(hw))
       return hw_list
   except Exception as e:
-    logger.error(f"Error getting homework by date {to_date_ts}: {e}")
+    logger.exception(f"Error getting homework by date {to_date_ts}: {e}")
     return None
 
 async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False, group_id: int = None) -> List[dict] | None:
@@ -114,7 +114,7 @@ async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] 
       return hw_list
 
   except Exception as e:
-    logger.error(f"Error getting homework by subject {subject}: {e}")
+    logger.exception(f"Error getting homework by subject {subject}: {e}")
     return None
 
   
@@ -130,7 +130,7 @@ async def update_homework(homework_id: int, **kwargs):
       await s.commit()
       return homework
   except Exception as e:
-    logger.error(f"Error updating homework {homework_id}: {e}")
+    logger.exception(f"Error updating homework {homework_id}: {e}")
     return None
 
 async def update_homework_dates():
@@ -151,7 +151,7 @@ async def update_homework_dates():
           h.to_date = next_class_date.timestamp
       await s.commit()
   except Exception as e:
-    logger.error(f"Error updating homework dates: {e}")
+    logger.exception(f"Error updating homework dates: {e}")
 
 async def reset_homework_deadline_by_id(homework_id: int):
   try:
@@ -166,4 +166,4 @@ async def reset_homework_deadline_by_id(homework_id: int):
           homework.to_date = next_class_date.timestamp
           await s.commit()
   except Exception as e:
-    logger.error(f"Error resetting homework deadline by ID {homework_id}: {e}")
+    logger.exception(f"Error resetting homework deadline by ID {homework_id}: {e}")

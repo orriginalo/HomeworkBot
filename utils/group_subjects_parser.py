@@ -1,4 +1,4 @@
-from utils.logger import logger
+from utils.log import logger
 import json
 from utils.timetable_parser import process_subject_name
 from variables import prefixes_map, subjects_map
