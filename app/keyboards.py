@@ -130,7 +130,7 @@ donate_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
     [InlineKeyboardButton(text="Поддержать", pay=True)],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="donate_cancel")]
-]
+  ]
 )
 
 create_group_keyboard = InlineKeyboardMarkup(

@@ -39,6 +39,7 @@ async def create_backups():
 
 async def update_timetable_job():
   groups = await get_all_groups(Groups.is_equipped == True)
+  logger.info(f"Updating timetables for groups: {[group['name'] for group in groups]}...")
   download_timetable(driver, [group["name"] for group in groups])
   for group in groups:
     group_name = group["name"]
@@ -46,16 +47,12 @@ async def update_timetable_job():
     necessary_subjects = await get_homeworks(Homework.group_id == group["uid"])
     necessary_subjects = [homework["subject"] for homework in necessary_subjects]
     necessary_subjects = set(necessary_subjects)
-    print(necessary_subjects)
     group_subjects = get_group_unique_subjects(group_name, "./data/timetables/timetables.json")
-    print(group_subjects)
     for subject in group_subjects:
-      print(subject, end=" ")
       if subject not in necessary_subjects:
-        print("| Added")
         necessary_subjects.add(subject)
       else:
-        print("| Already added")
+        pass
   
     necessary_subjects = list(necessary_subjects)
     necessary_subjects.sort()
