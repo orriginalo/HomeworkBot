@@ -586,7 +586,7 @@ async def get_server_status_handler(call : CallbackQuery):
 @dp.callback_query(F.data == "add_user")
 async def add_user_handler(call: CallbackQuery, state: FSMContext):
   await state.set_state(adding_user.user_id)
-  await call.message.answer("Перешлите сообщение или введите id добавлятеля для добавления:", reply_markup=types.ReplyKeyboardRemove())
+  await call.message.answer("Перешлите сообщение или введите id пользователя для добавления:", reply_markup=kb.back_keyboard)
 
 @dp.message(adding_user.user_id)
 async def add_user_id(message: Message, state: FSMContext):
@@ -611,7 +611,7 @@ async def add_user_id(message: Message, state: FSMContext):
 @dp.callback_query(F.data == "remove_user")
 async def remove_user_id(call: CallbackQuery, state: FSMContext):
   await state.set_state(removing_user.user_id)
-  await call.message.answer("Перешлите сообщение или введите id добавлятеля для удаления:", reply_markup=types.ReplyKeyboardRemove())
+  await call.message.answer("Перешлите сообщение или введите id добавлятеля для удаления:", reply_markup=kb.back_keyboard)
 
 
 @dp.message(removing_user.user_id)
@@ -919,49 +919,56 @@ async def back_handler(message: Message, state: FSMContext):
 async def show_hw_by_date(message: Message, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
     user_role = user["role"]
+    inted_date_from_user: list = []
     try:
       inted_date_from_user = [int(num) for num in message.text.split(" ")]
-    except:
-      await message.answer("Попробуй еще раз.")
+    except ValueError as e:
+      await message.answer('❌ Введите числа в формате "номер_месяца число". Попробуй еще раз.')
+      return
+    
+    if len(inted_date_from_user) == 2:
+      date_time = datetime.strptime(f"{inted_date_from_user[1]}/{inted_date_from_user[0]}/2024, 00:00:00", "%d/%m/%Y, %H:%M:%S")
+      date_time_timestamp = datetime.timestamp(date_time)
+      tasks = await get_homeworks_by_date(date_time_timestamp, group_id=user["group_id"])
+      sent_message = await message.answer(f"⏳ Обновляю информацию...")
+      await update_homework_dates()
+      if tasks is None or len(tasks) == 0:
+        await sent_message.edit_text(
+          f"📭 <b>Заданий на этот день нет!</b>",
+          parse_mode="HTML",
+          reply_markup=await kb.get_start_keyboard(user)
+        )
+        await state.clear()
+      else:
+        await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
+        for homework in tasks:
+          subject = homework["subject"]
+          task = homework["task"]
+          task_id = homework["uid"]
+          if await get_media_by_id(task_id) is not None:
+            media_group_data = await get_media_by_id(task_id)
+            media_group = []
+            for media_data in media_group_data:
+              if media_data["media_type"] == "photo":
+                media_group.append(InputMediaPhoto(media=media_data["media_id"]))
+              elif media_data["media_type"] == "video":
+                media_group.append(InputMediaVideo(media=media_data["media_id"]))
+              elif media_data["media_type"] == "audio":
+                media_group.append(InputMediaAudio(media=media_data["media_id"]))
+              elif media_data["media_type"] == "document":
+                media_group.append(InputMediaDocument(media=media_data["media_id"]))
+            
+            media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
+            media_group[0].parse_mode = "html"
 
-    while len(inted_date_from_user) > 2:
-      await message.answer("Попробуй еще раз.")
-    date_time = datetime.strptime(f"{inted_date_from_user[1]}/{inted_date_from_user[0]}/2024, 00:00:00", "%d/%m/%Y, %H:%M:%S")
-    date_time_timestamp = datetime.timestamp(date_time)
-    tasks = await get_homeworks_by_date(date_time_timestamp, group_id=user["group_id"])
-    sent_message = await message.answer(f"⏳ Обновляю информацию...")
-    await update_homework_dates()
-    if tasks is None or len(tasks) == 0:
-      await sent_message.edit_text(
-        f"📭 <b>Заданий на этот день нет!</b>",
-        parse_mode="HTML"
-      )
+            await message.answer_media_group(media_group)
+          else:
+            await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
+        await state.clear()
     else:
-      await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
-      for homework in tasks:
-        subject = homework["subject"]
-        task = homework["task"]
-        task_id = homework["uid"]
-        if await get_media_by_id(task_id) is not None:
-          media_group_data = await get_media_by_id(task_id)
-          media_group = []
-          for media_data in media_group_data:
-            if media_data["media_type"] == "photo":
-              media_group.append(InputMediaPhoto(media=media_data["media_id"]))
-            elif media_data["media_type"] == "video":
-              media_group.append(InputMediaVideo(media=media_data["media_id"]))
-            elif media_data["media_type"] == "audio":
-              media_group.append(InputMediaAudio(media=media_data["media_id"]))
-            elif media_data["media_type"] == "document":
-              media_group.append(InputMediaDocument(media=media_data["media_id"]))
-          
-          media_group[0].caption = f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}"
-          media_group[0].parse_mode = "html"
-
-          await message.answer_media_group(media_group)
-        else:
-          await message.answer(f"<b>{subject}</b>" + (f' <span class="tg-spoiler">id {task_id}</span>' if user_role >= 2 else "") + f"\n\n{str(task)}", parse_mode="html")
-    await state.clear()
+      await message.answer("❌ Неправильный формат даты. Попробуй еще раз.")
+      return
+    
 
 @dp.message(F.text == 'Добавить Д/З ➕')
 async def add_hw_one(message: Message, state: FSMContext):
