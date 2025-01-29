@@ -37,6 +37,7 @@ async def check_paths():
       "data/logs",
       "data/screenshots",
       "data/timetables/html"
+      "data/changes"
     ]
     file_paths = [
       "data/timetables/timetables.json"
