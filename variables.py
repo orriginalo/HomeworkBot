@@ -30,6 +30,13 @@ postfixes = ["- 1 п/г", "- 2 п/г"]
 login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
 
+
+default_user_settings: dict = {
+  "send_timetable_new_week": False,
+  "send_timetable_updated": False,
+  "send_changes_updated": False,
+}
+
 def calculate_yesterday():
   """
   [0] - midnight datetime

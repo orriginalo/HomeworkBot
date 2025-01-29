@@ -85,7 +85,7 @@ class MsgLoggerMiddleware(BaseException):
     async def __call__(
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-        event: Message,
+        event: Message | CallbackQuery,
         data: Dict[str, Any]
     ) -> Any:
         
@@ -100,7 +100,6 @@ class MsgLoggerMiddleware(BaseException):
                 username=event.from_user.username,
                 firstname=event.from_user.first_name,
                 lastname=event.from_user.last_name,
-                notifications=False,
                 group_id=None,
                 is_leader=False
             )
@@ -111,7 +110,11 @@ class MsgLoggerMiddleware(BaseException):
         await update_user(event.from_user.id, username=event.from_user.username, firstname=event.from_user.first_name, lastname=event.from_user.last_name)
         
         data["user"] = user
-        msg = event.text
+        msg = ""
+        if hasattr(event, "data"):
+            msg = event.data
+        if hasattr(event, "text"):
+            msg = event.text
         user_name = f"{event.from_user.first_name if event.from_user.first_name else ''}{(" " + event.from_user.last_name) if event.from_user.last_name else ''}"
         try:
             if event.content_type == "text":

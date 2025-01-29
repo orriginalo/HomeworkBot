@@ -2,6 +2,7 @@ from sqlalchemy import select, and_
 from app.database.db_setup import session
 from app.database.models import User
 from utils.log import logger
+from variables import default_user_settings
 
 async def add_user(
     tg_id: int,
@@ -9,7 +10,7 @@ async def add_user(
     username: str = None,
     firstname: str = "",
     lastname: str = "",
-    notifications: bool = False,
+    settings: dict = default_user_settings,
     group_id: int = None,
     is_leader: bool = False
 ):
@@ -30,7 +31,7 @@ async def add_user(
                 username=username,
                 firstname=firstname,
                 lastname=lastname,
-                notifications=notifications,
+                settings=settings,
                 group_id=group_id,
                 is_leader=is_leader
             )
@@ -58,16 +59,6 @@ async def del_user(tg_id: int):
     logger.exception(f"Error deleting user {tg_id}: {e}")
     return None
 
-async def get_users_with_notifications():
-  users_list = []
-  async with session() as s:
-    stmt = select(User).where(User.notifications == True)
-    result = await s.execute(stmt)
-    users = result.scalars().all()
-    for user in users:
-      users_list.append(vars(user))
-    return users_list
-  
 async def get_user_by_id(tg_id: int):
   try:
     async with session() as s:

@@ -1,6 +1,6 @@
 from utils.log import logger
 import json
-from utils.timetable_parser import process_subject_name
+from utils.timetable.parser import process_subject_name
 from variables import prefixes_map, subjects_map
 
 def get_group_unique_subjects(group_name: str, from_json_path: str):

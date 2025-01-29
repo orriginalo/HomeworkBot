@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, String, text
+from sqlalchemy import ARRAY, BIGINT, JSON, TIMESTAMP, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.db_setup import Base
+from variables import default_user_settings
 
 intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
 created_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
@@ -16,7 +17,7 @@ class User(Base):
   username: Mapped[str | None]
   firstname: Mapped[str | None]
   lastname: Mapped[str | None]
-  notifications: Mapped[bool]
+  settings: Mapped[dict] = mapped_column(JSON, nullable=False, default=default_user_settings)
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
   moved_at: Mapped[datetime | None]

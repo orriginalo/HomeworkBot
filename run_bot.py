@@ -11,9 +11,10 @@ from app.database.models import User
 from app.database.core import create_tables
 from app.scheduler import start_scheduler
 from app.database.requests.user import get_users
+from app.database.requests.group import *
 
 from utils.log import logger
-from utils.timetable_downloader import download_timetable
+from utils.timetable.downloader import download_timetable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.browser_driver import driver
 
@@ -51,11 +52,15 @@ async def check_paths():
 
 async def send_new_timetable():
     logger.info("Sending new timetable")
-    download_timetable(driver=driver, make_screenshot=True)
 
     photo = FSInputFile("./data/screenshots/timetable.png")
-    users_with_notifications = await get_users(User.notifications == True)
-    users_with_notifications = [user.id for user in users_with_notifications]
+    users_with_notifications = await get_users(User.settings["send_timetable_new_week"] == True)
+    groups: set = set()
+    for user in users_with_notifications:
+      groups.add(await get_group_by_id(user['group_id']))
+
+    groups = list(groups)
+    download_timetable(driver=driver, groups=groups, make_screenshot=True)
     for user_id in users_with_notifications:
         await bot.send_photo(user_id, photo, caption="🔔 Новое расписание")
 
