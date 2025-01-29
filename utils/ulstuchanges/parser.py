@@ -4,11 +4,10 @@ import os
 
 # "%d.%m.%y"
 
-def check_downloaded_changes():
+def check_if_changes_to_tomorrow():
   path_to_files = "./data/changes"
   files = os.listdir(path_to_files)
   
-  # today_date = datetime.today().strftime("%d.%m.%y")
   tomorrow_date = (datetime.today() + timedelta(days=1)).strftime("%d.%m.%y")
   
   for file in files:
@@ -18,4 +17,4 @@ def check_downloaded_changes():
         return file
   return None
       
-print(check_downloaded_changes())
+print(check_if_changes_to_tomorrow())

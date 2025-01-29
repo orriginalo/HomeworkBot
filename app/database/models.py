@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import ARRAY, BIGINT, JSON, TIMESTAMP, String, text
+from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, String, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.db_setup import Base
 from variables import default_user_settings
@@ -17,7 +18,7 @@ class User(Base):
   username: Mapped[str | None]
   firstname: Mapped[str | None]
   lastname: Mapped[str | None]
-  settings: Mapped[dict] = mapped_column(JSON, nullable=False, default=default_user_settings)
+  settings: Mapped[dict] = mapped_column(JSONB, nullable=False, default=default_user_settings)
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
   moved_at: Mapped[datetime | None]
