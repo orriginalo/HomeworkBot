@@ -156,6 +156,12 @@ transfer_leadership_confirm_keyboard = InlineKeyboardMarkup(
   ]
 )
 
+do_check_changes_keyboard = InlineKeyboardMarkup(
+  inline_keyboard=[
+    [InlineKeyboardButton(text="Да", callback_data="yes-check_changes"), InlineKeyboardButton(text="Нет", callback_data="no-check_changes")]
+  ]
+)
+
 async def get_settings_keyboard(user: dict):
   
   def get_emoji_by_bool(var: bool):
@@ -174,15 +180,15 @@ async def get_settings_keyboard(user: dict):
   
   buttons = {
     "send_timetable_new_week": {
-      "text": f"{get_emoji_by_bool(send_timetable_new_week)} Уведомление о новой неделе с расписанием",
+      "text": f"{get_emoji_by_bool(send_timetable_new_week)} Расписание с новой недели",
       "callback": f"{get_callback_by_bool(send_timetable_new_week)}send_timetable_new_week{settings_postfix}"
     },
-    "send_timetable_updated": {
-      "text": f"{get_emoji_by_bool(send_timetable_updated)} Уведомление о обновлении расписания",
-      "callback": f"{get_callback_by_bool(send_timetable_updated)}send_timetable_updated{settings_postfix}"
-    },
+    # "send_timetable_updated": {
+    #   "text": f"{get_emoji_by_bool(send_timetable_updated)} Обновление в расписании",
+    #   "callback": f"{get_callback_by_bool(send_timetable_updated)}send_timetable_updated{settings_postfix}"
+    # },
     "send_changes_updated": {
-      "text": f"{get_emoji_by_bool(send_changes_updated)} Уведомление о новых изменениях",
+      "text": f"{get_emoji_by_bool(send_changes_updated)} Новые изменения",
       "callback": f"{get_callback_by_bool(send_changes_updated)}send_changes_updated{settings_postfix}"
     }
   }
@@ -192,6 +198,7 @@ async def get_settings_keyboard(user: dict):
   for key, value in buttons.items():
     kb.add(InlineKeyboardButton(text=value["text"], callback_data=value["callback"]))
   
+  kb.add(InlineKeyboardButton(text="◀️ Назад", callback_data="back"))
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_keyboard(subjects: list):

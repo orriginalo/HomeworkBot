@@ -1284,6 +1284,16 @@ async def settings_handler(call: CallbackQuery, state: FSMContext):
   updated_kb = await kb.get_settings_keyboard(user)
   await call.message.edit_reply_markup(reply_markup=updated_kb)
 
+@dp.callback_query(F.data.contains("check_changes"))
+async def check_changes_handler(call: CallbackQuery, state: FSMContext):
+  await call.message.delete()
+  answer = call.data.split("-")[0]
+  match answer:
+    case "yes":
+      await call.message.answer(f"📃 Изменения на {(var.calculate_tomorrow()[0]).strftime('%d.%m.%y')}.")
+    case "no":
+      pass
+
 @dp.callback_query(F.data == "tell_all_users_call")
 async def tell_all_users_handler(call: CallbackQuery, state: StatesGroup):
   await call.message.delete()

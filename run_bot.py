@@ -37,11 +37,11 @@ async def check_paths():
       "data/database",
       "data/logs",
       "data/screenshots",
-      "data/timetables/html"
+      "data/timetables/html",
       "data/changes"
     ]
     file_paths = [
-      "data/timetables/timetables.json"
+      "data/timetables/timetables.json",
       "data/timetables/all-timetables.json"
     ]
     for path in folder_paths:
@@ -50,19 +50,6 @@ async def check_paths():
         except Exception as e:
             logger.exception(f"Error creating {path}: {e}")
 
-async def send_new_timetable():
-    logger.info("Sending new timetable")
-
-    photo = FSInputFile("./data/screenshots/timetable.png")
-    users_with_notifications = await get_users(User.settings["send_timetable_new_week"] == True)
-    groups: set = set()
-    for user in users_with_notifications:
-      groups.add(await get_group_by_id(user['group_id']))
-
-    groups = list(groups)
-    download_timetable(driver=driver, groups=groups, make_screenshot=True)
-    for user_id in users_with_notifications:
-        await bot.send_photo(user_id, photo, caption="🔔 Новое расписание")
 
 async def main():
   await create_tables()
@@ -78,7 +65,7 @@ async def main():
   # notifications_scheduler.add_job(send_new_timetable, 'interval', seconds=30)
   # await send_new_timetable()
   notifications_scheduler.start()
-  await start_scheduler()
+  await start_scheduler(bot)
   logger.info("Schedulers started")
 
   driver.auth(login, password)
