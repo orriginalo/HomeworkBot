@@ -5,10 +5,11 @@ from app.database.requests.subjects import get_subject_by_id
 from app.database.requests.user import *
 from app.database.requests.other import *
 from app.database.requests.media import *
-from app.database.requests.groups import *
+from app.database.requests.group import *
 import variables as var
 import app.keyboards as kb
-from app.backuper import create_backups, update_timetable_job
+from utils.backuper import create_backups
+from utils.timetable.updater import update_timetable
 from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware, MsgLoggerMiddleware
 import os
 import sys
@@ -26,8 +27,8 @@ from app.excel_maker.formatter import format_table
 
 from utils.referal import generate_unique_code, get_referal_link
 from utils.db_subject_populator import populate_schedule
-from utils.timetable_downloader import download_timetable
-from utils.timetable_parser import parse_timetable
+from utils.timetable.downloader import download_timetable
+from utils.timetable.parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -87,6 +88,7 @@ dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
 dp.message.middleware(MsgLoggerMiddleware())
+dp.callback_query.middleware(MsgLoggerMiddleware())
 # dp.message.middleware(AntiFloodMiddleware(0.3))
 # dp.message.middleware(TestMiddleware())
 notifications_scheduler = AsyncIOScheduler()
@@ -314,7 +316,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
     user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True, moved_at=datetime.now())
 
-    await update_timetable_job()
+    await update_timetable(for_all=False, group_name=group["name"])
 
     await msg.edit_text(
         f"🎉 <b>Группа успешно создана!</b>\n\n"
@@ -1083,7 +1085,7 @@ async def add_hw_three(message: Message, state: FSMContext, album: list = None, 
 
 @dp.message(F.text == "🗑️ Удалить Д/З")
 async def remove_hw_by_id_handler(message: Message, state: FSMContext):
-  if (await get_user_by_id(message.from_user.id))["role"] >= 3:
+  if (await get_user_by_id(message.from_user.id))["role"] >= 2:
     await state.set_state(removing_homework.hw_id)
     await message.answer("Введите id задания:", reply_markup=kb.back_keyboard)
 
@@ -1140,12 +1142,11 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
     parse_mode="HTML"
   )
   await state.clear()
-
 @dp.callback_query(F.data == "update_timetable")
 async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
   msg = await call.message.answer("⏳ Обновление расписания...")
   try:
-    await update_timetable_job()
+    await update_timetable()
     await msg.edit_text("✅ Расписание обновлено.")
     await state.clear()
   except Exception as e: 
@@ -1232,16 +1233,17 @@ async def repair_bot(message: Message, command: CommandObject, state: FSMContext
 @dp.message(Command("settings"))
 async def show_settings(message: Message, command: CommandObject, state: FSMContext):
   await state.clear()
-  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard((await get_user_by_id(message.from_user.id))["notifications"]))
+  user = await get_user_by_id(message.from_user.id)
+  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard(user))
 
-@dp.callback_query(F.data == "enable_notifications")
-async def enable_notifications(call: CallbackQuery):
-    # Включаем рассылку
-    await update_user(call.from_user.id, notifications=True)
+# @dp.callback_query(F.data == "enable_notifications")
+# async def enable_notifications(call: CallbackQuery):
+#     # Включаем рассылку
+#     await update_user(call.from_user.id, notifications=True)
 
-    updated_keyboard = await kb.get_settings_keyboard(True)
-    await call.message.edit_reply_markup(reply_markup=updated_keyboard)
-    await call.message.answer("✅ Рассылка расписания включена.")
+#     updated_keyboard = await kb.get_settings_keyboard(True)
+#     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
+#     await call.message.answer("✅ Рассылка расписания включена.")
 
 @dp.callback_query(F.data == "disable_notifications")
 async def disable_notifications(call: CallbackQuery):
@@ -1251,7 +1253,36 @@ async def disable_notifications(call: CallbackQuery):
     updated_keyboard = await kb.get_settings_keyboard(False)
     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
     await call.message.answer("✅ Рассылка расписания отключена.")
+    
+# User settings: {"send_timetable_new_week": false, "send_timetable_updated": false, "send_changes_updated": false}
 
+@dp.callback_query(F.data.contains("setting"))
+async def settings_handler(call: CallbackQuery, state: FSMContext):
+  setting_name = call.data.replace("_setting", "").replace("disable_", "").replace("enable_", "")
+  setting_condition = False if call.data.split("_")[0] == "disable" else True
+  print(setting_name, setting_condition)
+  user = await get_user_by_id(call.from_user.id)
+  user_settings = user["settings"]
+  user_settings_copy = user_settings.copy()
+  match (setting_name):
+    case "send_timetable_new_week":
+      print("case 1")
+      user_settings_copy["send_timetable_new_week"] = not setting_condition
+      print(user)
+    case "send_timetable_updated":
+      print("case 2")
+      user_settings_copy["send_timetable_updated"] = not setting_condition
+      print(user)
+    case "send_changes_updated":
+      print("case 3")
+      user_settings_copy["send_changes_updated"] = not setting_condition
+      print(user)
+    case _:
+      print("case default")
+  
+  user = await update_user(call.from_user.id, settings=user_settings_copy)
+  updated_kb = await kb.get_settings_keyboard(user)
+  await call.message.edit_reply_markup(reply_markup=updated_kb)
 
 @dp.callback_query(F.data == "tell_all_users_call")
 async def tell_all_users_handler(call: CallbackQuery, state: StatesGroup):

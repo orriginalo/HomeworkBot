@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 from app.database.requests.media import add_media
-from app.database.requests.user import add_user, get_user_by_id, update_user, get_users, get_users_with_notifications, get_users_with_role
+from app.database.requests.user import add_user, get_user_by_id, update_user, get_users, get_users_with_role
 from app.database.requests.homework import add_homework, get_homeworks_by_date, get_homework_by_id, del_homework, update_homework, get_homeworks_by_subject, reset_homework_deadline_by_id
 from app.database.requests.other import sync_sequences
 from app.database.requests.schedule import add_subject, get_schedule_by_week
@@ -11,7 +11,7 @@ from utils.all_subjects_parser import parse_all_subjects
 from variables import login, password
 from rich import print
 import sqlite3
-
+from variables import default_user_settings
 from utils.groups_parser import parse_groups_and_add_to_db
 
 
@@ -56,7 +56,14 @@ async def main():
   users = get_users_from_sqlite()
   print("Adding users...", end="")
   for user in users:
-     await add_user(user[0], user[1], user[2], user[4], user[5], user[3], group_id=313)
+     await add_user(
+       tg_id=user[0],
+       role=user[1],
+       username=user[2],
+       firstname=user[4],
+       lastname=user[5],
+       settings=default_user_settings,
+       group_id=313)
   print(" | Done.")
 
   homeworks = get_homeworks_from_sqlite()

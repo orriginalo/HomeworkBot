@@ -1,0 +1,58 @@
+from utils.db_subject_populator import populate_schedule
+from utils.group_subjects_parser import get_group_unique_subjects
+from utils.log import logger
+
+from app.database.models import Groups, Homework
+from app.database.requests.homework import get_homeworks
+from app.database.requests.group import get_all_groups, get_group_by_name, update_group
+
+from utils.timetable.downloader import download_timetable
+from utils.timetable.parser import parse_timetable
+from app.browser_driver import driver
+
+
+async def update_timetable(for_all: bool = True, group_name: str = None):
+    groups: list | None = None
+    if for_all:
+        groups = await get_all_groups(Groups.is_equipped == True)
+        logger.info(
+            f"Updating timetables for groups: {[group['name'] for group in groups]}..."
+        )
+        download_timetable(driver, [group["name"] for group in groups])
+    else:
+        groups = [await get_group_by_name(group_name)]
+        logger.info(f"Updating timetable for one group: {group_name}...")
+        download_timetable(driver, [group_name])
+
+    if groups:
+        for group in groups:
+            group_name = group["name"]
+            parse_timetable(
+                f"./data/timetables/html/{group_name.lower()}-timetable.html",
+                "./data/timetables/timetables.json",
+                add_groupname_to_json=True,
+                group_name=group_name,
+            )
+            necessary_subjects = await get_homeworks(Homework.group_id == group["uid"])
+            necessary_subjects = [
+                homework["subject"] for homework in necessary_subjects
+            ]
+            necessary_subjects = set(necessary_subjects)
+            group_subjects = get_group_unique_subjects(
+                group_name, "./data/timetables/timetables.json"
+            )
+            for subject in group_subjects:
+                if subject not in necessary_subjects:
+                    necessary_subjects.add(subject)
+                else:
+                    pass
+
+            necessary_subjects = list(necessary_subjects)
+            necessary_subjects.sort()
+            await update_group(group["uid"], subjects=necessary_subjects)
+
+        await populate_schedule()
+    else:
+        logger.error(
+            f"Error updating timetable for groups: {[group['name'] for group in groups]}..."
+        )

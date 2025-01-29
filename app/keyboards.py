@@ -137,7 +137,7 @@ create_group_keyboard = InlineKeyboardMarkup(
   inline_keyboard=[
     [InlineKeyboardButton(text="Создать группу ➕", callback_data="create_group")],
     [InlineKeyboardButton(text="Отмена ❌", callback_data="back_to_start")]
-]
+  ]
 )
 
 
@@ -156,16 +156,42 @@ transfer_leadership_confirm_keyboard = InlineKeyboardMarkup(
   ]
 )
 
-async def get_settings_keyboard(notifications: bool):
+async def get_settings_keyboard(user: dict):
   
-  if notifications:
-    notifications_btn = InlineKeyboardButton(text="Выключить рассылку расписания", callback_data="disable_notifications")
-  else:
-    notifications_btn = InlineKeyboardButton(text="Включить рассылку расписания", callback_data="enable_notifications")
-
+  def get_emoji_by_bool(var: bool):
+    return "✅" if var == True else "❌"
+  
+  def get_callback_by_bool(var: bool):
+    return "enable_" if var == True else "disable_"
+  
+  user_settings = user["settings"]
+  
+  send_timetable_new_week = user_settings["send_timetable_new_week"]
+  send_timetable_updated = user_settings["send_timetable_updated"]
+  send_changes_updated = user_settings["send_changes_updated"]
+  
+  settings_postfix = "_setting"
+  
+  buttons = {
+    "send_timetable_new_week": {
+      "text": f"{get_emoji_by_bool(send_timetable_new_week)} Уведомление о новой неделе с расписанием",
+      "callback": f"{get_callback_by_bool(send_timetable_new_week)}send_timetable_new_week{settings_postfix}"
+    },
+    "send_timetable_updated": {
+      "text": f"{get_emoji_by_bool(send_timetable_updated)} Уведомление о обновлении расписания",
+      "callback": f"{get_callback_by_bool(send_timetable_updated)}send_timetable_updated{settings_postfix}"
+    },
+    "send_changes_updated": {
+      "text": f"{get_emoji_by_bool(send_changes_updated)} Уведомление о новых изменениях",
+      "callback": f"{get_callback_by_bool(send_changes_updated)}send_changes_updated{settings_postfix}"
+    }
+  }
+  
   kb = InlineKeyboardBuilder()
-  kb.add(notifications_btn)
-  kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
+  
+  for key, value in buttons.items():
+    kb.add(InlineKeyboardButton(text=value["text"], callback_data=value["callback"]))
+  
   return kb.adjust(1).as_markup()
 
 async def allowed_subjects_keyboard(subjects: list):

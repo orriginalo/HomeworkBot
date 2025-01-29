@@ -1,7 +1,7 @@
 import re
 
 from bs4 import BeautifulSoup
-from app.database.requests.groups import add_group
+from app.database.requests.group import add_group
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

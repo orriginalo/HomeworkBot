@@ -104,9 +104,12 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
         """Очистка текста от лишних символов."""
         return " ".join(text.split()).strip()
 
-    with open(html_file, "r", encoding="utf-8") as file:
-        soup = BeautifulSoup(file, "html.parser")
-
+    try:
+        with open(html_file, "r", encoding="utf-8") as file:
+            soup = BeautifulSoup(file, "html.parser")
+    except:
+        logger.exception(f"Error parsing {html_file}")
+        return {}
     # Ищем все недели
     week_sections = soup.find_all("div", class_="week-num")
     
@@ -174,6 +177,6 @@ def parse_timetable(html_file: str, json_file: str = None, add_groupname_to_json
     if json_file is not None:
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(timetable, file, ensure_ascii=False, indent=4)
-        logger.info(f"Timetable saved to {json_file}")
+        logger.info(f"Timetable {group_name} saved to {json_file}")
 
     return timetable

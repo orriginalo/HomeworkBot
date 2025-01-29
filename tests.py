@@ -1,6 +1,6 @@
 import asyncio
 from datetime import timezone, datetime
-from app.database.requests.groups import *
+from app.database.requests.group import *
 from app.database.requests.media import *
 from app.database.requests.user import *
 from app.database.requests.homework import *
