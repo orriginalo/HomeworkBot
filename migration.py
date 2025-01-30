@@ -63,7 +63,9 @@ async def main():
        firstname=user[4],
        lastname=user[5],
        settings=default_user_settings,
-       group_id=313)
+       group_id=313,
+       group_name="пдо-16"
+       )
   print(" | Done.")
 
   homeworks = get_homeworks_from_sqlite()

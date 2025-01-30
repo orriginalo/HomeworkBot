@@ -23,6 +23,7 @@ class User(Base):
   updated_at: Mapped[updated_at]
   moved_at: Mapped[datetime | None]
   group_id: Mapped[int | None]
+  group_name: Mapped[str | None]
   is_leader: Mapped[bool]
 
 class Homework(Base):
