@@ -37,7 +37,8 @@ def pdf_to_png(pdf_path: str, output_folder: str, date: str):
     print(f"{output_folder=}")
     print(f"{date=}")
     # Конвертируем PDF в список изображений (по одной картинке на страницу)
-    images = convert_from_path(pdf_path, dpi=300, poppler_path="C:\\poppler\\poppler-24.08.0\\Library\\bin")
+    images = convert_from_path(pdf_path, dpi=300)
+    # images = convert_from_path(pdf_path, dpi=300, poppler_path="C:\\poppler\\poppler-24.08.0\\Library\\bin")
 
     # Сохраняем каждую страницу как PNG
     for i, img in enumerate(images):
