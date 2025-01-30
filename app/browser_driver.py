@@ -7,6 +7,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Driver:
     def __init__(self, headless=True, remote=False):
@@ -23,7 +27,7 @@ class Driver:
         if headless:
           browser_options.add_argument("--headless")
         browser_options.add_argument("--disable-gpu")
-        browser_options.add_argument("--window-size=1920,1600")
+        browser_options.add_argument("--window-size=1920,1080")
         browser_options.add_argument("--no-sandbox")
         browser_options.add_argument("--disable-dev-shm-usage")
 
@@ -66,17 +70,19 @@ class Driver:
           self._wait.until(
               lambda d: d.current_url != "https://lk.ulstu.ru/?q=auth/login"
           )
-          logger.debug("Driver redirected",)
+          logger.debug("Driver redirected")
 
           # Дополнительная проверка элемента
           self._wait.until(
               EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div"))
           )
           logger.debug("Profile element will find")
+          self.authed = True
           return True
 
       except Exception as e:
           logger.exception(f"Driver authentication failed: {str(e)}")
+          self.authed = False
           return False
       finally:
           time.sleep(1)

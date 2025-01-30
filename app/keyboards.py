@@ -30,11 +30,12 @@ start_keyboard_admin = ReplyKeyboardMarkup(keyboard=[
 start_keyboard_adder = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="Добавить Д/З ➕")],
     [KeyboardButton(text="🗑️ Удалить Д/З"), KeyboardButton(text="Сбросить дедлайн 🔄")],
-    [KeyboardButton(text="👥 Моя группа")]
+    # [KeyboardButton(text="👥 Моя группа")]
 ], resize_keyboard=True, input_field_placeholder="Выберите действие")
 
 start_keyboard = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="👀 Посмотреть Д/З"), KeyboardButton(text="👥 Моя группа")]
+    [KeyboardButton(text="👀 Посмотреть Д/З")]
+    # , KeyboardButton(text="👥 Моя группа")]
 ], resize_keyboard=True, input_field_placeholder="Выберите действие")
 
 # Суперпользовательская клавиатура
@@ -187,10 +188,10 @@ async def get_settings_keyboard(user: dict):
     #   "text": f"{get_emoji_by_bool(send_timetable_updated)} Обновление в расписании",
     #   "callback": f"{get_callback_by_bool(send_timetable_updated)}send_timetable_updated{settings_postfix}"
     # },
-    "send_changes_updated": {
-      "text": f"{get_emoji_by_bool(send_changes_updated)} Новые изменения",
-      "callback": f"{get_callback_by_bool(send_changes_updated)}send_changes_updated{settings_postfix}"
-    }
+    # "send_changes_updated": {
+    #   "text": f"{get_emoji_by_bool(send_changes_updated)} Новые изменения",
+    #   "callback": f"{get_callback_by_bool(send_changes_updated)}send_changes_updated{settings_postfix}"
+    # }
   }
   
   kb = InlineKeyboardBuilder()

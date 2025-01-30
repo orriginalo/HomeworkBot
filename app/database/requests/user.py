@@ -12,6 +12,7 @@ async def add_user(
     lastname: str = "",
     settings: dict = default_user_settings,
     group_id: int = None,
+    group_name: str = None,
     is_leader: bool = False
 ):
     try:
@@ -33,6 +34,7 @@ async def add_user(
                 lastname=lastname,
                 settings=settings,
                 group_id=group_id,
+                group_name=group_name,
                 is_leader=is_leader
             )
             s.add(user)

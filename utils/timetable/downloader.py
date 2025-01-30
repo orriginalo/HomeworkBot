@@ -15,92 +15,69 @@ login = os.getenv("LOGIN")
 password = os.getenv("PASSWORD")
 
 
-def download_timetable(driver, groups: list[str], make_screenshot: bool = False):  # new
+from selenium.common.exceptions import TimeoutException
+
+def download_timetable(driver, groups: list[str], make_screenshot: bool = False):
     logger.debug(f"Started downloading timetable for groups: {groups}...")
     try:
         for group in groups:
-            # Открываем страницу с расписанием
-            print(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
             driver.get(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
-
-            # Ждём загрузки страницы с расписанием
-
-            crop_box = (370, 50, 1530, 800)
-
+            parent_container = None
             try:
-                parent_container = WebDriverWait(driver, 2).until(
-                    EC.visibility_of_all_elements_located(
+                # Wait for the parent container to be visible
+                parent_container = WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located(
                         (By.XPATH, "/html/body/div/div/div/div[2]/div/div[3]")
                     )
                 )
-            except:
-                pass
+            except TimeoutException:
+                logger.error(f"Parent container not found for group {group} within 10 seconds.")
+                continue  # Skip to next group if element not found
 
             page_html = driver.page_source
-            # Убираем ненужные элементы с помощью JavaScript для того чтобы скриншот вмещал в себя все нужное
+
             if make_screenshot:
-                driver.execute_script(
-                    """
-                    // Удаляем Header
-                    const header = document.querySelector('nav.navbar');
-                    if (header) header.remove();
+                if not parent_container:
+                    logger.error(f"Cannot take screenshot for {group}: parent container missing.")
+                    continue
 
-                    const layoutSelector = document.querySelector('.layout-panel');
-                    if (layoutSelector) layoutSelector.remove();
-
-                    // Удаляем поле для ввода группы
-                    const inputGroup = document.querySelector('.input-group');
-                    if (inputGroup) inputGroup.remove();
-
-                    // Удаляем надпись текущей недели
-                    const currentWeek = document.querySelector('.week');
-                    if (currentWeek) currentWeek.remove();
-
-                    // Удаляем первое расписание, если их два
+                # Remove unwanted elements
+                driver.execute_script("""
+                    document.querySelector('nav.navbar')?.remove();
+                    document.querySelector('.layout-panel')?.remove();
+                    document.querySelector('.input-group')?.remove();
+                    document.querySelector('.week')?.remove();
                     const weekNums = document.querySelectorAll('.week-num');
-                    if (weekNums.length > 1) {
-                        weekNums[0].parentElement.remove();
-                    }
-                """
-                )
+                    if (weekNums.length > 1) weekNums[0].parentElement.remove();
+                """)
 
-                rect: dict = parent_container.rect
-
-                driver.execute_script(
-                    "arguments[0].scrollIntoView();", parent_container
-                )
-
+                # Scroll to the container and take screenshot
+                driver.execute_script("arguments[0].scrollIntoView(true);", parent_container)
+                driver.execute_script("window.scrollBy(0, 50);")
                 screenshot_path = f"./data/screenshots/{group.lower()}.png"
                 driver.save_screenshot(screenshot_path)
-                print(f"Скриншот сохранён: {screenshot_path}")
 
+                # Define crop area with margins
                 margin = 35
-
+                rect = parent_container.rect
                 crop_box = (
-                    max(0, int(rect["x"]) - margin),  # left с учётом отступа
-                    max(0, int(rect["y"]) - margin - 65),  # top с учётом отступа
-                    int(rect["x"] + rect["width"] + margin),  # right с учётом отступа
-                    int(
-                        rect["y"] + rect["height"] + margin - 40
-                    ),  # bottom с учётом отступа
+                    max(0, int(rect['x']) - margin),
+                    max(0, int(rect['y']) - margin),
+                    int(rect['x'] + rect['width'] + margin),
+                    int(rect['y'] + rect['height'] + margin)
                 )
-                print(f"Обрезка по координатам: {crop_box}")
-                print(crop_box)
+
+                # Crop and save the image
                 image = Image.open(screenshot_path)
                 cropped_image = image.crop(crop_box)
                 cropped_image.save(screenshot_path)
-                print(f"Обрезанный скриншот сохранён: {screenshot_path}")
+                logger.debug(f"Screenshot saved: {screenshot_path}")
 
-            # Сохраняем HTML в файл
-            with open(
-                f"./data/timetables/html/{group.lower()}-timetable.html",
-                "w",
-                encoding="utf-8",
-            ) as file:
+            # Save HTML
+            html_path = f"./data/timetables/html/{group.lower()}-timetable.html"
+            with open(html_path, "w", encoding="utf-8") as file:
                 file.write(page_html)
-            logger.debug(
-                f"Html saved to: {f'./data/timetables/html/{group.lower()}-timetable.html'}"
-            )
+            logger.debug(f"HTML saved: {html_path}")
 
     except Exception as e:
-        logger.exception(f"Error downloading timetable for group {group}: {str(e)}")
+        logger.exception(f"Error processing group {group}: {e}")

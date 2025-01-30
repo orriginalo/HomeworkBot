@@ -61,15 +61,11 @@ async def main():
   disp.include_router(dp)
   logger.info("Dispatcher included")
 
-  # notifications_scheduler.add_job(send_new_timetable, CronTrigger(day_of_week="sun", hour=16, minute=00)) 
-  # notifications_scheduler.add_job(send_new_timetable, 'interval', seconds=30)
-  # await send_new_timetable()
-  notifications_scheduler.start()
-  await start_scheduler(bot)
-  logger.info("Schedulers started")
-
   driver.auth(login, password)
   logger.info("Driver authenticated")
+
+  await start_scheduler(bot)
+  logger.info("Schedulers started")
 
   logger.info("Bot started")
   await disp.start_polling(bot)

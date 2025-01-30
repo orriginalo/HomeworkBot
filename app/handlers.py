@@ -1,4 +1,5 @@
 from datetime import timedelta, timezone
+import re
 import aiogram.exceptions
 from app.database.requests.homework import *
 from app.database.requests.subjects import get_subject_by_id
@@ -84,6 +85,9 @@ class setting_group(StatesGroup):
 class transferring_leadership(StatesGroup):
   user_id = State()
 
+class joiningToGroup(StatesGroup):
+  group_name = State()
+
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
@@ -110,7 +114,8 @@ async def start(message: Message, state: FSMContext, user):
     args = message.text.split()
     if len(args) > 1 and args[0] == "/start":
       ref_code = args[1]
-      ref_code = ref_code[4:]
+      match = re.search(r'invite_([a-zA-Z0-9]+)_', ref_code)
+      ref_code = match.group(1) if match else ""
       group = await get_group_by_ref(ref_code)
 
       if group:
@@ -123,12 +128,15 @@ async def start(message: Message, state: FSMContext, user):
             else:
               if check_time_moved(user):
                 await message.answer(f"Вы хотите присоединиться к другой группе (<b>{group['name']}</b>)?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
+                await state.set_state(joiningToGroup.group_name)
+                await state.update_data(group_name=group['name'])
               else:
                 await message.answer(f"Вы временно не можете изменять группу\n<i>Ограничение на 48 часов</i>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
         else:
           await message.answer(f"Вы хотите присоединиться к группе <b>{group['name']}</b>?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
-          
           await state.clear()
+          await state.set_state(joiningToGroup.group_name)
+          await state.update_data(group_name=group['name'])
       else:
         await message.answer("Недействительная ссылка на вступление в группу.")
 
@@ -146,7 +154,6 @@ async def start(message: Message, state: FSMContext, user):
 
 @dp.message(Command("about"))
 async def show_info(message: Message):
-  print("About handled")
   about_text = """
 <b>📚 О боте и ролях:</b>
 
@@ -160,72 +167,36 @@ async def show_info(message: Message):
    - Может менять группу. 
 
 2. <b>➕ Добавлятель</b>:
-   - Может просматривать, добавлять и удалять домашние задания.
-   - Может сбрасывать дедлайны заданий.
+   - Может просматривать, добавлять, удалять и сбрасывать дедлайны домашних заданий.
    - Может менять группу.
 
 3. <b>👑 Лидер группы</b>:
-   - Может просматривать, добавлять и удалять домашние задания.
-   - Может сбрасывать дедлайны заданий.
+   - Может просматривать, добавлять, удалять и сбрасывать дедлайны домашних заданий.
    - Может управлять добавлятелями в своей группе.
    - Не может перейти в другую группу пока не передаст права лидера.
 
 <b>🔧 Основные функции:</b>
 
-- <b>📅 Просмотр домашних заданий</b> на сегодня, завтра и послезавтра (в связке с расписанием вашей группы).
+- <b>📅 Просмотр домашних заданий</b> на сегодня, завтра и послезавтра <b>в связке с расписанием вашей группы</b>.
 - <b>➕ Добавление заданий</b> с возможностью прикрепления медиафайлов.
-- <b>❌ Удаление заданий</b>.
 - <b>🔄 Сброс дедлайнов</b> для заданий (перенос Д/З на следующую пару).
 - <b>👑 Управление группой</b> (создание, присоединение, передача прав лидера).
 
 <b>📌 Важно:</b>
 - <i>Лидер группы</i> может передавать свои права другому пользователю.
-- Если вы не увидели <b>всех</b> предметов - ждите: расписание обновляется со временем и этот список зависит от расписания на сайте
+- Если вы не увидели <b>всех</b> предметов из расписания - ждите: расписание обновляется со временем и этот список зависит от расписания на сайте
 - Если вы добавили Д/З, но позже на сайте этого предмета не оказалось - предмет останется в списке.
-
-<b>📜 Для получения дополнительной информации</b> используйте команду /help.
 """
 
   await message.answer(about_text, parse_mode="HTML")
 
-@dp.message(Command("help"))
-async def show_help(message: Message, command: CommandObject, state: FSMContext):
-  await state.clear()
-  
-  help_text = """
-<b>🆘 Список доступных команд:</b>
-
-▫️ <b>/start</b> - Начало работы с ботом
-▫️ <b>/help</b> - Получить справку по командам
-▫️ <b>/about</b> - Информация о ролях и возможностях
-▫️ <b>/settings</b> - Настройки
-
-<b>📌 Основные функции:</b>
-• Добавление ДЗ ➕ - Создать новое задание
-• Просмотр ДЗ 👀 - Посмотреть задания
-• Управление группой 👑 - Настройки вашей учебной группы
-"""
-
-# <b>🎥 Визуальная инструкция:</b>
-# Посмотрите <a href="https://example.com/guide">гиф-инструкции</a> с примерами использования:
-# 👉 Как добавить задание
-# 👉 Как работать с расписанием
-# 👉 Как управлять группой
-
-# <b>❓ Возникли проблемы?</b>
-# Пишите @ваш_логин_поддержки
-
-  await message.answer(help_text, 
-    parse_mode="HTML", 
-    disable_web_page_preview=True)
-
-
 @dp.callback_query(F.data == "join_group")
-async def join_group_handler(call: CallbackQuery):
+async def join_group_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
-  await update_user(user["tg_id"], moved_at=datetime.now(), group_id=group["uid"])
   user = await get_user_by_id(call.from_user.id)
-  group = await get_group_by_id(user["group_id"])
+  group_name = (await state.get_data())["group_name"]
+  group = await get_group_by_name(group_name)
+  user = await update_user(user["tg_id"], moved_at=datetime.now(), group_id=group["uid"], group_name=group["name"])
   await call.message.answer(f"🎉 Вы присоединились к группе <b>{group['name']}</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 @dp.callback_query(F.data == "transfer_leadership")
@@ -310,11 +281,14 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
   group = await get_group_by_name(data["group_name"])
   try:
 
-    referal_code = await generate_unique_code()
-    referal_link = await get_referal_link(referal_code)
+    referal_code = None
+    while(referal_code == None):
+      referal_code = await generate_unique_code()
+    
+    referal_link = await get_referal_link(referal_code, group_name=group["name"])
     
     await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
-    user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], is_leader=True, moved_at=datetime.now())
+    user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], group_name=group["name"], is_leader=True, moved_at=datetime.now())
 
     await update_timetable(for_all=False, group_name=group["name"])
 
@@ -331,7 +305,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(f"🔗 <b>Пригласительная ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   except Exception as e:
     await update_group(group["uid"], ref_code=None, is_equipped=False, member_count=0 , leader_id=None)
-    await update_user(start_user["tg_id"], role=start_user["role"], group_id=None, is_leader=False, moved_at=None)
+    await update_user(start_user["tg_id"], role=start_user["role"], group_id=None, group_name=None, is_leader=False, moved_at=None)
     await msg.edit_text(f"❌ Ошибка создания группы. Попробуйте еще раз (/start).")
     logger.exception(f"Error creating group: {e}")
 
@@ -734,9 +708,7 @@ async def checK_hw_by_date_handler(call: CallbackQuery, state: FSMContext):
 async def check_hw_by_subject_handler(message: Message):
   user = await get_user_by_id(message.from_user.id)
   group = await get_group_by_id(user["group_id"])
-  print(group)
   subjects = group["subjects"]
-  print(subjects) 
   await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(subjects))
 
 @dp.callback_query(F.data.contains("-check-hw"))
@@ -1159,6 +1131,13 @@ async def load_new_week_handler(call: CallbackQuery, state: FSMContext):
     )
     logger.exception(f"Error updating schedule: {e}")
 
+@dp.message(F.text == "👥 Моя группа")
+async def show_my_group_handler(message: Message):
+  user = await get_user_by_id(message.from_user.id)
+  group = await get_group_by_id(user["group_id"])
+  all_users_in_group = await get_users(User.group_id == user["group_id"])
+
+
 @dp.message(F.text == "👑 Управление группой 👑")
 async def show_group_controller_handler(message: CallbackQuery):
   user = await get_user_by_id(message.from_user.id)
@@ -1186,8 +1165,8 @@ async def show_group_controller_handler(message: CallbackQuery):
   await message.answer(
       f"👑 <b>Панель управления группой</b>\n\n"
       f"▫️ Название: <code>{group['name']}</code>\n"
-      f"▫️ Участников: {len(all_users_in_group)}\n"
       f"▫️ Лидер: <a href='tg://user?id={group['leader_id']}'>{leader_user['firstname'] if leader_user['firstname'] else ''} {leader_user['lastname'] if leader_user['lastname'] else ''}</a>\n\n"
+      f"▫️ Всего участников: {len(all_users_in_group)}\n"
       f"🛠 <i>Доступные действия:</i>",
       parse_mode="HTML",
       reply_markup=kb.group_controller_keyboard
@@ -1234,16 +1213,7 @@ async def repair_bot(message: Message, command: CommandObject, state: FSMContext
 async def show_settings(message: Message, command: CommandObject, state: FSMContext):
   await state.clear()
   user = await get_user_by_id(message.from_user.id)
-  await message.answer("🔧 Настройки:", reply_markup=await kb.get_settings_keyboard(user))
-
-# @dp.callback_query(F.data == "enable_notifications")
-# async def enable_notifications(call: CallbackQuery):
-#     # Включаем рассылку
-#     await update_user(call.from_user.id, notifications=True)
-
-#     updated_keyboard = await kb.get_settings_keyboard(True)
-#     await call.message.edit_reply_markup(reply_markup=updated_keyboard)
-#     await call.message.answer("✅ Рассылка расписания включена.")
+  await message.answer("🔧 Настройки рассылки:", reply_markup=await kb.get_settings_keyboard(user))
 
 @dp.callback_query(F.data == "disable_notifications")
 async def disable_notifications(call: CallbackQuery):
@@ -1266,20 +1236,13 @@ async def settings_handler(call: CallbackQuery, state: FSMContext):
   user_settings_copy = user_settings.copy()
   match (setting_name):
     case "send_timetable_new_week":
-      print("case 1")
       user_settings_copy["send_timetable_new_week"] = not setting_condition
-      print(user)
     case "send_timetable_updated":
-      print("case 2")
       user_settings_copy["send_timetable_updated"] = not setting_condition
-      print(user)
     case "send_changes_updated":
-      print("case 3")
       user_settings_copy["send_changes_updated"] = not setting_condition
-      print(user)
     case _:
-      print("case default")
-  
+      pass
   user = await update_user(call.from_user.id, settings=user_settings_copy)
   updated_kb = await kb.get_settings_keyboard(user)
   await call.message.edit_reply_markup(reply_markup=updated_kb)
