@@ -31,7 +31,6 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
                         (By.XPATH, "/html/body/div/div/div/div[2]/div/div[3]")
                     )
                 )
-                asyncio.sleep(0.5)
             except TimeoutException:
                 logger.error(f"Parent container not found for group {group} within 10 seconds.")
                 continue  # Skip to next group if element not found

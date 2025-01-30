@@ -2,9 +2,10 @@ from sqlalchemy import Boolean, cast, func
 from app.database.models import User
 from app.database.requests.group import get_group_by_id
 from app.database.requests.user import get_user_by_id, get_users
+from app.database.requests.settings import get_setting, set_setting
 from utils.timetable.downloader import download_timetable
 from utils.log import logger
-from aiogram.types import FSInputFile
+from aiogram.types import FSInputFile, InputMediaPhoto
 from app.browser_driver import driver
 from aiogram import Bot
 from datetime import datetime, timedelta
@@ -16,22 +17,35 @@ from bs4 import BeautifulSoup
 import re
 from utils.log import logger
 import app.keyboards as kb
-
-already_sended = False
+from pdf2image import convert_from_path
 
 async def check_changes_job(bot: Bot):
   global already_sended
   pdf_url = get_pdf_url_from_page()
   download_pdf_from_url(pdf_url)
   filename = check_if_exists_changes_pdf_to_tomorrow()
-  if filename and not already_sended:
-    logger.info(f"Changes for tomorrow found: {filename}")
-    await send_changes_to_users(bot)
-    already_sended = True
+  last_send_date = await get_setting("last_send_changes_date")
+  if filename:
+    if last_send_date == None or last_send_date != datetime.today().strftime("%d.%m.%y"):
+      last_send_date = datetime.today().strftime("%d.%m.%y")
+      logger.info(f"Changes for tomorrow found: {filename}")
+      await set_setting("last_send_changes_date", last_send_date)
+      await send_changes_to_users(bot)
     
+def pdf_to_png(pdf_path: str, output_folder: str, date: str):
+    print(f"{pdf_path=}")
+    print(f"{output_folder=}")
+    print(f"{date=}")
+    # Конвертируем PDF в список изображений (по одной картинке на страницу)
+    images = convert_from_path(pdf_path, dpi=300, poppler_path="C:\\poppler\\poppler-24.08.0\\Library\\bin")
 
-
-
+    # Сохраняем каждую страницу как PNG
+    for i, img in enumerate(images):
+        img_path = f"{output_folder}/{date}_{i+1}.png"
+        img.save(img_path, "PNG")
+        print(f"Сохранено: {img_path}")
+  
+    
 def check_if_exists_changes_pdf_to_tomorrow():
   path_to_files = "./data/changes"
   files = os.listdir(path_to_files)
@@ -70,16 +84,39 @@ async def send_changes_to_users(bot: Bot):
 
   users_with_setting = await get_users(User.settings['send_changes_updated'].as_boolean() == True)
   print(users_with_setting)
+  
+  files = []
+  today_date = datetime.today().strftime('%d.%m.%y')
+  tomorrow_date = (datetime.today() + timedelta(days=1)).strftime('%d.%m.%y')
+  
+  # Конвертируем PDF в PNG
+  pdf_to_png(f"./data/changes/changes_{tomorrow_date}.pdf", f"./data/changes/", tomorrow_date)
+
+  # Собираем файлы изображений
+  for file in os.listdir(f"./data/changes/"):
+    if file.endswith(".png") and tomorrow_date in file:
+      files.append(FSInputFile(f"./data/changes/{file}"))
+
   for user in users_with_setting:
     group = await get_group_by_id(user["group_id"])
-    if check_if_group_in_changes(group["name"]):
-      await bot.send_message(user["tg_id"],
-        f"🔔 Появились изменения на завтрашний день.\n<b>Группа {group["name"]} есть в списке изменений!</b>\n",
-        parse_mode="html")
-    else:
-      await bot.send_message(user["tg_id"],
-        f"🔔 Появились изменения на завтрашний день.\n<i>Группы {group["name"]} нету в списке изменений. 😢</i>",
-        parse_mode="html")
+    text = (
+      f"🔔 Появились изменения на завтрашний день.\n"
+      f"<b>Группа {group['name']} есть в списке изменений!</b>\n"
+    ) if check_if_group_in_changes(group["name"]) else (
+      f"🔔 Появились изменения на завтрашний день.\n"
+      f"<i>Группы {group['name']} нету в списке изменений. 😢</i>"
+    )
+
+    # Если только 1 фото → отправляем обычное `send_photo()`
+    if len(files) == 1:
+      await bot.send_photo(user["tg_id"], photo=files[0], caption=text, parse_mode="html")
+    elif len(files) > 1:
+      # Создаём `media_group`
+      media = [InputMediaPhoto(media=f) for f in files]
+      media[0].caption = text  # Добавляем описание только к первой картинке
+      media[0].parse_mode = "html"
+
+      await bot.send_media_group(user["tg_id"], media=media)
 
 def check_if_group_in_changes(group_name: str):
   group_name = group_name.lower()
