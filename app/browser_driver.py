@@ -93,4 +93,4 @@ class Driver:
         if self._driver:
             self._driver.quit()
 
-driver = Driver(headless=True, remote=False)
+driver = Driver(headless=True, remote=True)
