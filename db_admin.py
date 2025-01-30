@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from sqladmin import Admin, ModelView
-from app.database.models import User, Homework, Schedule, Media, Groups
+from app.database.models import Settings, User, Homework, Schedule, Media, Groups
 from app.database.db_setup import async_engine, sync_engine
 
 app = FastAPI()
@@ -27,12 +27,16 @@ class GroupsAdmin(ModelView, model=Groups):
   name = "Group"
   column_list = ["uid", "name", "course"]
 
+class SettingsAdmin(ModelView, model=Settings):
+  name = "Setting"
+  column_list = ["uid", "key", "value"]
 
 admin.add_view(UserAdmin)
 admin.add_view(HomeworkAdmin)
 admin.add_view(ScheduleAdmin)
 admin.add_view(MediaAdmin)
 admin.add_view(GroupsAdmin)
+admin.add_view(SettingsAdmin)
 
 if __name__ == "__main__":
   import uvicorn

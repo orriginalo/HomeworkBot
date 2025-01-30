@@ -69,3 +69,9 @@ class Subjects(Base):
   __tablename__ = "subjects"
   uid: Mapped[intpk]
   name: Mapped[str] = mapped_column(unique=True)
+
+class Settings(Base):
+  __tablename__ = "settings"
+  uid: Mapped[intpk]
+  key: Mapped[str]
+  value: Mapped[str]
