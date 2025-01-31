@@ -53,5 +53,5 @@ async def replace_ru_to_en(text: str):
 
 async def get_referal_link(code: str, group_name: str):
     # return f"https://t.me/homew0rk_bot?start=invite_{code}"  
-    group_name = await replace_ru_to_en(group_name)
-    return f"https://t.me/homew0rk_testing_bot?start=invite_{code}_{group_name}"
+    en_group_name = await replace_ru_to_en(group_name)
+    return f"https://t.me/homew0rk_testing_bot?start=invite_{code}_{en_group_name}"
