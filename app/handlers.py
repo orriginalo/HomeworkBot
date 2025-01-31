@@ -285,7 +285,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     while(referal_code == None):
       referal_code = await generate_unique_code()
     
-    referal_link = await get_referal_link(referal_code, group_name=group["name"])
+    referal_link = await get_referal_link(referal_code, en_group_name=group["name"])
     
     await update_group(group["uid"], ref_code=referal_code, is_equipped=True, member_count=group["member_count"] + 1, leader_id=callback.from_user.id)
     user = await update_user(callback.from_user.id, role=2, group_id=group["uid"], group_name=group["name"], is_leader=True, moved_at=datetime.now())
@@ -1176,7 +1176,7 @@ async def show_group_controller_handler(message: CallbackQuery):
 async def get_group_link_handler(call: CallbackQuery):
   user = await get_user_by_id(call.from_user.id)
   group = await get_group_by_id(user["group_id"])
-  referal_link = await get_referal_link(group["ref_code"])
+  referal_link = await get_referal_link(group["ref_code"], group["name"])
   await call.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 
