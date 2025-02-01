@@ -25,38 +25,35 @@ async def check_changes_job(bot: Bot):
   download_pdf_from_url(pdf_url)
   filename = check_if_exists_changes_pdf_to_tomorrow()
   last_send_date = await get_setting("last_send_changes_date")
-  if filename:
-    if last_send_date == None or last_send_date != datetime.today().strftime("%d.%m.%y"):
+  if filename is not None:
+    if last_send_date is None or last_send_date != datetime.today().strftime("%d.%m.%y"):
       last_send_date = datetime.today().strftime("%d.%m.%y")
       logger.info(f"Changes for tomorrow found: {filename}")
       await set_setting("last_send_changes_date", last_send_date)
-      await send_changes_to_users(bot)
+      await send_changes_to_users(bot, get_changes_date(filename))
     
 def pdf_to_png(pdf_path: str, output_folder: str, date: str):
-    print(f"{pdf_path=}")
-    print(f"{output_folder=}")
-    print(f"{date=}")
     # Конвертируем PDF в список изображений (по одной картинке на страницу)
     images = convert_from_path(pdf_path, dpi=300)
     # images = convert_from_path(pdf_path, dpi=300, poppler_path="C:\\poppler\\poppler-24.08.0\\Library\\bin")
 
     # Сохраняем каждую страницу как PNG
     for i, img in enumerate(images):
-        img_path = f"{output_folder}/{date}_{i+1}.png"
-        img.save(img_path, "PNG")
-        print(f"Сохранено: {img_path}")
+      img_path = f"{output_folder}/{date}_{i+1}.png"
+      img.save(img_path, "PNG")
   
     
 def check_if_exists_changes_pdf_to_tomorrow():
   path_to_files = "./data/changes"
   files = os.listdir(path_to_files)
   
+  today_date = datetime.today().strftime("%d.%m.%y")
   tomorrow_date = (datetime.today() + timedelta(days=1)).strftime("%d.%m.%y")
   
   for file in files:
     if file.endswith(".pdf"):
       file_date = file.replace("changes_", "").replace(".pdf", "")
-      if file_date == tomorrow_date:
+      if file_date == tomorrow_date or file_date == today_date:
         return file
   return None
 
@@ -80,31 +77,36 @@ def download_pdf_from_url(url: str):
   logger.debug(f"PDF file is successfully saved as {path_to_file}")
 
 
-async def send_changes_to_users(bot: Bot):
+async def send_changes_to_users(bot: Bot, date: str):
   logger.info("Sending changes to users")
 
   users_with_setting = await get_users(User.settings['send_changes_updated'].as_boolean() == True)
-  print(users_with_setting)
   
   files = []
   today_date = datetime.today().strftime('%d.%m.%y')
   tomorrow_date = (datetime.today() + timedelta(days=1)).strftime('%d.%m.%y')
   
   # Конвертируем PDF в PNG
-  pdf_to_png(f"./data/changes/changes_{tomorrow_date}.pdf", f"./data/changes/", tomorrow_date)
+  pdf_to_png(f"./data/changes/changes_{date}.pdf", f"./data/changes/", date)
 
   # Собираем файлы изображений
-  for file in os.listdir(f"./data/changes/"):
-    if file.endswith(".png") and tomorrow_date in file:
-      files.append(FSInputFile(f"./data/changes/{file}"))
+  files_paths = []
+  for f in os.listdir(f"./data/changes/"):
+    if f.endswith(".png") and date in f:
+      files_paths.append(f"./data/changes/{f}")
+  files_paths.sort()
+  
+  for path in files_paths:
+    files.append(FSInputFile(f"{path}"))
+  
 
   for user in users_with_setting:
     group = await get_group_by_id(user["group_id"])
     text = (
-      f"🔔 Появились изменения на завтрашний день.\n"
+      f"🔔 Появились изменения на <b>{date}</b>.\n"
       f"<b>Группа {group['name']} есть в списке изменений!</b>\n"
-    ) if check_if_group_in_changes(group["name"]) else (
-      f"🔔 Появились изменения на завтрашний день.\n"
+    ) if check_if_group_in_changes(group["name"], date) else (
+      f"🔔 Появились изменения на <b>{date}</b>.\n"
       f"<i>Группы {group['name']} нету в списке изменений. 😢</i>"
     )
 
@@ -119,10 +121,9 @@ async def send_changes_to_users(bot: Bot):
 
       await bot.send_media_group(user["tg_id"], media=media)
 
-def check_if_group_in_changes(group_name: str):
+def check_if_group_in_changes(group_name: str, date: str):
   group_name = group_name.lower()
-  tomorrow_date = (datetime.today() + timedelta(days=1)).strftime("%d.%m.%y")
-  with pdfplumber.open(f"./data/changes/changes_{tomorrow_date}.pdf") as pdf:
+  with pdfplumber.open(f"./data/changes/changes_{date}.pdf") as pdf:
     for page in pdf.pages:
       text = page.extract_text().lower()
       text = text.splitlines()
