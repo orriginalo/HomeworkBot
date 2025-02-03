@@ -37,7 +37,6 @@ class Driver:
           self._driver = webdriver.Remote("http://selenium:4444/wd/hub", options=browser_options)
         else:
           self._driver = webdriver.Chrome(
-              service=Service(ChromeDriverManager().install()),
               options=browser_options
           )
         self._wait = WebDriverWait(self._driver, 10)
@@ -93,4 +92,4 @@ class Driver:
         if self._driver:
             self._driver.quit()
 
-driver = Driver(headless=True, remote=True)
+driver = Driver(headless=True, remote=False)
