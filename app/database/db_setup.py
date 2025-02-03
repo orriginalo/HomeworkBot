@@ -5,7 +5,7 @@ from sqlalchemy.orm import DeclarativeBase
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 async_engine = create_async_engine(
