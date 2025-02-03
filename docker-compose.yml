@@ -17,12 +17,6 @@ services:
     env_file:
       - .env
 
-  selenium:
-    image: selenium/standalone-firefox
-    restart: no
-    networks:
-      - internal
-
   db_admin:
     build:
       context: .

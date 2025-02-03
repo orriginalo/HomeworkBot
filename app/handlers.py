@@ -1311,6 +1311,14 @@ async def secret(message: Message):
 🔗 Пригласительная ссылка для <code>Пдо-16</code>
 👉 https://t.me/homew0rk_testing_bot?start=invite_ueU2Kvia_pdo-16
   """
+  
+  msg_for_adders = """
+У тебя, как у <i>добавлятеля</i> появились новые возможности:
+
+▫️ 🔄 Сбросить дедлайн - Перенести Д/З на следующую пару 
+▫️ 🗑️ Удалить Д/З - Удалить Д/З 😱
+"""
+
   if user["role"] >= 4:
     message
     users = await get_users()
@@ -1318,6 +1326,8 @@ async def secret(message: Message):
       if user["tg_id"] != 1579774985:
         await message.answer(f"✉️ <a href='tg://user?id={user['tg_id']}'>{user['tg_id']}</a>...", parse_mode="html")
         await message.bot.send_message(user["tg_id"], msg, parse_mode="html")
+        if user["role"] == 2:
+          await message.bot.send_message(user["tg_id"], msg_for_adders, parse_mode="html")
     await message.answer("✅ Сообщение отправлено всем пользователям.")
     await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))
     

@@ -2,7 +2,7 @@
 $LocalDBContainer = "homeworkbot-db-1"
 $ServerUser = "orriginalo"
 $ServerIP = "10.242.106.91"
-$ServerDBContainer = "homeworkbottesting-db-1"
+$ServerDBContainer = "homeworkbot-db-1"
 $BackupFile = "domashkabot_backup.dump"
 $PGPassword = "domashkabot"  # Ваш пароль от БД
 
