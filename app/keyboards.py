@@ -73,7 +73,7 @@ check_hw_before_apply_keyboard = InlineKeyboardMarkup(
 group_controller_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="🔗 Ссылка для вступления", callback_data="get_group_link")],
-        [InlineKeyboardButton(text="👥 Доб. добавлятеля", callback_data="add_user"), InlineKeyboardButton(text="🚫 Удал. добавлятеля", callback_data="remove_user")],
+        [InlineKeyboardButton(text="👥 Доб. добавлятеля", callback_data="add_adder"), InlineKeyboardButton(text="🚫 Удал. добавлятеля", callback_data="remove_adder")],
         [InlineKeyboardButton(text="🔄 Передать лидерство", callback_data="transfer_leadership")],
         [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
     ]
@@ -82,7 +82,7 @@ group_controller_keyboard = InlineKeyboardMarkup(
 # Клавиатура выбора дня
 see_hw_keyboard = ReplyKeyboardMarkup(keyboard=[
   [KeyboardButton(text="📚 По предмету")],
-  [KeyboardButton(text="📅 На сегодня"), KeyboardButton(text="📅 На завтра"), KeyboardButton(text="📅 На послезавтра")],
+  [KeyboardButton(text="На сегодня"), KeyboardButton(text="На завтра"), KeyboardButton(text="На послезавтра")],
   [KeyboardButton(text="🗓 По дате"), KeyboardButton(text="◀️ Назад")],
 ], resize_keyboard=True, input_field_placeholder="Выбери период")
 

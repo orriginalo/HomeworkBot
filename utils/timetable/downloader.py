@@ -28,7 +28,7 @@ def download_timetable(driver, groups: list[str], make_screenshot: bool = False)
                 # Wait for the parent container to be visible
                 parent_container = WebDriverWait(driver, 10).until(
                     EC.visibility_of_element_located(
-                        (By.XPATH, "/html/body/div/div/div/div[2]/div/div[3]")
+                        (By.XPATH, "//div[contains(@class, 'table-responsive')]/..")
                     )
                 )
             except TimeoutException:

@@ -90,9 +90,7 @@ class MsgLoggerMiddleware(BaseException):
     ) -> Any:
         
         user = await get_user_by_id(event.from_user.id)
-        print("User is none?")
         if user is None:
-            print("User is none!")
             user = await add_user(
                 tg_id=event.from_user.id,
                 role=1,
