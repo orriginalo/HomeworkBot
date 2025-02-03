@@ -1310,7 +1310,7 @@ async def secret(message: Message):
 ▫️ Теперь бот поддерживает все группы КЭИ | УлГТУ.
 
 🔗 Пригласительная ссылка для <code>Пдо-16</code>
-👉 https://t.me/homew0rk_testing_bot?start=invite_svmeP8pb_pdo-16
+👉 https://t.me/homew0rk_bot?start=invite_svmeP8pb_pdo-16
   """
   
   msg_for_adders = """

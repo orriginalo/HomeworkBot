@@ -9,7 +9,7 @@ admin = Admin(app, engine=async_engine, title="DomashkaBotDB Admin")
 
 class UserAdmin(ModelView, model=User):
   name = "User"
-  column_list = ["uid", "tg_id", "role", "username", "firstname", "lastname", "notifications","created_at", "updated_at", "group_id", "is_leader"]
+  column_list = ["uid", "tg_id", "role", "username", "firstname", "lastname", "notifications", "created_at", "updated_at", "group_id", "is_leader"]
 
 class HomeworkAdmin(ModelView, model=Homework):
   name = "Homework"
