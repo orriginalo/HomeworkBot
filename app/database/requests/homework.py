@@ -66,7 +66,7 @@ async def get_homework_by_id(homework_id: int):
       stmt = select(Homework).where(Homework.uid == homework_id)
       result = await s.execute(stmt)
       homework = result.scalar_one_or_none()
-      return vars(homework)
+      return vars(homework) if homework else None
   except Exception as e:
     logger.exception(f"Error getting homework by ID {homework_id}: {e}")
     return None
