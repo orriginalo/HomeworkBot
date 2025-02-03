@@ -1301,6 +1301,7 @@ async def tell_all_users_state(message: Message, state: FSMContext):
 @dp.message(F.text == "secret ❔🔧")
 async def secret(message: Message):
   user = await get_user_by_id(message.from_user.id)
+  
   msg = """
 🎉 <b>DomashkaBot</b> обновился!
 
@@ -1309,7 +1310,7 @@ async def secret(message: Message):
 ▫️ Теперь бот поддерживает все группы КЭИ | УлГТУ.
 
 🔗 Пригласительная ссылка для <code>Пдо-16</code>
-👉 https://t.me/homew0rk_testing_bot?start=invite_ueU2Kvia_pdo-16
+👉 https://t.me/homew0rk_testing_bot?start=invite_svmeP8pb_pdo-16
   """
   
   msg_for_adders = """
