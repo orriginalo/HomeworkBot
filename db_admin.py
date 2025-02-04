@@ -9,7 +9,7 @@ admin = Admin(app, engine=async_engine, title="DomashkaBotDB Admin")
 
 class UserAdmin(ModelView, model=User):
   name = "User"
-  column_list = ["uid", "tg_id", "role", "username", "firstname", "lastname", "notifications", "created_at", "updated_at", "group_id", "is_leader"]
+  column_list = ["uid", "tg_id", "role", "username", "firstname", "lastname", "settings", "created_at", "updated_at", "moved_at", "group_id", "group_name", "is_leader"]
 
 class HomeworkAdmin(ModelView, model=Homework):
   name = "Homework"
@@ -17,7 +17,7 @@ class HomeworkAdmin(ModelView, model=Homework):
 
 class ScheduleAdmin(ModelView, model=Schedule):
   name = "Schedule"
-  column_list = ["uid", "timestamp", "subject", "week_number"]
+  column_list = ["uid", "timestamp", "subject", "week_number", "group_id"]
 
 class MediaAdmin(ModelView, model=Media):
   name = "Media"
@@ -25,7 +25,7 @@ class MediaAdmin(ModelView, model=Media):
 
 class GroupsAdmin(ModelView, model=Groups):
   name = "Group"
-  column_list = ["uid", "name", "course"]
+  column_list = ["uid", "name", "course", "ref_code", "is_equipped", "leader_id", "member_count", "created_at", "updated_at", "subjects"]
 
 class SettingsAdmin(ModelView, model=Settings):
   name = "Setting"
