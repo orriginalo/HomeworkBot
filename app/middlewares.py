@@ -96,7 +96,7 @@ class GroupChecker(Filter):
         
         stmt = False
         if message:
-            stmt = message.text.strip() != "/start" and message.text.strip() != "/repair" and (await state.get_state() != "setting_group:group_name")
+            stmt = "/start" not in message.text and message.text.strip() != "/repair" and (await state.get_state() != "setting_group:group_name")
         # elif callback:
         #     stmt = callback.data != "join_group" and callback.data != "back_to_start" and callback.data != "create_group" and (await state.get_state() != "setting_group:group_name")
             
