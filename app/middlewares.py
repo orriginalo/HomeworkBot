@@ -3,6 +3,8 @@ from utils.log import logger
 from typing import Any, Dict, Union, Callable, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Filter
 
 from cachetools import TTLCache
 
@@ -78,7 +80,32 @@ class TestMiddleware(BaseMiddleware):
         data["aboba"] = "abobus mobobus"
         return await handler(event, data)
     
-
+class GroupChecker(Filter):
+    
+    async def __call__(
+    self, 
+    message: Message, 
+    state: FSMContext
+    ) -> bool:
+        
+        user = None
+        if message:
+            user = await get_user_by_id(message.from_user.id)
+        # elif callback:
+        #     user = await get_user_by_id(callback.from_user.id)
+        
+        stmt = False
+        if message:
+            stmt = message.text.strip() != "/start" and message.text.strip() != "/repair" and (await state.get_state() != "setting_group:group_name")
+        # elif callback:
+        #     stmt = callback.data != "join_group" and callback.data != "back_to_start" and callback.data != "create_group" and (await state.get_state() != "setting_group:group_name")
+            
+        if user["group_id"] is None and stmt:
+            await message.answer("➡️ Для продолжения использования бота присоединитесь к группе\n\nИз <b>Пдо-16</b>?\n👉 https://t.me/homew0rk_bot?start=invite_svmeP8pb_pdo-16", parse_mode="html")
+        # if callback:
+        #     await callback.message.answer("➡️ Для продолжения использования бота присоединитесь к группе\n\nИз <b>Пдо-16</b>?\n👉 https://t.me/homew0rk_bot?start=invite_svmeP8pb_pdo-16", parse_mode="html")
+            return False
+        return True
 
 class MsgLoggerMiddleware(BaseException):
 
@@ -86,7 +113,7 @@ class MsgLoggerMiddleware(BaseException):
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
         event: Message | CallbackQuery,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Any:
         
         user = await get_user_by_id(event.from_user.id)

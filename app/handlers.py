@@ -11,7 +11,7 @@ import variables as var
 import app.keyboards as kb
 from utils.backuper import create_backups
 from utils.timetable.updater import update_timetable
-from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware, MsgLoggerMiddleware
+from app.middlewares import AlbumMiddleware, AntiFloodMiddleware, TestMiddleware, MsgLoggerMiddleware, GroupChecker
 import os
 import sys
 import time
@@ -91,10 +91,15 @@ class joiningToGroup(StatesGroup):
 dp = Router()
 
 dp.message.middleware(AlbumMiddleware())
+
 dp.message.middleware(MsgLoggerMiddleware())
 dp.callback_query.middleware(MsgLoggerMiddleware())
+
+dp.message.filter(GroupChecker())
+# dp.callback_query.filter(GroupChecker())
+
 # dp.message.middleware(AntiFloodMiddleware(0.3))
-# dp.message.middleware(TestMiddleware())
+
 notifications_scheduler = AsyncIOScheduler()
 
 @dp.message(CommandStart())
@@ -316,7 +321,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_start")
 async def back_to_start(callback: CallbackQuery, state: FSMContext):
   await callback.message.answer("❌ Действие отменено")
-
+  await callback.message.delete()
   await state.clear()
 
 @dp.message(F.text.contains("Админ-панель"))
