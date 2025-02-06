@@ -49,6 +49,11 @@ async def check_paths():
             os.makedirs(path, exist_ok=True)
         except Exception as e:
             logger.exception(f"Error creating {path}: {e}")
+    # for path in file_paths:
+    #     try:
+    #         open(path, "w").close()
+    #     except Exception as e:
+    #         logger.exception(f"Error creating {path}: {e}")
 
 
 async def main():
