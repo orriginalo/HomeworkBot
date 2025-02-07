@@ -91,12 +91,9 @@ async def get_start_keyboard(user):
   adder_kb = deepcopy(start_keyboard_adder)
   default_kb = deepcopy(start_keyboard)
 
-  user_role = user["role"]
-  user_is_leader = user["is_leader"]
-
   user_keyboard = None
 
-  match user_role:
+  match user.role:
     case 2:
       user_keyboard = adder_kb
     case 3 | 4:
@@ -104,7 +101,7 @@ async def get_start_keyboard(user):
     case _:
       user_keyboard = default_kb
 
-  if user_is_leader:
+  if user.is_leader:
     user_keyboard.keyboard.append([KeyboardButton(text="👑 Управление группой 👑")])
 
   return user_keyboard

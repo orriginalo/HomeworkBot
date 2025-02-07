@@ -98,14 +98,14 @@ async def remove_admin_id(message: Message, state: FSMContext):
       data = await state.get_data()
 
     user_id = data.get("user_id")
+    user_to_remove = await get_user_by_id(user_id)
 
-    user_role = (await get_user_by_id(user_id))["role"]
-    if user_role == None:
+    if user_to_remove.role == None:
       await message.answer(f"❌ Пользователь не существует или скрыл id.", reply_markup=await kb.get_start_keyboard(user))
       await state.clear()
       return
 
-    elif user_role == 3:
+    elif user_to_remove.role == 3:
       await update_user(user_id, role=1)
       await message.answer(f"✅ Пользователь удален из администраторов.", reply_markup=await kb.get_start_keyboard(user))
     else:

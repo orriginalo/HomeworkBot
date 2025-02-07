@@ -3,7 +3,8 @@ from sqlalchemy import and_, func, select
 from app.database.db_setup import session
 from app.database.models import Homework, Schedule
 from utils.log import logger
-import datetime
+from datetime import datetime, timedelta
+from app.database.schemas import HomeworkSchema
 
 async def add_homework(subject: str, task: str, group_id: int, added_by: int, from_date_ts: int, to_date_ts: int = None, **kwargs):
   try:
@@ -25,7 +26,7 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
       await s.commit()
       
       await s.refresh(homework)
-      return vars(homework)
+      return HomeworkSchema(**homework.__dict__)
 
   except Exception as e:
     logger.exception(f"Error adding homework: {e}")
@@ -57,7 +58,7 @@ async def get_homeworks(*filters):
       stmt = stmt.where(and_(*filters))
     result = await s.execute(stmt)
     homeworks = result.scalars().all()
-    homeworks = [vars(homework) for homework in homeworks]
+    homeworks = [HomeworkSchema(**homework.__dict__) for homework in homeworks]
     return homeworks
 
 async def get_homework_by_id(homework_id: int):
@@ -66,34 +67,31 @@ async def get_homework_by_id(homework_id: int):
       stmt = select(Homework).where(Homework.uid == homework_id)
       result = await s.execute(stmt)
       homework = result.scalar_one_or_none()
-      return vars(homework) if homework else None
+      return HomeworkSchema(**homework.__dict__) if homework else None
   except Exception as e:
     logger.exception(f"Error getting homework by ID {homework_id}: {e}")
     return None
   
-async def get_homeworks_by_date(to_date_ts: int, group_id: int = None):
-  hw_list = []
+async def get_homeworks_by_date(to_date: datetime, group_id: int = None):
   try:
     async with session() as s:
-      iso_time = datetime.datetime.fromtimestamp(to_date_ts).replace(microsecond=0)
       stmt = select(Homework).where(
-        Homework.to_date >= iso_time,
-        Homework.to_date < iso_time + datetime.timedelta(seconds=1)
+        Homework.to_date >= to_date,
+        Homework.to_date < to_date + datetime.timedelta(seconds=1)
       )
       if group_id:
         stmt = stmt.where(Homework.group_id == group_id)
         
       result = await s.execute(stmt)
-      homework = result.scalars().all()
-      for hw in homework:
-        hw_list.append(vars(hw))
-      return hw_list
+      homeworks = result.scalars().all()
+      homeworks = [HomeworkSchema(**homework.__dict__) for homework in homeworks]
+      return homeworks
+    
   except Exception as e:
-    logger.exception(f"Error getting homework by date {to_date_ts}: {e}")
+    logger.exception(f"Error getting homework by date {to_date.strftime('%d.%m.%Y')}: {e}")
     return None
 
-async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False, group_id: int = None) -> List[dict] | None:
-  hw_list = []
+async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] = False, group_id: int = None) -> List[HomeworkSchema] | None:
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.subject == subject)
@@ -105,13 +103,9 @@ async def get_homeworks_by_subject(subject: str, limit_last_two: Optional[bool] 
         stmt = stmt.where(Homework.group_id == group_id)
 
       result = await s.execute(stmt)
-      homework = result.scalars().all()
-      
-      for hw in homework:
-        hw.from_date = datetime.datetime.timestamp(hw.from_date)
-        hw_list.append(vars(hw))
-      
-      return hw_list
+      homeworks = result.scalars().all()
+      homeworks = [HomeworkSchema(**homework.__dict__) for homework in homeworks]
+      return homeworks
 
   except Exception as e:
     logger.exception(f"Error getting homework by subject {subject}: {e}")
@@ -128,7 +122,7 @@ async def update_homework(homework_id: int, **kwargs):
         if value is not None:
           setattr(homework, key, value)
       await s.commit()
-      return homework
+      return HomeworkSchema(**homework.__dict__)
   except Exception as e:
     logger.exception(f"Error updating homework {homework_id}: {e}")
     return None
@@ -157,11 +151,13 @@ async def reset_homework_deadline_by_id(homework_id: int):
   try:
     async with session() as s:
       stmt = select(Homework).where(Homework.uid == homework_id)
-      homework = await s.execute(stmt).scalar_one_or_none()
+      homework = await s.execute(stmt)
+      homework = homework.scalar_one_or_none()
       if homework:
         # Find the next class date for the subject
         stmt = select(Schedule).where(Schedule.subject == homework.subject, Schedule.timestamp > homework.from_date)
-        next_class_date = await s.execute(stmt).scalar_one_or_none()
+        next_class_date = await s.execute(stmt)
+        next_class_date = next_class_date.scalar_one_or_none()
         if next_class_date:
           homework.to_date = next_class_date.timestamp
           await s.commit()

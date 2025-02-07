@@ -3,6 +3,7 @@ from app.database.db_setup import session
 from app.database.models import User
 from utils.log import logger
 from variables import default_user_settings
+from app.database.schemas import UserSchema
 
 async def add_user(
     tg_id: int,
@@ -23,8 +24,8 @@ async def add_user(
             existing_user = result.scalar_one_or_none()
 
             if existing_user:
-                logger.debug(f"User with tg_id {tg_id} already exists.")
-                return existing_user  # Возвращаем существующего пользователя
+                logger.warning(f"User with tg_id {tg_id} already exists.")
+                return UserSchema(**existing_user.__dict__)
 
             user = User(
                 tg_id=tg_id,
@@ -40,7 +41,7 @@ async def add_user(
             s.add(user)
             await s.commit()
             await s.refresh(user)
-            return vars(user) if user else None
+            return UserSchema(**user.__dict__) if user else None
     except Exception as e:
         logger.error(f"Error adding user: {e}")
         return None
@@ -68,7 +69,7 @@ async def get_user_by_id(tg_id: int):
       result = await s.execute(stmt)
       user = result.scalar_one_or_none()
       if user:
-        return vars(user)
+        return UserSchema(**user.__dict__) if user else None
       else:
         return None
   except Exception as e:
@@ -86,7 +87,7 @@ async def update_user(tg_id: int, **kwargs):
           setattr(user, key, value)
       await s.commit()
       await s.refresh(user)
-      return vars(user) if user else None
+      return UserSchema(**user.__dict__) if user else None
   except Exception as e:
     logger.exception(f"Error updating user {tg_id}: {e}")
     return None
@@ -102,16 +103,14 @@ async def get_users(*filters):
       stmt = stmt.where(and_(*filters))
     result = await s.execute(stmt)
     users = result.scalars().all()
-    users = [vars(user) for user in users]
+    users = [UserSchema(**user.__dict__) for user in users]
     return users
 
 async def get_users_with_role(role: int):
-  users_list = []
   async with session() as s:
     stmt = select(User).where(User.role == role)
     result = await s.execute(stmt)
     users = result.scalars().all()
-    for user in users:
-      users_list.append(vars(user))
-    return users_list
+    users = [UserSchema(**user.__dict__) for user in users]
+    return users
   

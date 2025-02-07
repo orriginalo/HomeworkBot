@@ -83,7 +83,7 @@ def calculate_aftertomorrow():
 # Convert the datetime object to a timestamp
 
 # print(yesterday)
-cur_year = datetime.now()
+cur_year = datetime.now().year
 
 months_words = {
   1: "января",
@@ -101,8 +101,7 @@ months_words = {
 }
 
 
-async def get_day_month(timestamp):
-  date = datetime.fromtimestamp(timestamp)
+async def get_day_month(date: datetime):
   return f"{date.strftime('%d')} {months_words[int(date.strftime('%m'))]}"
 
 # print(asyncio.run(get_day_month(yesterday)))

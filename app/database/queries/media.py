@@ -3,6 +3,8 @@ from app.database.models import Media
 from sqlalchemy import select
 from utils.log import logger
 
+from app.database.schemas import MediaSchema
+
 async def add_media(homework_id: int, media_id: str, media_type: str):
   try:
     async with session() as s:
@@ -13,7 +15,7 @@ async def add_media(homework_id: int, media_id: str, media_type: str):
       )
       s.add(media)
       await s.commit()
-      return media
+      return MediaSchema(**media.__dict__)
   except Exception as e:
     logger.exception(f"Error adding media: {e}")
     return None
@@ -34,16 +36,13 @@ async def del_media(media_id: int):
     return None
 
 async def get_media_by_id(media_id: int):
-  media_list = []
   try:
     async with session() as s:
       stmt = select(Media).where(Media.homework_id == media_id)
       result = await s.execute(stmt)
       media = result.scalars().all()
-      for m in media:
-        media_list.append(vars(m))
-      
-      return media_list if len(media_list) > 0 else None
+      medias = [MediaSchema(**media.__dict__) for media in media]
+      return medias if len(medias) > 0 else None
   except Exception as e:
     logger.exception(f"Error getting media by ID {media_id}: {e}")
     return None

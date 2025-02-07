@@ -45,4 +45,18 @@ class ScheduleSchema(BaseModel):
   subject: str
   week_number: int
   group_id: Optional[int]
-# Добавь схемы для остальных моделей
+
+class MediaSchema(BaseModel):
+  uid: Optional[int]
+  homework_id: int
+  media_id: str
+  media_type: str
+  
+class SubjectSchema(BaseModel):
+  uid: Optional[int]
+  name: str
+  
+class SettingsSchema(BaseModel):
+  uid: Optional[int]
+  key: str
+  value: str

@@ -4,6 +4,8 @@ from sqlalchemy import select
 from utils.log import logger
 import datetime
 
+from app.database.schemas import ScheduleSchema
+
 async def add_subject(timestamp: int, subject: str, week_number: int, group_id: int):
   try:
     async with session() as s:
@@ -15,21 +17,19 @@ async def add_subject(timestamp: int, subject: str, week_number: int, group_id: 
       )
       s.add(schedule)
       await s.commit()
-      return schedule
+      return ScheduleSchema(**schedule.__dict__)
     logger.debug(f"Schedule with week={week_number} and subject={subject} added.")
   except Exception as e:
     logger.exception(f"Error adding schedule: {e}")
 
 async def get_schedule_by_week(week_number: int):
-  schedule_list = []
   try:
     async with session() as s:
       stmt = select(Schedule).where(Schedule.week_number == week_number)
       result = await s.execute(stmt)
-      schedule = result.scalars().all()
-      for sch in schedule:
-        schedule_list.append(vars(sch))
-      return schedule_list
+      schedules = result.scalars().all()
+      schedules = [ScheduleSchema(**schedule.__dict__) for schedule in schedules]
+      return schedules
   except Exception as e:
     logger.exception(f"Error getting schedule by week {week_number}: {e}")
     return None

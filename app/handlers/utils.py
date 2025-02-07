@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
+from app.database.schemas import UserSchema
 import app.keyboards as kb
 from app.database.queries.user import get_user_by_id, update_user
 
@@ -36,7 +38,7 @@ async def repair_bot(message: Message, state: FSMContext):
   await message.answer("🔧 Бот починен.")
   
 @router.callback_query(F.data.contains("setting"))
-async def settings_handler(call: CallbackQuery, state: FSMContext):
+async def settings_handler(call: CallbackQuery):
   setting_name = call.data.replace("_setting", "").replace("disable_", "").replace("enable_", "")
   setting_condition = False if call.data.split("_")[0] == "disable" else True
   print(setting_name, setting_condition)
@@ -55,3 +57,11 @@ async def settings_handler(call: CallbackQuery, state: FSMContext):
   user = await update_user(call.from_user.id, settings=user_settings_copy)
   updated_kb = await kb.get_settings_keyboard(user)
   await call.message.edit_reply_markup(reply_markup=updated_kb)
+  
+  
+def check_time_moved(user: UserSchema):
+  current_time = datetime.now()
+  if user.moved_at is not None and current_time - user.moved_at > timedelta(days=2):
+    return True
+  else:
+    return False

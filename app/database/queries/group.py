@@ -3,6 +3,8 @@ from app.database.models import Groups
 from sqlalchemy import and_, select
 from utils.log import logger
 
+from app.database.schemas import GroupSchema
+
 async def add_group(name: str, course: int):
   try:
     async with session() as s:
@@ -30,7 +32,7 @@ async def update_group(group_id: int, **kwargs):
         await s.commit()
         logger.debug(f"Group {group_id} successfully updated!")
         await s.refresh(group)
-        return vars(group) if group else None
+        return GroupSchema(**group.__dict__) if group else None
       else:
         logger.debug(f"Group with uid={group_id} not found.")
   except Exception as e:
@@ -56,8 +58,8 @@ async def get_group_by_id(group_id: int):
     async with session() as s:
       stmt = select(Groups).where(Groups.uid == group_id)
       result = await s.execute(stmt)
-      result = result.scalar_one_or_none()
-      return vars(result) if result else None
+      group = result.scalar_one_or_none()
+      return GroupSchema(**group.__dict__) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by ID {group_id}: {e}")
     return None
@@ -68,7 +70,7 @@ async def get_group_by_name(group_name: str):
       stmt = select(Groups).where(Groups.name == group_name)
       result = await s.execute(stmt)
       group = result.scalar_one_or_none()
-      return vars(group)
+      return GroupSchema(**group.__dict__) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by name {group_name}: {e}")
     return None
@@ -83,7 +85,7 @@ async def get_all_groups(*filters):
         
       result = await s.execute(stmt)
       groups = result.scalars().all()
-      groups = [vars(group) for group in groups]
+      groups = [GroupSchema(**group.__dict__) for group in groups]
       return groups
   except Exception as e:
     logger.exception(f"Error getting all groups: {e}")
@@ -96,7 +98,7 @@ async def get_group_by_ref(ref: str):
       result = await s.execute(stmt)
       group = result.scalar_one_or_none()
       print(f"ref: {ref}, group: {group}")
-      return vars(group) if group else None
+      return GroupSchema(**group.__dict__) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by ref: {e}")
     return None
