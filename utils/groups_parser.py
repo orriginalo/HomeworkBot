@@ -1,19 +1,20 @@
 import re
 
 from bs4 import BeautifulSoup
-from app.database.requests.group import add_group
+from app.database.queries.group import add_group
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import os
 from dotenv import load_dotenv
+from config import settings
 
 load_dotenv()
 
 # Логин и пароль из .env
-login = os.getenv("LOGIN")
-password = os.getenv("PASSWORD")
+login = settings.ULSTU_LOGIN
+password = settings.ULSTU_PASSWORD
 
 async def parse_groups_and_add_to_db(driver):
     driver.get("https://time.ulstu.ru/groups")

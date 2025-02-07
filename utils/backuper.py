@@ -1,13 +1,13 @@
 from app.database.models import Groups, Homework
-from app.database.requests.group import update_group, get_group_by_name
-from app.database.requests.homework import get_homeworks
+from app.database.queries.group import update_group, get_group_by_name
+from app.database.queries.homework import get_homeworks
 from app.browser_driver import driver
 from utils.log import logger
 from utils.timetable.downloader import download_timetable
 from utils.timetable.parser import parse_timetable
 from utils.db_subject_populator import populate_schedule
 from utils.group_subjects_parser import get_group_unique_subjects
-from app.database.requests.group import get_all_groups
+from app.database.queries.group import get_all_groups
 import shutil
 import datetime
 import os

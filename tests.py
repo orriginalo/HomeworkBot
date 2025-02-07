@@ -1,10 +1,10 @@
 import asyncio
 from datetime import timezone, datetime
-from app.database.requests.group import *
-from app.database.requests.media import *
-from app.database.requests.user import *
-from app.database.requests.homework import *
-from app.database.requests.schedule import *
+from app.database.queries.group import *
+from app.database.queries.media import *
+from app.database.queries.user import *
+from app.database.queries.homework import *
+from app.database.queries.schedule import *
 from app.browser_driver import driver
 from utils.all_subjects_parser import parse_all_subjects
 from utils.groups_parser import parse_groups_and_add_to_db

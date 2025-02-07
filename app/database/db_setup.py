@@ -4,18 +4,16 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 import os
 from dotenv import load_dotenv
-
-load_dotenv(override=True)
-
+from config import settings
 
 async_engine = create_async_engine(
-  url=os.getenv("SQLALCHEMY_URL"),
+  url=settings.SQLALCHEMY_URL,
   # echo=True,
   pool_size=5
 )
 
 sync_engine = create_engine(
-  url=os.getenv("SQLALCHEMY_URL_SYNC"),
+  url=settings.SQLALCHEMY_URL_SYNC,
   # echo=True,
   pool_size=5
 )

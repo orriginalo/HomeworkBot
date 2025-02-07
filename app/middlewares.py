@@ -8,7 +8,7 @@ from aiogram.filters import Filter
 
 from cachetools import TTLCache
 
-from app.database.requests.user import add_user, get_user_by_id, update_user
+from app.database.queries.user import add_user, get_user_by_id, update_user
 
 from rich import print
 

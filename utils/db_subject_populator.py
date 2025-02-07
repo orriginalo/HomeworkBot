@@ -4,8 +4,8 @@ import datetime as dt
 from bs4 import BeautifulSoup
 import sqlite3 as sql
 import json
-from app.database.requests.group import get_group_by_name
-from app.database.requests.schedule import add_subject, del_schedule_by_week, check_exists_subject
+from app.database.queries.group import get_group_by_name
+from app.database.queries.schedule import add_subject, del_schedule_by_week, check_exists_subject
 
 # 34 + СУПЕРЧИСЛО
 

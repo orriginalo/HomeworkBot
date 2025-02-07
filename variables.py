@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from config import settings
 
 load_dotenv()
 
@@ -27,8 +28,8 @@ prefixes_map = {
 
 postfixes = ["- 1 п/г", "- 2 п/г"]
 
-login = os.getenv("LOGIN")
-password = os.getenv("PASSWORD")
+login = settings.ULSTU_LOGIN
+password = settings.ULSTU_PASSWORD
 
 
 default_user_settings: dict = {

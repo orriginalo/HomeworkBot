@@ -6,26 +6,25 @@ from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
 from aiogram.types import FSInputFile
 
-from app.handlers import dp
+from app.handlers import routers
 from app.database.models import User
 from app.database.core import create_tables
 from app.scheduler import start_scheduler
-from app.database.requests.user import get_users
-from app.database.requests.group import *
+from app.database.queries.user import get_users
+from app.database.queries.group import *
 
 from utils.log import logger
 from utils.timetable.downloader import download_timetable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.browser_driver import driver
+from config import settings
 
 load_dotenv()
 
-login = os.getenv('LOGIN')
-password = os.getenv('PASSWORD')
+login = settings.ULSTU_LOGIN
+password = settings.ULSTU_PASSWORD
 
-API_KEY = os.getenv('API_KEY')
-
-bot = Bot(token=API_KEY)
+bot = Bot(token=settings.API_KEY)
 disp = Dispatcher()
 
 notifications_scheduler = AsyncIOScheduler()
@@ -63,8 +62,8 @@ async def main():
   await check_paths()
   logger.info("Paths checked")
 
-  disp.include_router(dp)
-  logger.info("Dispatcher included")
+  disp.include_routers(*routers)
+  logger.info("Routers included")
 
   driver.auth(login, password)
   logger.info("Driver authenticated")

@@ -1,10 +1,10 @@
 import asyncio
 import datetime
-from app.database.requests.media import add_media
-from app.database.requests.user import add_user, get_user_by_id, update_user, get_users, get_users_with_role
-from app.database.requests.homework import add_homework, get_homeworks_by_date, get_homework_by_id, del_homework, update_homework, get_homeworks_by_subject, reset_homework_deadline_by_id
-from app.database.requests.other import sync_sequences
-from app.database.requests.schedule import add_subject, get_schedule_by_week
+from app.database.queries.media import add_media
+from app.database.queries.user import add_user, get_user_by_id, update_user, get_users, get_users_with_role
+from app.database.queries.homework import add_homework, get_homeworks_by_date, get_homework_by_id, del_homework, update_homework, get_homeworks_by_subject, reset_homework_deadline_by_id
+from app.database.queries.other import sync_sequences
+from app.database.queries.schedule import add_subject, get_schedule_by_week
 from app.database.core import create_tables
 from app.browser_driver import driver
 from utils.all_subjects_parser import parse_all_subjects

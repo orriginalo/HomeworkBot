@@ -1,17 +1,18 @@
 from app.database.models import Groups
-from app.database.requests.group import get_all_groups, update_group
-from app.database.requests.subjects import add_subject_to_subjects
+from app.database.queries.group import get_all_groups, update_group
+from app.database.queries.subjects import add_subject_to_subjects
 from utils.group_subjects_parser import get_group_unique_subjects
 from utils.timetable.downloader import download_timetable
 from utils.timetable.parser import parse_timetable
 from dotenv import load_dotenv
 import os
 from rich import print
+from config import settings
 
 load_dotenv()
 
-login = os.getenv("LOGIN")
-password = os.getenv("PASSWORD")
+login = settings.ULSTU_LOGIN
+password = settings.ULSTU_PASSWORD
 
 
 async def parse_all_subjects(

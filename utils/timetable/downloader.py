@@ -9,12 +9,12 @@ from rich import print
 import json
 from dotenv import load_dotenv
 import os
+from config import settings
 
 load_dotenv()
 
-login = os.getenv("LOGIN")
-password = os.getenv("PASSWORD")
-
+login = settings.ULSTU_LOGIN
+password = settings.ULSTU_PASSWORD
 
 from selenium.common.exceptions import TimeoutException
 

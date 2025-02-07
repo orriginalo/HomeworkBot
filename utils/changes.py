@@ -1,8 +1,8 @@
 from sqlalchemy import Boolean, cast, func
 from app.database.models import User
-from app.database.requests.group import get_group_by_id
-from app.database.requests.user import get_user_by_id, get_users
-from app.database.requests.settings import get_setting, set_setting
+from app.database.queries.group import get_group_by_id
+from app.database.queries.user import get_user_by_id, get_users
+from app.database.queries.settings import get_setting, set_setting
 from utils.timetable.downloader import download_timetable
 from utils.log import logger
 from aiogram.types import FSInputFile, InputMediaPhoto

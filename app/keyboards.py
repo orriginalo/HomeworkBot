@@ -2,7 +2,7 @@ from utils.log import logger
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
-from app.database.requests.subjects import get_subject_by_name
+from app.database.queries.subjects import get_subject_by_name
 
 from copy import deepcopy
 
