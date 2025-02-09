@@ -7,8 +7,8 @@ from app.database.db_setup import Base
 from variables import default_user_settings
 
 intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
-created_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
-updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
+created_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
+updated_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
 
 class User(Base):
   __tablename__ = "users"
@@ -29,10 +29,10 @@ class User(Base):
 class Homework(Base):
   __tablename__ = "homeworks"
   uid: Mapped[intpk]
-  from_date: Mapped[int] = mapped_column(TIMESTAMP)
+  from_date: Mapped[datetime] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
   task: Mapped[str | None]
-  to_date: Mapped[int | None] = mapped_column(TIMESTAMP)
+  to_date: Mapped[datetime | None] = mapped_column(TIMESTAMP)
   group_id: Mapped[int]
   created_at: Mapped[created_at]
   added_by: Mapped[int | None] = mapped_column(BIGINT)
@@ -40,7 +40,7 @@ class Homework(Base):
 class Schedule(Base):
   __tablename__ = "schedule"
   uid: Mapped[intpk]
-  timestamp: Mapped[int] = mapped_column(TIMESTAMP)
+  timestamp: Mapped[datetime] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
   week_number: Mapped[int]
   group_id: Mapped[int | None]

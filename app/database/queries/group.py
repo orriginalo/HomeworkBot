@@ -32,7 +32,7 @@ async def update_group(group_id: int, **kwargs):
         await s.commit()
         logger.debug(f"Group {group_id} successfully updated!")
         await s.refresh(group)
-        return GroupSchema(**group.__dict__) if group else None
+        return GroupSchema.model_validate(group, from_attributes=True)
       else:
         logger.debug(f"Group with uid={group_id} not found.")
   except Exception as e:
@@ -59,7 +59,7 @@ async def get_group_by_id(group_id: int):
       stmt = select(Groups).where(Groups.uid == group_id)
       result = await s.execute(stmt)
       group = result.scalar_one_or_none()
-      return GroupSchema(**group.__dict__) if group else None
+      return GroupSchema.model_validate(group, from_attributes=True) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by ID {group_id}: {e}")
     return None
@@ -70,7 +70,7 @@ async def get_group_by_name(group_name: str):
       stmt = select(Groups).where(Groups.name == group_name)
       result = await s.execute(stmt)
       group = result.scalar_one_or_none()
-      return GroupSchema(**group.__dict__) if group else None
+      return GroupSchema.model_validate(group, from_attributes=True) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by name {group_name}: {e}")
     return None
@@ -85,7 +85,7 @@ async def get_all_groups(*filters):
         
       result = await s.execute(stmt)
       groups = result.scalars().all()
-      groups = [GroupSchema(**group.__dict__) for group in groups]
+      groups = [GroupSchema.model_validate(group, from_attributes=True) for group in groups]
       return groups
   except Exception as e:
     logger.exception(f"Error getting all groups: {e}")
@@ -98,7 +98,7 @@ async def get_group_by_ref(ref: str):
       result = await s.execute(stmt)
       group = result.scalar_one_or_none()
       print(f"ref: {ref}, group: {group}")
-      return GroupSchema(**group.__dict__) if group else None
+      return GroupSchema.model_validate(group, from_attributes=True) if group else None
   except Exception as e:
     logger.exception(f"Error getting group by ref: {e}")
     return None

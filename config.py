@@ -37,6 +37,4 @@ class Settings(BaseSettings):
     
 # Создаём глобальный объект настроек
 settings = Settings()
-print(settings.dict())
-
 

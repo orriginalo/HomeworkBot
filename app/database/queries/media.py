@@ -15,7 +15,7 @@ async def add_media(homework_id: int, media_id: str, media_type: str):
       )
       s.add(media)
       await s.commit()
-      return MediaSchema(**media.__dict__)
+      return MediaSchema.model_validate(media, from_attributes=True)
   except Exception as e:
     logger.exception(f"Error adding media: {e}")
     return None
@@ -41,7 +41,7 @@ async def get_media_by_id(media_id: int):
       stmt = select(Media).where(Media.homework_id == media_id)
       result = await s.execute(stmt)
       media = result.scalars().all()
-      medias = [MediaSchema(**media.__dict__) for media in media]
+      medias = [MediaSchema.model_validate(media, from_attributes=True) for media in media]
       return medias if len(medias) > 0 else None
   except Exception as e:
     logger.exception(f"Error getting media by ID {media_id}: {e}")

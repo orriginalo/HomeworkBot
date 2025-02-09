@@ -17,7 +17,7 @@ async def add_subject(timestamp: int, subject: str, week_number: int, group_id: 
       )
       s.add(schedule)
       await s.commit()
-      return ScheduleSchema(**schedule.__dict__)
+      return ScheduleSchema.model_validate(schedule, from_attributes=True)
     logger.debug(f"Schedule with week={week_number} and subject={subject} added.")
   except Exception as e:
     logger.exception(f"Error adding schedule: {e}")
@@ -28,7 +28,7 @@ async def get_schedule_by_week(week_number: int):
       stmt = select(Schedule).where(Schedule.week_number == week_number)
       result = await s.execute(stmt)
       schedules = result.scalars().all()
-      schedules = [ScheduleSchema(**schedule.__dict__) for schedule in schedules]
+      schedules = [ScheduleSchema.model_validate(schedule, from_attributes=True) for schedule in schedules]
       return schedules
   except Exception as e:
     logger.exception(f"Error getting schedule by week {week_number}: {e}")
