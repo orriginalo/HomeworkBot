@@ -1,16 +1,16 @@
-from app.database.db_setup import Base
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, ForeignKey, String, text
+from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
+from app.database.db_setup import OldBase
 from variables import default_user_settings
 
 intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
-created_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
-updated_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
+created_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
+updated_at = Annotated[str, mapped_column(server_default=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"), onupdate=text("TIMEZONE('UTC-4', CURRENT_TIMESTAMP)"))]
 
-class User(Base):
+class User(OldBase):
   __tablename__ = "users"
   uid: Mapped[intpk]
   tg_id: Mapped[int] = mapped_column(BIGINT, unique=True)
@@ -22,40 +22,37 @@ class User(Base):
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
   moved_at: Mapped[datetime | None]
-  group_uid: Mapped[int | None] = mapped_column(ForeignKey("groups.uid"))
-  group: Mapped["Groups"] = relationship()
+  group_id: Mapped[int | None]
+  group_name: Mapped[str | None]
   is_leader: Mapped[bool]
-  homeworks: Mapped[list["Homework"] | None] = relationship(back_populates="user")
 
-class Homework(Base):
+class Homework(OldBase):
   __tablename__ = "homeworks"
   uid: Mapped[intpk]
-  from_date: Mapped[datetime] = mapped_column(TIMESTAMP)
+  from_date: Mapped[int] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
   task: Mapped[str | None]
-  to_date: Mapped[datetime | None] = mapped_column(TIMESTAMP)
-  group_uid: Mapped[int | None] = mapped_column(ForeignKey("groups.uid"))
-  group: Mapped["Groups"] = relationship()
+  to_date: Mapped[int | None] = mapped_column(TIMESTAMP)
+  group_id: Mapped[int]
   created_at: Mapped[created_at]
-  user_uid: Mapped[int | None] = mapped_column(BIGINT, ForeignKey("users.uid"))
-  user: Mapped["User"] = relationship(back_populates="homeworks")
+  added_by: Mapped[int | None] = mapped_column(BIGINT)
 
-class Schedule(Base):
+class Schedule(OldBase):
   __tablename__ = "schedule"
   uid: Mapped[intpk]
-  timestamp: Mapped[datetime] = mapped_column(TIMESTAMP)
+  timestamp: Mapped[int] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
   week_number: Mapped[int]
   group_id: Mapped[int | None]
 
-class Media(Base):
+class Media(OldBase):
   __tablename__ = "media"
   uid: Mapped[intpk]
   homework_id: Mapped[int]
   media_id: Mapped[str]
   media_type: Mapped[str]
   
-class Groups(Base):
+class Groups(OldBase):
   __tablename__ = "groups"
   uid: Mapped[intpk]
   name: Mapped[str]
@@ -68,12 +65,12 @@ class Groups(Base):
   updated_at: Mapped[updated_at]
   subjects: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True, default=None)
 
-class Subjects(Base):
+class Subjects(OldBase):
   __tablename__ = "subjects"
   uid: Mapped[intpk]
   name: Mapped[str] = mapped_column(unique=True)
 
-class Settings(Base):
+class Settings(OldBase):
   __tablename__ = "settings"
   uid: Mapped[intpk]
   key: Mapped[str]

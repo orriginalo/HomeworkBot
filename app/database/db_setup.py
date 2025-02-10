@@ -21,6 +21,12 @@ sync_engine = create_engine(
 
 session = async_sessionmaker(async_engine)
 
+# В db_setup.py
+from sqlalchemy.ext.declarative import declarative_base
+
+# Новый Base для старых моделей
+OldBase = declarative_base()
+
 class Base(DeclarativeBase):
   pass
 
