@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Annotated, Optional, List
 from datetime import datetime
 
 class UserSchema(BaseModel):
@@ -13,20 +13,27 @@ class UserSchema(BaseModel):
   created_at: datetime
   updated_at: datetime
   moved_at: Optional[datetime]
-  group_id: Optional[int]
-  group_name: Optional[str]
+  group_uid: Optional[int]
   is_leader: bool
-
+  
+class UserRelSchema(UserSchema):
+    group: Optional["GroupSchema"]
+    homeworks: Optional[list["HomeworkRelSchema"]]
+  
 class HomeworkSchema(BaseModel):
   uid: Optional[int]
   from_date: datetime
   subject: str
   task: Optional[str]
   to_date: Optional[datetime]
-  group_id: int
+  group_uid: int
   created_at: datetime
-  added_by: Optional[int]
+  user_uid: int
 
+class HomeworkRelSchema(HomeworkSchema):
+  group: Optional["GroupSchema"]
+  user: Optional["UserSchema"]
+  
 class GroupSchema(BaseModel):
   uid: Optional[int]
   name: str
@@ -41,7 +48,7 @@ class GroupSchema(BaseModel):
 
 class ScheduleSchema(BaseModel):
   uid: Optional[int]
-  timestamp: int
+  timestamp: datetime
   subject: str
   week_number: int
   group_id: Optional[int]

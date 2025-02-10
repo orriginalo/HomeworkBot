@@ -12,6 +12,7 @@ from app.database.core import create_tables
 from app.scheduler import start_scheduler
 from app.database.queries.user import get_users
 from app.database.queries.group import *
+from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 from utils.log import logger
 from utils.timetable.downloader import download_timetable
@@ -25,7 +26,12 @@ login = settings.ULSTU_LOGIN
 password = settings.ULSTU_PASSWORD
 
 bot = Bot(token=settings.API_KEY)
-disp = Dispatcher()
+dp = Dispatcher()
+
+# dp.message.middleware(AlbumMiddleware())
+# dp.message.middleware(MsgLoggerMiddleware())
+# dp.callback_query.middleware(MsgLoggerMiddleware())
+# dp.message.filter(GroupChecker())
 
 notifications_scheduler = AsyncIOScheduler()
 
@@ -62,7 +68,7 @@ async def main():
   await check_paths()
   logger.info("Paths checked")
 
-  disp.include_routers(*routers)
+  dp.include_routers(*routers)
   logger.info("Routers included")
 
   driver.auth(login, password)
@@ -72,7 +78,7 @@ async def main():
   logger.info("Schedulers started")
 
   logger.info("Bot started")
-  await disp.start_polling(bot)
+  await dp.start_polling(bot)
 
 if __name__ == "__main__":
   logger.info("Bot starting...")

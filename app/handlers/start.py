@@ -8,6 +8,7 @@ from app.database.queries.group import get_all_groups, get_group_by_name, get_gr
 from app.handlers.utils import check_time_moved
 import app.keyboards as kb
 from app.database.queries.user import get_user_by_id
+from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 import re
 
@@ -19,6 +20,11 @@ class setting_group(StatesGroup):
 
 router = Router(name="Start")
 
+router.message.middleware(MsgLoggerMiddleware())
+router.callback_query.middleware(MsgLoggerMiddleware())
+router.message.middleware(AlbumMiddleware())
+router.message.filter(GroupChecker())
+  
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext):
   user = await get_user_by_id(message.from_user.id)
@@ -35,8 +41,8 @@ async def start(message: Message, state: FSMContext):
       group = await get_group_by_ref(ref_code)
 
       if group:
-        if user.group_id:
-          if group.uid == user.group_id:
+        if user.group:
+          if group.uid == user.group.uid:
             await message.answer("Вы уже присоеденены к этой группе!")
           else:
             if user.is_leader:
@@ -57,7 +63,7 @@ async def start(message: Message, state: FSMContext):
 
 
     else:
-      if user.group_id is None:
+      if user.group is None: 
         await message.answer(
             f"👋 <b>Добро пожаловать в DomashkaBot!</b>\n\n"
             f"📝 Для начала работы укажи <i>название своей группы</i> (например: <code>пдо-16</code>, <code>рэсдо-12</code>):",

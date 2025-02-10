@@ -22,9 +22,9 @@ async def parse_all_subjects(
     groups = await get_all_groups()
     if do_download_timetable:
         driver.auth(login, password)
-        download_timetable(driver, [group["name"] for group in groups])
+        download_timetable(driver, [group.name for group in groups])
     for group in groups:
-        group_name = group["name"]
+        group_name = group.name
         parse_timetable(
             f"./data/timetables/html/{group_name.lower()}-timetable.html",
             from_json_path,

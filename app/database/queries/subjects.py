@@ -11,6 +11,7 @@ async def add_subject_to_subjects(subject: str):
       subject = Subjects(name=subject)
       s.add(subject)
       await s.commit()
+      await s.refresh(subject)
       return SubjectSchema.model_validate(subject, from_attributes=True)
   except Exception as e:
     logger.exception(f"Error adding subject {subject}: {e}")

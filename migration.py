@@ -53,38 +53,38 @@ def get_media_from_sqlite():
 async def main():
   await create_tables(drop_tables=True)
   
-  users = get_users_from_sqlite()
-  print("Adding users...", end="")
-  for user in users:
-     await add_user(
-       tg_id=user[0],
-       role=user[1],
-       username=user[2],
-       firstname=user[4],
-       lastname=user[5],
-       settings=default_user_settings,
-       group_id=None,
-       group_name=None
-       )
-  print(" | Done.")
+  # users = get_users_from_sqlite()
+  # print("Adding users...", end="")
+  # for user in users:
+  #    await add_user(
+  #      tg_id=user[0],
+  #      role=user[1],
+  #      username=user[2],
+  #      firstname=user[4],
+  #      lastname=user[5],
+  #      settings=default_user_settings,
+  #      group_id=None,
+  #      group_name=None
+  #      )
+  # print(" | Done.")
 
-  homeworks = get_homeworks_from_sqlite()
-  print("Adding homeworks...", end="")
-  for homework in homeworks:
-    await add_homework(homework[2], homework[3], 313, 1, homework[1], to_date_ts=homework[4], uid=homework[0])
-  print(" | Done.")
+  # homeworks = get_homeworks_from_sqlite()
+  # print("Adding homeworks...", end="")
+  # for homework in homeworks:
+  #   await add_homework(homework[2], homework[3], 313, 1, homework[1], to_date_ts=homework[4], uid=homework[0])
+  # print(" | Done.")
 
-  schedule = get_schedule_from_sqlite()
-  print("Adding schedule...", end="")
-  for schedule in schedule:
-    await add_subject(schedule[1], schedule[2], schedule[3], 313)
-  print(" | Done.")
+  # schedule = get_schedule_from_sqlite()
+  # print("Adding schedule...", end="")
+  # for schedule in schedule:
+  #   await add_subject(schedule[1], schedule[2], schedule[3], 313)
+  # print(" | Done.")
   
-  media = get_media_from_sqlite()
-  print("Adding media...", end="")
-  for media in media:
-    await add_media(media[0], media[1], media[2])
-  print(" | Done.")
+  # media = get_media_from_sqlite()
+  # print("Adding media...", end="")
+  # for media in media:
+  #   await add_media(media[0], media[1], media[2])
+  # print(" | Done.")
 
   print("Adding groups...", end="")
   driver.auth(login, password)

@@ -8,6 +8,7 @@ from app.database.models import User
 from app.database.queries.user import get_user_by_id, get_users, update_user, add_user, del_user
 from app.excel_maker.db_to_excel import create_schedule
 from app.excel_maker.formatter import format_table
+from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 from utils.backuper import create_backups
 from utils.log import logger
@@ -41,6 +42,11 @@ class removing_user(StatesGroup):
   user_id = State()
 
 router = Router(name="Admin")
+
+router.message.middleware(MsgLoggerMiddleware())
+router.callback_query.middleware(MsgLoggerMiddleware())
+router.message.middleware(AlbumMiddleware())
+router.message.filter(GroupChecker())
 
 # ADMIN PANEL CALLBACKS
 @router.callback_query(F.data == "show_favs")
@@ -348,8 +354,8 @@ async def tell_all_users_state(message: Message, state: FSMContext):
     msg1 = await message.answer("Отправляю сообщение всем пользователям...")
     users = await get_users()
     for user in users:
-      await message.answer(f"✉️ <a href='tg://user?id={user['tg_id']}'>{user['tg_id']}</a>...")
-      await message.bot.send_message(user["tg_id"], msg)
+      await message.answer(f"✉️ <a href='tg://user?id={user.tg_id}'>{user.tg_id}</a>...")
+      await message.bot.send_message(user.tg_id, msg)
     await msg1.delete()
     await message.answer("✅ Сообщение отправлено всем пользователям.")
   await state.clear()
@@ -381,10 +387,13 @@ async def secret(message: Message):
     message
     users = await get_users()
     for user in users:
-      if user["tg_id"] != 1579774985:
-        await message.answer(f"✉️ <a href='tg://user?id={user['tg_id']}'>{user['tg_id']}</a>...", parse_mode="html")
-        await message.bot.send_message(user["tg_id"], msg, parse_mode="html")
-        if user["role"] == 2:
-          await message.bot.send_message(user["tg_id"], msg_for_adders, parse_mode="html")
+      if user.tg_id != 1579774985:
+        try:
+          await message.answer(f"✉️ <a href='tg://user?id={user['tg_id']}'>{user['tg_id']}</a>...", parse_mode="html")
+          await message.bot.send_message(user.tg_id, msg, parse_mode="html")
+          if user["role"] == 2:
+            await message.bot.send_message(user.tg_id, msg_for_adders, parse_mode="html")
+        except:
+          await message.answer(f"Не удалось отправить сообщение пользователю <a href='tg://user?id={user['tg_id']}'>{user['tg_id']}</a>")
     await message.answer("✅ Сообщение отправлено всем пользователям.")
     await message.answer("Выберите опцию:", reply_markup=await kb.get_start_keyboard(user))

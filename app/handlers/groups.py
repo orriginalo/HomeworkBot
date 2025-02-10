@@ -7,6 +7,7 @@ from app.database.queries.group import get_all_groups, get_group_by_id, get_grou
 import app.keyboards as kb
 from app.database.models import User
 from app.database.queries.user import get_user_by_id, get_users, update_user
+from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 from utils.log import logger
 from utils.referal import generate_unique_code, get_referal_link
@@ -19,13 +20,18 @@ class transferring_leadership(StatesGroup):
 
 router = Router(name="Groups")
 
+router.message.middleware(MsgLoggerMiddleware())
+router.callback_query.middleware(MsgLoggerMiddleware())
+router.message.middleware(AlbumMiddleware())
+router.message.filter(GroupChecker())
+
 @router.callback_query(F.data == "join_group")
 async def join_group_handler(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
   user = await get_user_by_id(call.from_user.id)
   group_name = (await state.get_data())["group_name"]
   group = await get_group_by_name(group_name)
-  user = await update_user(user.tg_id, role=1, moved_at=datetime.now(), group_id=group.uid, group_name=group.name)
+  user = await update_user(user.tg_id, role=1, moved_at=datetime.now(), group_uid=group.uid, group_name=group.name)
   await call.message.answer(f"🎉 Вы присоединились к группе <b>{group.name}</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
 
 @router.callback_query(F.data == "transfer_leadership")
@@ -56,7 +62,7 @@ async def transfer_leadership(message: Message, state: FSMContext):
     await message.answer("❌ Пользователь не существует, или его нет в базе (пусть напишет боту).", reply_markup=await kb.get_start_keyboard(user))
     await state.clear()
     return
-  elif future_leader.group_id != user.group_id:
+  elif future_leader.group.uid != user.group.uid:
     await message.answer("❌ Вы не можете передать права лидерства человеку который находится в другой группе.", reply_markup=await kb.get_start_keyboard(user))
     await state.clear()
     return
@@ -67,7 +73,7 @@ async def transfer_leadership(message: Message, state: FSMContext):
 @router.callback_query(F.data == "transfer_leadership_confirm")
 async def transfer_leadership_confirm_handler(call: CallbackQuery, state: FSMContext):
   user = await get_user_by_id(call.from_user.id)
-  group = await get_group_by_id(user.group_id)
+  group = await get_group_by_id(user.group.uid)
   data = await state.get_data()
   future_leader_id = data["user_id"]
 
@@ -103,7 +109,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     referal_link = await get_referal_link(referal_code, group.name)
     
     await update_group(group.uid, ref_code=referal_code, is_equipped=True, member_count=group.member_count + 1, leader_id=callback.from_user.id)
-    user = await update_user(callback.from_user.id, role=2, group_id=group.uid, group_name=group.name, is_leader=True, moved_at=datetime.now())
+    user = await update_user(callback.from_user.id, role=2, group_uid=group.uid, group_name=group.name, is_leader=True, moved_at=datetime.now())
 
     await update_timetable(for_all=False, group_name=group.name)
 
@@ -120,7 +126,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(f"🔗 <b>Пригласительная ссылка для вступления:</b>\n\n👉 {referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
   except Exception as e:
     await update_group(group.uid, ref_code=None, is_equipped=False, member_count=0 , leader_id=None)
-    await update_user(start_user.tg_id, role=start_user.role, group_id=None, group_name=None, is_leader=False, moved_at=None)
+    await update_user(start_user.tg_id, role=start_user.role, group_uid=None, group_name=None, is_leader=False, moved_at=None)
     await msg.edit_text(f"❌ Ошибка создания группы. Попробуйте еще раз (/start).")
     logger.exception(f"Error creating group: {e}")
 
@@ -129,8 +135,7 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
 @router.message(F.text.contains("Управление группой"))
 async def show_group_controller_handler(message: CallbackQuery):
   user = await get_user_by_id(message.from_user.id)
-  group = await get_group_by_id(user.group_id)
-  all_users_in_group = await get_users(User.group_id == user.group_id)
+  all_users_in_group = await get_users(User.group_uid == user.group.uid)
 
   all_users_in_group_id = [user.tg_id for user in all_users_in_group]
 
@@ -150,18 +155,18 @@ async def show_group_controller_handler(message: CallbackQuery):
 
   await message.answer(
       f"👑 <b>Панель управления группой</b>\n\n"
-      f"▫️ Название: <code>{group.name}</code>\n"
-      f"▫️ Лидер: <a href='tg://user?id={group.leader_id}'>{user.firstname if user.firstname else ''} {user.lastname if user.lastname else ''}</a>\n\n"
-      f"▫️ Всего участников: {len(all_users_in_group)}\n"
-      f"📃 Список участников:\n{users_links}",
+      f"▫️ Название: <code>{user.group.name}</code>\n"
+      f"▫️ Лидер: <a href='tg://user?id={user.group.leader_id}'>{user.firstname if user.firstname else ''} {user.lastname if user.lastname else ''}</a>\n\n"
+      f"▫️ Всего участников: {len(all_users_in_group)}"
+      f"\n📃 Список участников:\n{users_links}" if users_links and len(users_links) > 0 else ""
       f"🛠 <i>Доступные действия:</i>",
-      parse_mode="HTML",
+      parse_mode="html",
       reply_markup=kb.group_controller_keyboard
   )
 
 @router.callback_query(F.data == "get_group_link")
 async def get_group_link_handler(call: CallbackQuery):
   user = await get_user_by_id(call.from_user.id)
-  group = await get_group_by_id(user.group_id)
+  group = await get_group_by_id(user.group.uid)
   referal_link = await get_referal_link(group.ref_code, group.name)
   await call.message.answer(f"🔗 <b>Ссылка для вступления:</b>\n👉{referal_link}", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))

@@ -89,7 +89,7 @@ class GroupChecker(Filter):
     ) -> bool:
         
         user = await get_user_by_id(message.from_user.id)
-        if user is not None and user["group_id"] is None:
+        if user is not None and user.group is None:
             stmt = "/start" not in message.text and message.text.strip() != "/repair" and (await state.get_state() != "setting_group:group_name")
             if stmt:
                 await message.answer("➡️ Для продолжения использования бота присоединитесь к группе\n\nИз <b>Пдо-16</b>?\n👉 https://t.me/homew0rk_bot?start=invite_svmeP8pb_pdo-16", parse_mode="html")
@@ -98,7 +98,6 @@ class GroupChecker(Filter):
         
 
 class MsgLoggerMiddleware(BaseException):
-
     async def __call__(
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
@@ -114,11 +113,11 @@ class MsgLoggerMiddleware(BaseException):
                 username=event.from_user.username,
                 firstname=event.from_user.first_name,
                 lastname=event.from_user.last_name,
-                group_id=None,
+                group_uid=None,
                 is_leader=False
             )
         else:
-            if user["role"] == 0:
+            if user.role == 0:
                 return  # Прерываем выполнение, если роль 0
         
         # Обновляем данные пользователя в БД

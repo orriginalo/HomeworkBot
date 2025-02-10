@@ -5,7 +5,7 @@ from app.database.queries.media import *
 from app.database.queries.user import *
 from app.database.queries.homework import *
 from app.database.queries.schedule import *
-from app.browser_driver import driver
+# from app.browser_driver import driver
 from utils.all_subjects_parser import parse_all_subjects
 from utils.groups_parser import parse_groups_and_add_to_db
 from utils.db_subject_populator import populate_schedule
@@ -19,7 +19,7 @@ async def tests():
 
   print("USERS")
   
-  print(await get_user_by_id(1522039516)) # WORKING
+  # print(await get_user_by_id(1522039516)) # WORKING
   # print(await update_user(1522039516, moved_at=datetime.datetime.now())) # WORKING
   # print(await get_user_by_id(1522039516)) # WORKING
  
@@ -35,7 +35,7 @@ async def tests():
   # print(await get_homeworks_by_date(1734465600)) # WORKING
 
   # print("get_homework_by_id")
-  # print(await get_homework_by_id(1)) # WORKING
+  print(await get_homework_by_id(39)) # WORKING
 
   # print("get_homeworks_by_subject")
   # print(await get_homeworks_by_subject("Математика")) # WORKING

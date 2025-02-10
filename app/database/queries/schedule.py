@@ -17,6 +17,7 @@ async def add_subject(timestamp: int, subject: str, week_number: int, group_id: 
       )
       s.add(schedule)
       await s.commit()
+      await s.refresh(schedule)
       return ScheduleSchema.model_validate(schedule, from_attributes=True)
     logger.debug(f"Schedule with week={week_number} and subject={subject} added.")
   except Exception as e:

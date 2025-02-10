@@ -18,10 +18,10 @@ password = settings.ULSTU_PASSWORD
 
 from selenium.common.exceptions import TimeoutException
 
-def download_timetable(driver, groups: list[str], make_screenshot: bool = False):
-    logger.debug(f"Started downloading timetable for groups: {groups}...")
+def download_timetable(driver, groups_names: list[str], make_screenshot: bool = False):
+    logger.debug(f"Started downloading timetable for groups: {groups_names}...")
     try:
-        for group in groups:
+        for group in groups_names:
             driver.get(f"https://time.ulstu.ru/timetable?filter={group.lower()}")
             parent_container = None
             try:

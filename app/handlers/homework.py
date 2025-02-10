@@ -12,6 +12,7 @@ from app.database.queries.media import add_media, del_media, get_media_by_id
 from app.database.queries.subjects import get_subject_by_id
 from app.database.models import User
 from app.database.queries.user import get_user_by_id, get_users
+from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 from datetime import datetime, timedelta
 
@@ -39,12 +40,17 @@ class adding_homework(StatesGroup):
 
 router = Router(name="Homework")
 
+router.message.middleware(MsgLoggerMiddleware())
+router.callback_query.middleware(MsgLoggerMiddleware())
+router.message.middleware(AlbumMiddleware())
+router.message.filter(GroupChecker())
+
 @router.callback_query(F.data == "change_subject")
 async def change_subject(call: CallbackQuery, state: FSMContext):
   user = await get_user_by_id(call.from_user.id)
   await state.set_state(adding_homework.subject)
   await call.message.delete()
-  subjects = (await get_group_by_id(user.group_id)).subjects
+  subjects = (await get_group_by_id(user.group.uid)).subjects
   await call.message.answer("🔄 Выберите предмет:", reply_markup=await kb.allowed_subjects_change_keyboard(subjects))
 
 @router.callback_query(F.data == "change_task")
@@ -63,7 +69,7 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
   media = data.get("media_group")
   user = await get_user_by_id(call.from_user.id)
 
-  homework = await add_homework(subject, task, user["group_id"], call.from_user.id, var.calculate_today()[1])
+  homework = await add_homework(subject, task, user.group.uid, call.from_user.id, var.calculate_today()[1])
 
   if media:
     for media in data.get("media_group"):
@@ -71,15 +77,15 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
 
   await call.message.answer(f"✅ <b>Домашнее задание добавлено.</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user)) # в базу
   await call.message.delete()
-  admins = await get_users(User.role == 4, User.group_id == user["group_id"])
-  admins += await get_users(User.role == 3, User.group_id == user["group_id"])
+  admins = await get_users(User.role == 4, User.group_uid == user.group.uid)
+  admins += await get_users(User.role == 3, User.group_uid == user.group.uid)
   
   for admin in admins:
     if admin.tg_id != call.from_user.id:
       if media:
         await send_media(admin.tg_id, call.message.bot, media, f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework.id}*", parse_mode="Markdown")
       else:
-        await call.bot.send_message(admin["tg_id"], f"🔔 Добавлено домашнее задание по\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework.id}*", parse_mode="Markdown")
+        await call.bot.send_message(admin.tg_id, f"🔔 Добавлено домашнее задание по\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework.id}*", parse_mode="Markdown")
 
   await state.clear()
   
@@ -118,7 +124,7 @@ async def _(message: Message, state: FSMContext):
 @router.message(F.text.lower().contains("по предмету"))
 async def _(message: Message):
   user = await get_user_by_id(message.from_user.id)
-  group = await get_group_by_id(user.group_id)
+  group = await get_group_by_id(user.group.uid)
   subjects = group.subjects
   await message.answer("Выбери предмет по которому\nхочешь посмотреть Д/З", reply_markup=await kb.allowed_subjects_check_hw_keyboard(subjects))
 
@@ -127,13 +133,13 @@ async def _(call: CallbackQuery):
   user = await get_user_by_id(call.from_user.id)
   await call.message.delete()
   subject = await get_subject_by_id(int(call.data.replace("-check-hw", "")))
-  homeworks = (await get_homeworks_by_subject(subject.name, limit_last_two=True, group_id=user["group_id"]))
-  homeworks.reverse()
-  if len(homeworks) > 0:
+  homeworks: list = (await get_homeworks_by_subject(subject.name, limit_last=True, limit_last_count=user.settings["last_homeworks_count"], group_id=user.group.uid))
+  if homeworks is not None and len(homeworks) > 0:
+    homeworks.reverse()
     await call.message.answer(f"Домашнее задание по <b>{subject.name}</b>", parse_mode="html")
     for homework in homeworks:
       text = f"""
-Добавлено <b>{homework.from_date.strftime("%d.%m.%Y")}</b> {"<i>(последнее)</i>" if homework == homeworks[-1] else ""} {f'<span class="tg-spoiler">id {homework.uid}</span>' if user.role >= 2 else ""}
+Добавлено <b>{homework.from_date.strftime("%d.%m.%Y")}</b> {"<i>(последнее)</i>" if homework == homeworks[-1] else ""} {f'<span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] and user.role >= 2 else ""}
 
 {homework.task}
       """
@@ -180,7 +186,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
     if len(inted_date_from_user) == 2:
       date_time = datetime.strptime(f"{inted_date_from_user[1]}/{inted_date_from_user[0]}/{var.cur_year}, 00:00:00", "%d/%m/%Y, %H:%M:%S")
       date_time_timestamp = datetime.timestamp(date_time)
-      homeworks = await get_homeworks_by_date(date_time_timestamp, group_id=user["group_id"])
+      homeworks = await get_homeworks_by_date(date_time_timestamp, group_id=user.group.uid)
       sent_message = await message.answer(f"⏳ Обновляю информацию...", reply_markup=await kb.get_start_keyboard(user))
       await update_homework_dates()
       if homeworks is None or len(homeworks) == 0:
@@ -192,7 +198,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
       else:
         await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
         for homework in homeworks:
-          text = f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.role >= 2 else "") + f"\n\n{homework.task}"
+          text = f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] and user.role >= 2 else "") + f"\n\n{homework.task}"
           media = await get_media_by_id(homework.uid)
           if media:
             await send_media(message.chat.id, message.bot, media, text, parse_mode="html")
@@ -208,7 +214,7 @@ async def add_hw_one(message: Message, state: FSMContext):
   user = await get_user_by_id(message.from_user.id)
   if user.role >= 2:
     await state.set_state(adding_homework.subject)
-    subjects = (await get_group_by_id(user.group_id)).subjects
+    subjects = (await get_group_by_id(user.group.uid)).subjects
     await message.answer("Выберите предмет:", reply_markup=await kb.allowed_subjects_keyboard(subjects))
     kb.ReplyKeyboardRemove(remove_keyboard=True)
 
@@ -352,8 +358,8 @@ async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
   await call.message.edit_text(
     f"🗑️ <b>Задание успешно удалено!</b>\n\n"
     f"▫️ ID: <code>{data['hw_id']}</code>\n"
-    f"▫️ Предмет: {homework['subject']}\n"
-    f"▫️ Текст: <i>{homework['task'][:30] + '...' if len(homework['task']) > 30 else homework['task']}</i>",
+    f"▫️ Предмет: {homework.subject}\n"
+    f"▫️ Текст: <i>{homework.task[:30] + '...' if len(homework.task) > 30 else homework.task}</i>",
     parse_mode="HTML"
   )
   await state.clear()

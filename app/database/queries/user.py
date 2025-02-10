@@ -1,9 +1,10 @@
 from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 from app.database.db_setup import session
 from app.database.models import User
 from utils.log import logger
 from variables import default_user_settings
-from app.database.schemas import UserSchema
+from app.database.schemas import UserRelSchema
 
 async def add_user(
     tg_id: int,
@@ -12,8 +13,7 @@ async def add_user(
     firstname: str = "",
     lastname: str = "",
     settings: dict = default_user_settings,
-    group_id: int = None,
-    group_name: str = None,
+    group_uid: int = None,
     is_leader: bool = False
 ):
     try:
@@ -25,7 +25,7 @@ async def add_user(
 
             if existing_user:
                 logger.warning(f"User with tg_id {tg_id} already exists.")
-                return UserSchema(**existing_user.__dict__)
+                return UserRelSchema(**existing_user.__dict__)
 
             user = User(
                 tg_id=tg_id,
@@ -34,14 +34,13 @@ async def add_user(
                 firstname=firstname,
                 lastname=lastname,
                 settings=settings,
-                group_id=group_id,
-                group_name=group_name,
+                group_uid=group_uid,
                 is_leader=is_leader
             )
             s.add(user)
             await s.commit()
             await s.refresh(user)
-            return UserSchema.model_validate(user, from_attributes=True) if user else None
+            return UserRelSchema.model_validate(user, from_attributes=True) if user else None
     except Exception as e:
         logger.error(f"Error adding user: {e}")
         return None
@@ -65,13 +64,10 @@ async def del_user(tg_id: int):
 async def get_user_by_id(tg_id: int):
   try:
     async with session() as s:
-      stmt = select(User).where(User.tg_id == tg_id)
+      stmt = select(User).where(User.tg_id == tg_id).options(selectinload(User.homeworks), selectinload(User.group))
       result = await s.execute(stmt)
       user = result.scalar_one_or_none()
-      if user:
-        return UserSchema.model_validate(user, from_attributes=True) if user else None
-      else:
-        return None
+      return UserRelSchema.model_validate(user, from_attributes=True) if user else None
   except Exception as e:
     logger.exception(f"Error getting user by ID {tg_id}: {e}")
     return None
@@ -79,7 +75,7 @@ async def get_user_by_id(tg_id: int):
 async def update_user(tg_id: int, **kwargs):
   try:
     async with session() as s:
-      stmt = select(User).where(User.tg_id == tg_id)
+      stmt = select(User).where(User.tg_id == tg_id).options(selectinload(User.homeworks), selectinload(User.group))
       result = await s.execute(stmt)
       user = result.scalar_one()
       for key, value in kwargs.items():
@@ -87,7 +83,7 @@ async def update_user(tg_id: int, **kwargs):
           setattr(user, key, value)
       await s.commit()
       await s.refresh(user)
-      return UserSchema.model_validate(user, from_attributes=True) if user else None
+      return UserRelSchema.model_validate(user, from_attributes=True) if user else None
   except Exception as e:
     logger.exception(f"Error updating user {tg_id}: {e}")
     return None
@@ -98,19 +94,19 @@ async def get_users(*filters):
   admins = await get_users(User.role >= 3)
   """
   async with session() as s:
-    stmt = select(User)
+    stmt = select(User).options(selectinload(User.homeworks), selectinload(User.group))
     if filters:
       stmt = stmt.where(and_(*filters))
     result = await s.execute(stmt)
     users = result.scalars().all()
-    users = [UserSchema.model_validate(user, from_attributes=True) for user in users]
+    users = [UserRelSchema.model_validate(user, from_attributes=True) for user in users]
     return users
 
 async def get_users_with_role(role: int):
   async with session() as s:
-    stmt = select(User).where(User.role == role)
+    stmt = select(User).where(User.role == role).options(selectinload(User.homeworks), selectinload(User.group))
     result = await s.execute(stmt)
     users = result.scalars().all()
-    users = [UserSchema.model_validate(user, from_attributes=True) for user in users]
+    users = [UserRelSchema.model_validate(user, from_attributes=True) for user in users]
     return users
   

@@ -33,9 +33,8 @@ password = settings.ULSTU_PASSWORD
 
 
 default_user_settings: dict = {
-  "send_timetable_new_week": False,
-  "send_timetable_updated": False,
-  "send_changes_updated": False,
+  "last_homeworks_count": 2,
+  "change_ids_visibility": True,
 }
 
 def calculate_yesterday():

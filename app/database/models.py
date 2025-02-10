@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, String, text
+from sqlalchemy import ARRAY, BIGINT, TIMESTAMP, ForeignKey, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.db_setup import Base
 from variables import default_user_settings
 
@@ -22,9 +22,10 @@ class User(Base):
   created_at: Mapped[created_at]
   updated_at: Mapped[updated_at]
   moved_at: Mapped[datetime | None]
-  group_id: Mapped[int | None]
-  group_name: Mapped[str | None]
+  group_uid: Mapped[int | None] = mapped_column(ForeignKey("groups.uid"))
+  group: Mapped["Groups"] = relationship()
   is_leader: Mapped[bool]
+  homeworks: Mapped[list["Homework"] | None] = relationship(back_populates="user")
 
 class Homework(Base):
   __tablename__ = "homeworks"
@@ -33,9 +34,11 @@ class Homework(Base):
   subject: Mapped[str]
   task: Mapped[str | None]
   to_date: Mapped[datetime | None] = mapped_column(TIMESTAMP)
-  group_id: Mapped[int]
+  group_uid: Mapped[int | None] = mapped_column(ForeignKey("groups.uid"))
+  group: Mapped["Groups"] = relationship()
   created_at: Mapped[created_at]
-  added_by: Mapped[int | None] = mapped_column(BIGINT)
+  user_uid: Mapped[int | None] = mapped_column(ForeignKey("users.uid"))
+  user: Mapped["User"] = relationship(back_populates="homeworks")
 
 class Schedule(Base):
   __tablename__ = "schedule"

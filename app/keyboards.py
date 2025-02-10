@@ -1,3 +1,4 @@
+from app.database.schemas import UserSchema
 from utils.log import logger
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
@@ -160,7 +161,7 @@ do_check_changes_keyboard = InlineKeyboardMarkup(
   ]
 )
 
-async def get_settings_keyboard(user: dict):
+async def get_settings_keyboard(user: UserSchema):
   
   def get_emoji_by_bool(var: bool):
     return "✅" if var == True else "❌"
@@ -168,34 +169,26 @@ async def get_settings_keyboard(user: dict):
   def get_callback_by_bool(var: bool):
     return "enable_" if var == True else "disable_"
   
-  user_settings = user["settings"]
+  user_settings = user.settings
   
-  send_timetable_new_week = user_settings["send_timetable_new_week"]
-  send_timetable_updated = user_settings["send_timetable_updated"]
-  send_changes_updated = user_settings["send_changes_updated"]
+  change_ids_visibility = user_settings["change_ids_visibility"]
   
   settings_postfix = "_setting"
   
   buttons = {
-    "send_timetable_new_week": {
-      "text": f"{get_emoji_by_bool(send_timetable_new_week)} Расписание с новой недели",
-      "callback": f"{get_callback_by_bool(send_timetable_new_week)}send_timetable_new_week{settings_postfix}"
-    },
-    # "send_timetable_updated": {
-    #   "text": f"{get_emoji_by_bool(send_timetable_updated)} Обновление в расписании",
-    #   "callback": f"{get_callback_by_bool(send_timetable_updated)}send_timetable_updated{settings_postfix}"
-    # },
-    # "send_changes_updated": {
-    #   "text": f"{get_emoji_by_bool(send_changes_updated)} Новые изменения",
-    #   "callback": f"{get_callback_by_bool(send_changes_updated)}send_changes_updated{settings_postfix}"
-    # }
+    "change_ids_visibility": {
+      "text": f"{get_emoji_by_bool(change_ids_visibility)} Видимость id заданий",
+      "callback": f"{get_callback_by_bool(change_ids_visibility)}change_ids_visibility{settings_postfix}"
+    }
   }
+  
   
   kb = InlineKeyboardBuilder()
   
   for key, value in buttons.items():
     kb.add(InlineKeyboardButton(text=value["text"], callback_data=value["callback"]))
   
+  kb.add(InlineKeyboardButton(text="📝 Изменить кол-во последних Д/З", callback_data="change_last_homeworks_count"))
   kb.add(InlineKeyboardButton(text="◀️ Назад", callback_data="back"))
   return kb.adjust(1).as_markup()
 
@@ -203,7 +196,7 @@ async def allowed_subjects_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
     try:
-      subject_id = (await get_subject_by_name(subject))["uid"]
+      subject_id = (await get_subject_by_name(subject)).uid
       kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-add"))
     except Exception as e:
       logger.warning(f"Building keyboard ({subject}): {e}")
@@ -215,7 +208,7 @@ async def allowed_subjects_change_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
     try:
-      subject_id = (await get_subject_by_name(subject))["uid"]
+      subject_id = (await get_subject_by_name(subject)).uid
       kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-changed"))
     except Exception as e:
       logger.warning(f"Building keyboard ({subject}): {e}")
@@ -223,11 +216,13 @@ async def allowed_subjects_change_keyboard(subjects: list):
   kb.add(InlineKeyboardButton(text="Отмена ❌", callback_data="back"))
   return kb.adjust(1).as_markup()
 
+
+
 async def allowed_subjects_check_hw_keyboard(subjects: list):
   kb = InlineKeyboardBuilder()
   for subject in subjects:
     try:
-      subject_id = (await get_subject_by_name(subject))["uid"]
+      subject_id = (await get_subject_by_name(subject)).uid
       kb.add(InlineKeyboardButton(text=subject, callback_data=f"{subject_id}-check-hw"))
     except Exception as e:
       logger.warning(f"Building keyboard ({subject}): {e}")
