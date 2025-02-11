@@ -182,7 +182,6 @@ async def get_settings_keyboard(user: UserSchema):
     }
   }
   
-  
   kb = InlineKeyboardBuilder()
   
   for key, value in buttons.items():

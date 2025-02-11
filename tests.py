@@ -22,7 +22,7 @@ async def tests():
   # print(await get_user_by_id(1522039516)) # WORKING
   # print(await update_user(1522039516, moved_at=datetime.datetime.now())) # WORKING
   # print(await get_user_by_id(1522039516)) # WORKING
- 
+
   # print(await get_users_with_notifications()) # WORKING
 
   # print(await get_users_with_role(2)) # WORKING
@@ -35,7 +35,7 @@ async def tests():
   # print(await get_homeworks_by_date(1734465600)) # WORKING
 
   # print("get_homework_by_id")
-  print(await get_homework_by_id(39)) # WORKING
+  # print(await get_homework_by_id(39)) # WORKING
 
   # print("get_homeworks_by_subject")
   # print(await get_homeworks_by_subject("Математика")) # WORKING

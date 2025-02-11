@@ -108,8 +108,10 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
     
     referal_link = await get_referal_link(referal_code, group.name)
     
+    settings_copy = start_user.settings.copy()
+    settings_copy["change_ids_visibility"] = True
     await update_group(group.uid, ref_code=referal_code, is_equipped=True, member_count=group.member_count + 1, leader_id=callback.from_user.id)
-    user = await update_user(callback.from_user.id, role=2, group_uid=group.uid, group_name=group.name, is_leader=True, moved_at=datetime.now())
+    user = await update_user(callback.from_user.id, role=2, settings=settings_copy, group_uid=group.uid, group_name=group.name, is_leader=True, moved_at=datetime.now())
 
     await update_timetable(for_all=False, group_name=group.name)
 
@@ -135,34 +137,33 @@ async def create_group_handler(callback: CallbackQuery, state: FSMContext):
 @router.message(F.text.contains("Управление группой"))
 async def show_group_controller_handler(message: CallbackQuery):
   user = await get_user_by_id(message.from_user.id)
-  all_users_in_group = await get_users(User.group_uid == user.group.uid)
+  if user.is_leader:
+    all_users_in_group = await get_users(User.group_uid == user.group.uid)
+    
+    def get_link(user_id, firstname, lastname):
+      if firstname == None:
+        return f"<a href='tg://user?id={user_id}'>{lastname}</a>"
+      elif lastname == None:
+        return f"<a href='tg://user?id={user_id}'>{firstname}</a>"
+      elif firstname == None and lastname == None:
+        return f"<a href='tg://user?id={user_id}'>{user_id}</a>"
+      else:
+        # return f"[{firstname} {lastname}](tg://user?id={user_id})\n"
+        return f"<a href='tg://user?id={user_id}'>{firstname} {lastname}</a>"
 
-  all_users_in_group_id = [user.tg_id for user in all_users_in_group]
+    users_links = [get_link(user.tg_id, user.firstname, user.lastname) for user in all_users_in_group]
+    users_links = "\n".join(users_links)
 
-  def get_link(user_id, firstname, lastname):
-    if firstname == None:
-      return f"<a href='tg://user?id={user_id}'>{lastname}</a>"
-    elif lastname == None:
-      return f"<a href='tg://user?id={user_id}'>{firstname}</a>"
-    elif firstname == None and lastname == None:
-      return f"<a href='tg://user?id={user_id}'>{user_id}</a>"
-    else:
-      # return f"[{firstname} {lastname}](tg://user?id={user_id})\n"
-      return f"<a href='tg://user?id={user_id}'>{firstname} {lastname}</a>"
-
-  users_links = [get_link(user_id, user.firstname, user.lastname) for user_id in all_users_in_group_id]
-  users_links = "\n".join(users_links)
-
-  await message.answer(
-      f"👑 <b>Панель управления группой</b>\n\n"
-      f"▫️ Название: <code>{user.group.name}</code>\n"
-      f"▫️ Лидер: <a href='tg://user?id={user.group.leader_id}'>{user.firstname if user.firstname else ''} {user.lastname if user.lastname else ''}</a>\n\n"
-      f"▫️ Всего участников: {len(all_users_in_group)}"
-      f"\n📃 Список участников:\n{users_links}" if users_links and len(users_links) > 0 else ""
-      f"🛠 <i>Доступные действия:</i>",
-      parse_mode="html",
-      reply_markup=kb.group_controller_keyboard
-  )
+    await message.answer(
+        f"👑 <b>Панель управления группой</b>\n\n"
+        f"▫️ Название: <code>{user.group.name}</code>\n"
+        f"▫️ Лидер: <a href='tg://user?id={user.group.leader_id}'>{user.firstname if user.firstname else ''} {user.lastname if user.lastname else ''}</a>\n\n"
+        f"▫️ Всего участников: {len(all_users_in_group)}"
+        f"\n📃 Список участников:\n{users_links}" if users_links and len(users_links) > 0 else ""
+        f"🛠 <i>Доступные действия:</i>",
+        parse_mode="html",
+        reply_markup=kb.group_controller_keyboard
+    )
 
 @router.callback_query(F.data == "get_group_link")
 async def get_group_link_handler(call: CallbackQuery):

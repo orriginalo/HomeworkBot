@@ -138,23 +138,25 @@ async def add_adder_id(message: Message, state: FSMContext):
 
     adding_user = (await get_user_by_id(adding_user_id))
 
+    settings_copy = user.settings.copy()
     if adding_user:
-      if user["role"] <= 3:
-        if adding_user["group_id"] != user["group_id"]:
+      if user.role <= 3:
+        if adding_user.group.uid != user.group.uid:
           await message.answer("❌ Вы не можете сделать этого пользователя добавлятелем, поскольку он не входит в вашу группу.", reply_markup=await kb.get_start_keyboard(user))
           await state.clear()
           return
 
-      if adding_user["role"] == None:
+      if adding_user.role == None:
         await message.answer(f"❌ Пользователь не существует или скрыл id.", reply_markup=await kb.get_start_keyboard(user))
         await state.clear()
         return
       
-      elif adding_user["role"] >= 3:
+      elif adding_user.role >= 3:
         await message.answer(f"🚫 Ошибка", parse_mode="html", reply_markup=await kb.get_start_keyboard(user))
       
-      elif adding_user["role"] <= 1:
-        await update_user(adding_user_id, role=2)
+      elif adding_user.role <= 1:
+        settings_copy["change_ids_visibility"] = True
+        await update_user(adding_user_id, role=2, settings=settings_copy)
         await message.answer(f"✅ Пользователь добавлен в добавлятелей.", reply_markup=await kb.get_start_keyboard(user))
       else:
         await message.answer(f"❌ Пользователь уже является добавлятелем.", reply_markup=await kb.get_start_keyboard(user))

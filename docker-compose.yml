@@ -10,7 +10,7 @@ services:
       - TZ=Europe/Samara
     restart: no
     networks:
-      - internal
+      - ulstu-bots-network
     depends_on:
       - selenium
       - db
@@ -56,3 +56,5 @@ services:
 networks:
   internal:
     external: false
+  ulstu-bots-network:
+    external: true

@@ -34,7 +34,7 @@ password = settings.ULSTU_PASSWORD
 
 default_user_settings: dict = {
   "last_homeworks_count": 2,
-  "change_ids_visibility": True,
+  "change_ids_visibility": False,
 }
 
 def calculate_yesterday():

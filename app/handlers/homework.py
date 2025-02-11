@@ -139,7 +139,7 @@ async def _(call: CallbackQuery):
     await call.message.answer(f"Домашнее задание по <b>{subject.name}</b>", parse_mode="html")
     for homework in homeworks:
       text = f"""
-Добавлено <b>{homework.from_date.strftime("%d.%m.%Y")}</b> {"<i>(последнее)</i>" if homework == homeworks[-1] else ""} {f'<span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] and user.role >= 2 else ""}
+Добавлено <b>{homework.from_date.strftime("%d.%m.%Y")}</b> {"<i>(последнее)</i>" if homework == homeworks[-1] else ""} {f'<span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] else ""}
 
 {homework.task}
       """
@@ -198,7 +198,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
       else:
         await sent_message.edit_text(f"Домашнее задание на <b>{datetime.fromtimestamp(date_time_timestamp).strftime("%d")} {var.months_words[int(datetime.fromtimestamp(date_time_timestamp).strftime("%m"))]}</b>:", parse_mode="html")
         for homework in homeworks:
-          text = f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] and user.role >= 2 else "") + f"\n\n{homework.task}"
+          text = f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] else "") + f"\n\n{homework.task}"
           media = await get_media_by_id(homework.uid)
           if media:
             await send_media(message.chat.id, message.bot, media, text, parse_mode="html")
