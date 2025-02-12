@@ -164,7 +164,7 @@ async def reset_homework_deadline_by_id(homework_id: int):
       homework = homework.scalar_one_or_none()
       if homework:
         # Find the next class date for the subject
-        stmt = select(Schedule).where(Schedule.subject == homework.subject, Schedule.timestamp > homework.from_date)
+        stmt = select(Schedule).where(Schedule.subject == homework.subject, Schedule.timestamp > homework.from_date).order_by(Schedule.timestamp).limit(1)
         next_class_date = await s.execute(stmt)
         next_class_date = next_class_date.scalar_one_or_none()
         if next_class_date:
