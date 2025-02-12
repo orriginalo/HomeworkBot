@@ -40,7 +40,7 @@ async def send_hw_by_date(message: Message, date: datetime, state: FSMContext):
   else:
     await sent_message.edit_text(f"Домашнее задание на <b>{await var.get_day_month(date)}</b>:", parse_mode="html")
     for homework in homeworks:
-      media = await get_media_by_id(homeworks.uid)
+      media = await get_media_by_id(homework.uid)
       if media:
         await send_media(message.chat.id, message.bot, media, f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.role >= 2 else "") + f"\n\n{str(homework.task)}", parse_mode="html")
     await state.clear()
