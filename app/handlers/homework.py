@@ -348,7 +348,6 @@ async def remove_hw_by_id(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "delete_hw")
 async def delete_hw_by_id(call: CallbackQuery, state: FSMContext):
-  await call.message.delete()
   data = await state.get_data()
   
   homework = await get_homework_by_id(int(data['hw_id']))
@@ -378,7 +377,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     await state.update_data(hw_id=message.text)
     data = await state.get_data()
     homework = None
-    hw_id = None
+    hw_id = (await state.get_data())["hw_id"]
     
     try:
       homework = await get_homework_by_id(hw_id)
