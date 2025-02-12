@@ -11,12 +11,12 @@ from app.database.queries.group import get_all_groups, get_group_by_name, update
 async def update_timetable(for_all: bool = True, group_name: str = None):
     groups: list[GroupSchema] = None
     if for_all:
-        groups = await get_all_groups(Groups.is_equipped == True)
+        groups: list[GroupSchema] = await get_all_groups(Groups.is_equipped == True)
         logger.info(
             f"Updating timetables for groups: {[group.name for group in groups]}..."
         )
     else:
-        groups = [await get_group_by_name(group_name)]
+        group: list[GroupSchema] = [await get_group_by_name(group_name)]
         logger.info(f"Updating timetable for one group: {group_name}...")
 
     if groups:

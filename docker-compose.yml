@@ -12,7 +12,6 @@ services:
     networks:
       - ulstu-bots-network
     depends_on:
-      - selenium
       - db
     env_file:
       - .env
