@@ -218,8 +218,7 @@ async def add_hw_one(message: Message, state: FSMContext):
     await message.answer("Выберите предмет:", reply_markup=await kb.allowed_subjects_keyboard(subjects))
     kb.ReplyKeyboardRemove(remove_keyboard=True)
 
-@router.callback_query(adding_homework.subject)
-@router.callback_query(F.data.contains("-add"))
+@router.callback_query(F.data.contains("-add"), adding_homework.subject)
 async def add_hw_two(call: CallbackQuery, state: FSMContext):
   await call.message.delete()
   subject = await get_subject_by_id(int(call.data.replace("-add", "")))
