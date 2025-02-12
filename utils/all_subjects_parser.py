@@ -1,9 +1,6 @@
-from app.database.models import Groups
-from app.database.queries.group import get_all_groups, update_group
+from app.database.queries.group import get_all_groups
 from app.database.queries.subjects import add_subject_to_subjects
 from utils.group_subjects_parser import get_group_unique_subjects
-from utils.timetable.downloader import download_timetable
-from utils.timetable.parser import parse_timetable
 from dotenv import load_dotenv
 import os
 from rich import print
@@ -22,7 +19,6 @@ async def parse_all_subjects(
     groups = await get_all_groups()
     if do_download_timetable:
         driver.auth(login, password)
-        download_timetable(driver, [group.name for group in groups])
     for group in groups:
         group_name = group.name
         parse_timetable(

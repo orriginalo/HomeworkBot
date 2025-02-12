@@ -1,19 +1,24 @@
 from app.database.db_setup import session
 from app.database.models import Schedule
 from sqlalchemy import select
+from app.database.queries.group import get_group_by_id
 from utils.log import logger
 import datetime
 
 from app.database.schemas import ScheduleSchema
 
-async def add_subject(timestamp: int, subject: str, week_number: int, group_id: int):
+async def add_subject(timestamp: int, subject: str, teacher: str, cabinet: str, week_number: int, group_id: int):
   try:
     async with session() as s:
+      group = await get_group_by_id(group_id)
       schedule = Schedule(
-        timestamp=datetime.datetime.fromtimestamp(timestamp), 
+        timestamp=datetime.datetime.fromtimestamp(timestamp),
+        group_name=group.name,
         subject=subject, 
+        teacher=teacher,
+        cabinet=cabinet,
         week_number=week_number,
-        group_id=group_id
+        group_id=group.uid
       )
       s.add(schedule)
       await s.commit()
@@ -36,6 +41,7 @@ async def get_schedule_by_week(week_number: int):
     return None
   
 async def del_schedule_by_week(week_number: int, group_id: int = None):
+  print(week_number, group_id)
   try:
     async with session() as s:
       stmt = select(Schedule).where(Schedule.week_number == week_number)

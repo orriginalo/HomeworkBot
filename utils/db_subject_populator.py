@@ -28,22 +28,23 @@ def get_monday_timestamp(week_number, year=2024):
 def get_iterable_text(soup_find_text):
   return [text.strip() for text in soup_find_text.splitlines() if text.strip()]
 
-async def populate_schedule():
-  timetable_json = json.load(open("./data/timetables/timetables.json", "r", encoding="utf-8"))
-
-# Проход по JSON
-  # for week, days in timetable_json.items():
-  #   await del_schedule_by_week(int(week))
-  #   for timestamp, lessons in days.items():
-  #     for pair_number, subject in lessons.items():
-  #       if subject != "-" and await check_exists_subject(subject, int(timestamp)) == False:
-  #         await add_subject(int(timestamp), subject, int(week))
-  for group, weeks in timetable_json.items():
+async def populate_schedule(timetable: dict):
+  for group, weeks in timetable.items():
     print(group)
     group = await get_group_by_name(group)
-    for week, days in weeks.items():
-      await del_schedule_by_week(int(week), group.uid)
-      for timestamp, lessons in days.items():
-        for pair_number, subject in lessons.items():
-          if subject != "-" and await check_exists_subject(subject, int(timestamp), group.uid) == False:
-            await add_subject(int(timestamp), subject, int(week), group.uid)
+    for group_name, week in timetable.items():
+      for week_num, day in week.items():
+        await del_schedule_by_week(int(week_num), group.uid)
+        for day_timestamp, pairs in day.items():
+          for pair, variants in pairs.items():
+            for variant_num, pair_info in variants.items():
+              subject = pair_info["subject"]
+              if subject != "-" and await check_exists_subject(subject, int(day_timestamp), group.uid) == False:
+                await add_subject(
+                  timestamp=int(day_timestamp),
+                  subject=subject,
+                  teacher=pair_info["teacher"],
+                  cabinet=pair_info["cabinet"],
+                  week_number=int(week_num),
+                  group_id=group.uid
+                  )

@@ -42,7 +42,7 @@ async def get_admins_chatid():
    return result
 
 async def sync_sequences():
-  tables = ["users", "homeworks", "schedule", "media", "groups", "subjects"]
+  tables = ["users", "homeworks", "schedule", "media", "groups", "subjects", "settings"]
   async with session() as s:
     for table in tables:
       stmt = text(f"""

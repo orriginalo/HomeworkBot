@@ -48,6 +48,14 @@ router.callback_query.middleware(MsgLoggerMiddleware())
 router.message.middleware(AlbumMiddleware())
 router.message.filter(GroupChecker())
 
+@router.message(F.text.lower().contains("админ-панель"))
+async def show_admin_panel(message: Message):
+  user = await get_user_by_id(message.from_user.id)
+  if user.role == 3:
+    await message.answer("Админ-панель:", reply_markup=kb.adminka_keyboard)
+  if user.role == 4:
+    await message.answer("Админ-панель:", reply_markup=kb.superuser_keyboard)
+
 # ADMIN PANEL CALLBACKS
 @router.callback_query(F.data == "show_favs")
 async def show_favs(call: CallbackQuery):

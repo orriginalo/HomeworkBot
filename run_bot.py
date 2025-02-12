@@ -15,9 +15,7 @@ from app.database.queries.group import *
 from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 from utils.log import logger
-from utils.timetable.downloader import download_timetable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from app.browser_driver import driver
 from config import settings
 
 load_dotenv()
@@ -71,9 +69,6 @@ async def main():
   dp.include_routers(*routers)
   logger.info("Routers included")
 
-  driver.auth(login, password)
-  logger.info("Driver authenticated")
-
   await start_scheduler(bot)
   logger.info("Schedulers started")
 
@@ -86,5 +81,4 @@ if __name__ == "__main__":
     asyncio.run(main())
   except (KeyboardInterrupt, SystemExit):
     logger.info("Bot stopping...")
-    driver.quit()
     print ("[bold red]Bot stopped")

@@ -1,13 +1,10 @@
 import re
 
-from bs4 import BeautifulSoup
 from app.database.queries.group import add_group
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import os
 from dotenv import load_dotenv
+from app.requests.utils import fetch_all_groups
 from config import settings
 
 load_dotenv()
@@ -16,23 +13,16 @@ load_dotenv()
 login = settings.ULSTU_LOGIN
 password = settings.ULSTU_PASSWORD
 
-async def parse_groups_and_add_to_db(driver):
-    driver.get("https://time.ulstu.ru/groups")
-    element = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "/html/body/div/div/div/div[2]/div/div[2]"))
-    )
-    soup = BeautifulSoup(driver.page_source, "lxml")
-    groups_container = soup.find("div", class_="container-fluid")
-    groups_list = [group.strip() for group in groups_container.text.split("\n") if group.strip()]
-    driver.close()
+async def parse_groups_and_add_to_db():
+    groups_list: list[str] = await fetch_all_groups()
 
     for group in groups_list:
         try:
           match = re.search(r'\d', group)
-          course = None
+          course: str = None
           if match:
-            course = match.group() 
-          await add_group(group, int(course))
+            course: str = match.group()
+          await add_group(group.lower(), int(course))
         except Exception as e:
           print("Error adding group: ", group, "| Error: ", e)
 

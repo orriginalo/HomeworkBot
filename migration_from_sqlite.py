@@ -6,7 +6,6 @@ from app.database.queries.homework import add_homework, get_homeworks_by_date, g
 from app.database.queries.other import sync_sequences
 from app.database.queries.schedule import add_subject, get_schedule_by_week
 from app.database.core import create_tables
-from app.browser_driver import driver
 from utils.all_subjects_parser import parse_all_subjects
 from variables import login, password
 from rich import print
@@ -87,8 +86,7 @@ async def main():
   # print(" | Done.")
 
   print("Adding groups...", end="")
-  driver.auth(login, password)
-  await parse_groups_and_add_to_db(driver)
+  await parse_groups_and_add_to_db()
   print(" | Done.")
 
   print("Adding subjects...", end="")

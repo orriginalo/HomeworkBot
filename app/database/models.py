@@ -45,6 +45,9 @@ class Schedule(Base):
   uid: Mapped[intpk]
   timestamp: Mapped[datetime] = mapped_column(TIMESTAMP)
   subject: Mapped[str]
+  teacher: Mapped[str]
+  cabinet: Mapped[str]
+  group_name: Mapped[str]
   week_number: Mapped[int]
   group_id: Mapped[int | None]
 

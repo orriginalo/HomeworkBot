@@ -19,13 +19,14 @@ async def add_user(
     try:
         async with session() as s:
             # Проверка, существует ли пользователь с таким tg_id
-            stmt = select(User).where(User.tg_id == tg_id)
+            stmt = select(User).where(User.tg_id == tg_id).options(selectinload(User.homeworks), selectinload(User.group))
             result = await s.execute(stmt)
             existing_user = result.scalar_one_or_none()
 
             if existing_user:
                 logger.warning(f"User with tg_id {tg_id} already exists.")
-                return UserRelSchema(**existing_user.__dict__)
+                s.refresh(existing_user)
+                return UserRelSchema.model_validate(existing_user, from_attributes=True)
 
             user = User(
                 tg_id=tg_id,

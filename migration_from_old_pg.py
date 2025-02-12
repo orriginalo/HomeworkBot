@@ -1,8 +1,10 @@
+import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import app.database.models_old as old_models
 import app.database.models as models
 from app.database.db_setup import Base
+from app.database.queries.other import sync_sequences
 
 # Подключение к БД
 OLD_DB_URL = "postgresql+psycopg2://domashkabot:domashkabot@10.242.106.91:5432/domashkabot"
@@ -90,7 +92,10 @@ for old_sch in old_schedule:
     new_sch = models.Schedule(
         uid=old_sch.uid,
         timestamp=old_sch.timestamp,
+        group_name="-",
         subject=old_sch.subject,
+        teacher="-",
+        cabinet="-",
         week_number=old_sch.week_number,
         group_id=old_sch.group_id
     )
@@ -136,5 +141,7 @@ for old_set in old_settings:
     new_session.add(new_set)
 
 new_session.commit()
+
+asyncio.run(sync_sequences())
 
 print("Миграция завершена!")

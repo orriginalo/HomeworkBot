@@ -12,6 +12,15 @@ class Settings(BaseSettings):
     ULSTU_LOGIN: str
     ULSTU_PASSWORD: str
 
+    # Настройки API
+    API_HOST: str
+    API_PORT: int
+    API_URL: str
+    
+    @property
+    def API_URL(self) -> str:
+        return f"http://{self.API_HOST}:{self.API_PORT}"
+     
     # Настройки PostgreSQL
     POSTGRES_HOST: str
     POSTGRES_PORT: int = 5432
