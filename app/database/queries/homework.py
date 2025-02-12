@@ -85,7 +85,7 @@ async def get_homeworks_by_date(to_date: datetime, group_id: int = None):
     async with session() as s:
       stmt = select(Homework).where(
         Homework.to_date >= to_date,
-        Homework.to_date < to_date + datetime.timedelta(seconds=1)
+        Homework.to_date < to_date + timedelta(seconds=1)
       ).options(selectinload(Homework.user), selectinload(Homework.group))
       if group_id:
         stmt = stmt.where(Homework.group_uid == group_id)
