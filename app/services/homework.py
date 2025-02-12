@@ -42,5 +42,7 @@ async def send_hw_by_date(message: Message, date: datetime, state: FSMContext):
     for homework in homeworks:
       media = await get_media_by_id(homework.uid)
       if media:
-        await send_media(message.chat.id, message.bot, media, f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.role >= 2 else "") + f"\n\n{str(homework.task)}", parse_mode="html")
+        await send_media(message.chat.id, message.bot, media, f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] == True else "") + f"\n\n{str(homework.task)}", parse_mode="html")
+      else:
+        await message.answer(f"<b>{homework.subject}</b>" + (f' <span class="tg-spoiler">id {homework.uid}</span>' if user.settings["change_ids_visibility"] == True else "") + f"\n\n{homework.task}", parse_mode="html")
     await state.clear()
