@@ -4,6 +4,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 from app.database.queries.group import get_all_groups, get_group_by_id, get_group_by_name, update_group
+from app.database.schemas import UserRelSchema
 import app.keyboards as kb
 from app.database.models import User
 from app.database.queries.user import get_user_by_id, get_users, update_user
@@ -139,19 +140,29 @@ async def show_group_controller_handler(message: CallbackQuery):
   user = await get_user_by_id(message.from_user.id)
   if user.is_leader:
     all_users_in_group = await get_users(User.group_uid == user.group.uid)
-    
-    def get_link(user_id, firstname, lastname):
-      if firstname == None:
-        return f"<a href='tg://user?id={user_id}'>{lastname}</a>"
-      elif lastname == None:
-        return f"<a href='tg://user?id={user_id}'>{firstname}</a>"
-      elif firstname == None and lastname == None:
-        return f"<a href='tg://user?id={user_id}'>{user_id}</a>"
-      else:
-        # return f"[{firstname} {lastname}](tg://user?id={user_id})\n"
-        return f"<a href='tg://user?id={user_id}'>{firstname} {lastname}</a>"
+    all_users_in_group.sort(key=lambda user: user.role, reverse=True)
 
-    users_links = [get_link(user.tg_id, user.firstname, user.lastname) for user in all_users_in_group]
+    def get_emoji(user: UserRelSchema):
+      if user.is_leader:
+        return "👑"
+      elif user.role <= 1:
+        return "👤"
+      elif user.role >= 2:
+        return "➕"
+
+    # Определяем максимальную длину имени для выравнивания
+    max_name_length = max(
+      len(f"{u.firstname or ''} {u.lastname or ''}".strip()) for u in all_users_in_group
+    )
+
+    def get_link(user):
+      emoji = get_emoji(user)
+      full_name = f"{user.firstname or ''} {user.lastname or ''}".strip()
+      full_name = full_name if full_name else str(user.tg_id)  # Если нет имени, показываем ID
+
+      return f"{emoji} <a href='tg://user?id={user.tg_id}'>{full_name}</a> (<code>{user.tg_id}</code>)"
+
+    users_links = [get_link(user) for user in all_users_in_group]
     users_links = "\n".join(users_links)
 
     await message.answer(
@@ -159,11 +170,12 @@ async def show_group_controller_handler(message: CallbackQuery):
         f"▫️ Название: <code>{user.group.name}</code>\n"
         f"▫️ Лидер: <a href='tg://user?id={user.group.leader_id}'>{user.firstname if user.firstname else ''} {user.lastname if user.lastname else ''}</a>\n\n"
         f"▫️ Всего участников: {len(all_users_in_group)}"
-        f"\n📃 Список участников:\n{users_links}" if users_links and len(users_links) > 0 else ""
+        f"\n📃 Список участников:\n{users_links}" if users_links else ""
         f"🛠 <i>Доступные действия:</i>",
         parse_mode="html",
         reply_markup=kb.group_controller_keyboard
     )
+
 
 @router.callback_query(F.data == "get_group_link")
 async def get_group_link_handler(call: CallbackQuery):
