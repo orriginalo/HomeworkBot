@@ -380,8 +380,8 @@ async def reset_deadline(message: Message, state: FSMContext):
     hw_id = (await state.get_data())["hw_id"]
     
     try:
-      homework = await get_homework_by_id(hw_id)
       hw_id = int(data['hw_id'])
+      homework = await get_homework_by_id(int(hw_id))
     except:
       await message.answer("❌ Неверно указано id. Попробуй еще раз.", parse_mode="html", reply_markup=kb.back_keyboard)
       return
