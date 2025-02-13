@@ -73,7 +73,7 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
 
   if media:
     for media in data.get("media_group"):
-      await add_media(homework.id, media.media, media.type)
+      await add_media(homework.uid, media.media, media.type)
 
   await call.message.answer(f"✅ <b>Домашнее задание добавлено.</b>", parse_mode="html", reply_markup=await kb.get_start_keyboard(user)) # в базу
   await call.message.delete()
