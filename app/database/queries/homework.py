@@ -43,11 +43,6 @@ async def add_homework(subject: str, task: str, group_id: int, added_by: int, fr
 async def del_homework(homework_id: int):
   try:
     async with session() as s:
-
-      if not isinstance(homework_id, int):
-        homework_id = int(homework_id)
-      print(type(homework_id))
-
       stmt = select(Homework).where(Homework.uid == homework_id).options(selectinload(Homework.user), selectinload(Homework.group))
       result = await s.execute(stmt)
       homework = result.scalar_one_or_none()
