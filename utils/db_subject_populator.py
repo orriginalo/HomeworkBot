@@ -1,11 +1,9 @@
-import re
 from datetime import datetime
 import datetime as dt
-from bs4 import BeautifulSoup
-import sqlite3 as sql
-import json
 from app.database.queries.group import get_group_by_name
 from app.database.queries.schedule import add_subject, del_schedule_by_week, check_exists_subject
+from utils.timetable.subjects_process import process_subject_name
+from variables import subjects_map, prefixes_map
 
 # 34 + СУПЕРЧИСЛО
 
@@ -42,7 +40,7 @@ async def populate_schedule(timetable: dict):
               if subject != "-" and await check_exists_subject(subject, int(day_timestamp), group.uid) == False:
                 await add_subject(
                   timestamp=int(day_timestamp),
-                  subject=subject,
+                  subject=process_subject_name(subject, subjects_map, prefixes_map),
                   teacher=pair_info["teacher"],
                   cabinet=pair_info["cabinet"],
                   week_number=int(week_num),
