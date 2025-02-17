@@ -1,5 +1,6 @@
+from datetime import datetime
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import CommandStart
@@ -7,7 +8,7 @@ from aiogram.filters import CommandStart
 from app.database.queries.group import get_all_groups, get_group_by_name, get_group_by_ref
 from app.handlers.utils import check_time_moved
 import app.keyboards as kb
-from app.database.queries.user import get_user_by_id
+from app.database.queries.user import get_user_by_id, update_user
 from app.middlewares import AlbumMiddleware, GroupChecker, MsgLoggerMiddleware
 
 import re
@@ -84,9 +85,12 @@ async def set_group_name(message: Message, state: FSMContext):
     group = await get_group_by_name(message.text.strip().lower())
     if group:
       if group.is_equipped:
-        await message.answer("Эта группа уже зарегистрирована в системе. Запросите ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
-        await state.clear()
+        await message.answer(f"Вы хотите присоединиться к группе <b>{group.name}</b>?\n<i>В случае присоединения, вы не сможете сменить группу в следующие 48 часов.</i>", parse_mode="html", reply_markup=kb.do_join_to_group_keyboard)
+        await state.set_state(joiningToGroup.group_name)
+        await state.update_data(group_name=group.name)
+        # await message.answer("Эта группа уже зарегистрирована в системе. Запросите ссылку на вступление у <i>лидера</i> группы.", parse_mode="html")
       else:
         await message.answer("Эта группа еще не зарегистрирована в системе, при подтверждении вы станете <b>лидером</b> группы \n\n(о том что может лидер группы вы можете узнать в /about)", parse_mode="html", reply_markup=kb.create_group_keyboard)
   else:
     await message.answer("❌ Такая группа не найдена, попробуй еще раз.")
+    
