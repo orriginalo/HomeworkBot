@@ -52,7 +52,7 @@ services:
       - ./data/database:/var/lib/postgresql/data
     networks:
       - internal
-
+      
 networks:
   internal:
     external: false

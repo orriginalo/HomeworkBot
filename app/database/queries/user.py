@@ -25,7 +25,7 @@ async def add_user(
 
             if existing_user:
                 logger.warning(f"User with tg_id {tg_id} already exists.")
-                s.refresh(existing_user)
+                await s.refresh(existing_user)
                 return UserRelSchema.model_validate(existing_user, from_attributes=True)
 
             user = User(

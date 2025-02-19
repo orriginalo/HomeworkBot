@@ -15,7 +15,7 @@ run_BOT_FOR_TESTS.py
 .vscode
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+*/**/__pycache__/
 *.py[cod]
 *$py.class
 
