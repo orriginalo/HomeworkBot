@@ -38,7 +38,7 @@ for old_group in old_groups:
         member_count=old_group.member_count,
         created_at=old_group.created_at,
         updated_at=old_group.updated_at,
-        subjects=old_group.subjects
+        subjects=old_group.subjects,
     )
     new_session.add(new_group)
     group_map[old_group.uid] = new_group.uid
@@ -61,7 +61,7 @@ for old_user in old_users:
         updated_at=old_user.updated_at,
         moved_at=old_user.moved_at,
         group_uid=group_map.get(old_user.group_id),
-        is_leader=old_user.is_leader
+        is_leader=old_user.is_leader,
     )
     new_session.add(new_user)
 
@@ -79,7 +79,7 @@ for old_hw in old_homeworks:
         to_date=old_hw.to_date,
         group_uid=group_map.get(old_hw.group_id),
         created_at=old_hw.created_at,
-        user_uid=23
+        user_uid=23,
     )
     new_session.add(new_hw)
 
@@ -97,7 +97,7 @@ for old_sch in old_schedule:
         teacher="-",
         cabinet="-",
         week_number=old_sch.week_number,
-        group_id=old_sch.group_id
+        group_id=old_sch.group_id,
     )
     new_session.add(new_sch)
 
@@ -108,10 +108,7 @@ old_media = old_session.query(old_models.Media).all()
 
 for old_m in old_media:
     new_m = models.Media(
-        uid=old_m.uid,
-        homework_id=old_m.homework_id,
-        media_id=old_m.media_id,
-        media_type=old_m.media_type
+        uid=old_m.uid, homework_id=old_m.homework_id, media_id=old_m.media_id, media_type=old_m.media_type
     )
     new_session.add(new_m)
 
@@ -121,10 +118,7 @@ new_session.commit()
 old_subjects = old_session.query(old_models.Subjects).all()
 
 for old_subj in old_subjects:
-    new_subj = models.Subjects(
-        uid=old_subj.uid,
-        name=old_subj.name
-    )
+    new_subj = models.Subjects(uid=old_subj.uid, name=old_subj.name)
     new_session.add(new_subj)
 
 new_session.commit()
@@ -133,11 +127,7 @@ new_session.commit()
 old_settings = old_session.query(old_models.Settings).all()
 
 for old_set in old_settings:
-    new_set = models.Settings(
-        uid=old_set.uid,
-        key=old_set.key,
-        value=old_set.value
-    )
+    new_set = models.Settings(uid=old_set.uid, key=old_set.key, value=old_set.value)
     new_session.add(new_set)
 
 new_session.commit()

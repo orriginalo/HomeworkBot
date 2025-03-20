@@ -12,9 +12,7 @@ login = settings.ULSTU_LOGIN
 password = settings.ULSTU_PASSWORD
 
 
-async def parse_all_subjects(
-    driver, from_json_path: str, do_download_timetable: bool = True
-):
+async def parse_all_subjects(driver, from_json_path: str, do_download_timetable: bool = True):
     all_subjects = []
     groups = await get_all_groups()
     if do_download_timetable:
@@ -27,9 +25,7 @@ async def parse_all_subjects(
             add_groupname_to_json=True,
             group_name=group_name,
         )
-        subjects = get_group_unique_subjects(
-            group_name, "./data/timetables/all-timetables.json"
-        )
+        subjects = get_group_unique_subjects(group_name, "./data/timetables/all-timetables.json")
         for subject in subjects:
             if subject not in all_subjects:
                 all_subjects.append(subject)

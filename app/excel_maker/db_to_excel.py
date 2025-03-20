@@ -4,7 +4,7 @@ from datetime import datetime
 from app.excel_maker.db_requests import get_homeworks, get_users, get_schedule
 import os
 
-homeworks_columns = ["id", "Дата (Когда задано)", "Предмет", "Домашнее задание", "Дата сдачи" ]
+homeworks_columns = ["id", "Дата (Когда задано)", "Предмет", "Домашнее задание", "Дата сдачи"]
 users_columns = ["Телеграм id", "Юзернейм", "Имя", "Роль", "Уведомления", "Создан"]
 schedule_columns = ["Дата", "Предмет", "Номер недели"]
 
@@ -14,14 +14,15 @@ sheet_names = ["Домашние задания", "Пользователи", "�
 excel_filename = "domashkabot info.xlsx"
 
 weekdays_ru = {
-    'Monday': 'Понедельник',
-    'Tuesday': 'Вторник',
-    'Wednesday': 'Среда',
-    'Thursday': 'Четверг',
-    'Friday': 'Пятница',
-    'Saturday': 'Суббота',
-    'Sunday': 'Воскресенье'
+    "Monday": "Понедельник",
+    "Tuesday": "Вторник",
+    "Wednesday": "Среда",
+    "Thursday": "Четверг",
+    "Friday": "Пятница",
+    "Saturday": "Суббота",
+    "Sunday": "Воскресенье",
 }
+
 
 def get_db():
     """
@@ -39,36 +40,37 @@ def get_db():
             for i in range(3):
                 df = pd.DataFrame(columns=all_columns[i])
                 df.to_excel(writer, index=False, sheet_name=sheet_names[i])
-        
+
         return {sheet_names[i]: pd.DataFrame(columns=all_columns[i]) for i in range(3)}
+
 
 def append_db(data: list, df_dict: dict, sheet_name: str):
     new_data = None
-    
+
     match sheet_name:
         case "Домашние задания":
-            new_data = pd.DataFrame({
-                "id": [data[0]],
-                "Дата (Когда задано)": [data[1]],
-                "Предмет": [data[2]],
-                "Домашнее задание": [data[3]],
-                "Дата сдачи": [data[4]],
-            })
+            new_data = pd.DataFrame(
+                {
+                    "id": [data[0]],
+                    "Дата (Когда задано)": [data[1]],
+                    "Предмет": [data[2]],
+                    "Домашнее задание": [data[3]],
+                    "Дата сдачи": [data[4]],
+                }
+            )
         case "Пользователи":
-            new_data = pd.DataFrame({
-                "Телеграм id": [data[0]],
-                "Юзернейм": [data[1]],
-                "Имя": [data[2]],
-                "Роль": [data[3]],
-                "Уведомления": [data[4]],
-                "Создан": [data[5]]
-            })
+            new_data = pd.DataFrame(
+                {
+                    "Телеграм id": [data[0]],
+                    "Юзернейм": [data[1]],
+                    "Имя": [data[2]],
+                    "Роль": [data[3]],
+                    "Уведомления": [data[4]],
+                    "Создан": [data[5]],
+                }
+            )
         case "Расписание пар":
-            new_data = pd.DataFrame({
-                "Дата": [data[0]],
-                "Предмет": [data[1]],
-                "Номер недели": [data[2]]
-            })
+            new_data = pd.DataFrame({"Дата": [data[0]], "Предмет": [data[1]], "Номер недели": [data[2]]})
 
     # Обновление DataFrame для соответствующего листа
     df_dict[sheet_name] = pd.concat([df_dict[sheet_name], new_data], ignore_index=True)
@@ -78,6 +80,7 @@ def append_db(data: list, df_dict: dict, sheet_name: str):
         for name, df in df_dict.items():
             df.to_excel(writer, index=False, sheet_name=name)
 
+
 def get_name(firstname: str, lastname: str):
     if lastname is None or lastname.strip() == "":
         return firstname
@@ -85,29 +88,30 @@ def get_name(firstname: str, lastname: str):
         return lastname
     return f"{firstname} {lastname}"
 
+
 def db_to_excel():
-  for homework in get_homeworks():
-      from_date = datetime.fromtimestamp(homework[1]).strftime("%d/%m/%Y")
-      to_date = datetime.fromtimestamp(homework[4]).strftime("%d/%m/%Y") if homework[4] is not None else ""
-      append_db([homework[0], from_date, homework[2], homework[3], to_date], get_db(), "Домашние задания")
+    for homework in get_homeworks():
+        from_date = datetime.fromtimestamp(homework[1]).strftime("%d/%m/%Y")
+        to_date = datetime.fromtimestamp(homework[4]).strftime("%d/%m/%Y") if homework[4] is not None else ""
+        append_db([homework[0], from_date, homework[2], homework[3], to_date], get_db(), "Домашние задания")
 
-  for user in get_users():
-      user_id = user[0]
-      username = user[2]
-      name = get_name(user[4], user[5])
-      role = user[1]
-      notifications = ("Да" if bool(user[3]) else "Нет")
-      created_at = datetime.fromtimestamp(user[6]) if user[6] else ""
-      
-      append_db([user_id, username, name, role, notifications, created_at], get_db(), "Пользователи")
+    for user in get_users():
+        user_id = user[0]
+        username = user[2]
+        name = get_name(user[4], user[5])
+        role = user[1]
+        notifications = "Да" if bool(user[3]) else "Нет"
+        created_at = datetime.fromtimestamp(user[6]) if user[6] else ""
 
-  for schedule in get_schedule():
-      date = datetime.fromtimestamp(schedule[0]).strftime("%d/%m/%Y")
-      append_db([date, schedule[1], schedule[2]], get_db(), "Расписание пар")
+        append_db([user_id, username, name, role, notifications, created_at], get_db(), "Пользователи")
+
+    for schedule in get_schedule():
+        date = datetime.fromtimestamp(schedule[0]).strftime("%d/%m/%Y")
+        append_db([date, schedule[1], schedule[2]], get_db(), "Расписание пар")
 
 
 def create_schedule():
-  if os.path.exists(excel_filename):
-    os.remove(excel_filename)
-  get_db()
-  db_to_excel()
+    if os.path.exists(excel_filename):
+        os.remove(excel_filename)
+    get_db()
+    db_to_excel()

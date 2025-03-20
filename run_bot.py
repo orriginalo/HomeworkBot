@@ -33,20 +33,18 @@ dp = Dispatcher()
 
 notifications_scheduler = AsyncIOScheduler()
 
+
 async def check_paths():
     folder_paths = [
-      "data/backups",
-      "data/databases",
-      "data/database",
-      "data/logs",
-      "data/screenshots",
-      "data/timetables/html",
-      "data/changes"
+        "data/backups",
+        "data/databases",
+        "data/database",
+        "data/logs",
+        "data/screenshots",
+        "data/timetables/html",
+        "data/changes",
     ]
-    file_paths = [
-      "data/timetables/timetables.json",
-      "data/timetables/all-timetables.json"
-    ]
+    file_paths = ["data/timetables/timetables.json", "data/timetables/all-timetables.json"]
     for path in folder_paths:
         try:
             os.makedirs(path, exist_ok=True)
@@ -60,25 +58,26 @@ async def check_paths():
 
 
 async def main():
-  await create_tables()
-  logger.info("Tables created")
+    await create_tables()
+    logger.info("Tables created")
 
-  await check_paths()
-  logger.info("Paths checked")
+    await check_paths()
+    logger.info("Paths checked")
 
-  dp.include_routers(*routers)
-  logger.info("Routers included")
+    dp.include_routers(*routers)
+    logger.info("Routers included")
 
-  await start_scheduler(bot)
-  logger.info("Schedulers started")
+    await start_scheduler(bot)
+    logger.info("Schedulers started")
 
-  logger.info("Bot started")
-  await dp.start_polling(bot)
+    logger.info("Bot started")
+    await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
-  logger.info("Bot starting...")
-  try:
-    asyncio.run(main())
-  except (KeyboardInterrupt, SystemExit):
-    logger.info("Bot stopping...")
-    print ("[bold red]Bot stopped")
+    logger.info("Bot starting...")
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Bot stopping...")
+        print("[bold red]Bot stopped")

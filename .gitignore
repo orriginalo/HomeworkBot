@@ -10,6 +10,7 @@ schedule.html
 /data/backups/html_schedules/*
 Database.db
 
+repomix-output.txt
 test.py
 run_BOT_FOR_TESTS.py
 .vscode

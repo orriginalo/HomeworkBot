@@ -4,20 +4,23 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from aiogram.types import Message, FSInputFile
+
 # from utils.log import logger
 from rich import print
 
 load_dotenv(override=True)
 
+
 async def fetch_all_groups():
-  url = f"{os.getenv("API_URL")}/utils/all_groups"  # Используем имя сервиса FastAPI
-  try:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url) as response:
-        return await response.json()
-  except Exception as e:
-    print(e)
-    return
+    url = f"{os.getenv("API_URL")}/utils/all_groups"  # Используем имя сервиса FastAPI
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
+    except Exception as e:
+        print(e)
+        return
+
 
 # async def main():
 #   group = "пдо-16"
@@ -35,9 +38,11 @@ async def fetch_all_groups():
 #             print("---------------")
 # asyncio.run(main())
 
+
 async def main():
-  groups = await fetch_all_groups()
-  print(groups)
+    groups = await fetch_all_groups()
+    print(groups)
+
 
 if __name__ == "__main__":
-  asyncio.run(main())
+    asyncio.run(main())

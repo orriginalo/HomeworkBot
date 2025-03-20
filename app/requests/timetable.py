@@ -4,21 +4,24 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from aiogram.types import Message, FSInputFile
+
 # from utils.log import logger
 from rich import print
 
 load_dotenv(override=True)
 
+
 async def fetch_timetable(group_name: str):
-  url = f"{os.getenv("API_URL")}/timetable/{group_name}/"  # Используем имя сервиса FastAPI
-  try:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url) as response:
-        return await response.json()
-  except Exception as e:
-    print(e)
-    return
-  
+    url = f"{os.getenv("API_URL")}/timetable/{group_name}/"  # Используем имя сервиса FastAPI
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
+    except Exception as e:
+        print(e)
+        return
+
+
 # async def main():
 #   group = "пдо-16"
 #   timetable: dict = await fetch_timetable(group)
