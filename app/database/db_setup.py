@@ -8,7 +8,7 @@ from config import settings
 
 async_engine = create_async_engine(
     url=settings.SQLALCHEMY_URL,
-    # echo=True,
+    echo=True,
     pool_size=5,
 )
 

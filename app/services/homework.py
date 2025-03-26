@@ -16,8 +16,8 @@ async def send_hw_by_date(message: Message, date: datetime, state: FSMContext):
     user = await get_user_by_id(message.from_user.id)
 
     sent_message = await message.answer(f"⏳ Обновляю информацию...")
-    await update_homework_dates()
-
+    await update_homework_dates(user.group.uid)
+    
     date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     homeworks = await get_homeworks_by_date(date, group_id=user.group.uid)
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)

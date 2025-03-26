@@ -96,7 +96,8 @@ async def get_homeworks_by_date(to_date: datetime, group_id: int = None):
                 .where(Homework.to_date >= to_date, Homework.to_date < to_date + timedelta(seconds=1))
                 .options(selectinload(Homework.user), selectinload(Homework.group))
             )
-            if group_id:
+
+            if group_id is not None:
                 stmt = stmt.where(Homework.group_uid == group_id)
 
             result = await s.execute(stmt)
@@ -157,7 +158,7 @@ async def update_homework(homework_id: int, **kwargs):
         return None
 
 
-async def update_homework_dates():
+async def update_homework_dates(group_id: int):
     try:
         async with session() as s:
             stmt = (
@@ -169,7 +170,7 @@ async def update_homework_dates():
             homework = result.scalars().all()
             for h in homework:
                 # Ищем все возможные даты занятия для предмета
-                stmt = select(Schedule).where(Schedule.subject == h.subject, Schedule.timestamp > h.from_date)
+                stmt = select(Schedule).where(Schedule.subject == h.subject, Schedule.timestamp > h.from_date, Schedule.group_id == group_id)
                 next_class_dates = await s.execute(stmt)
                 next_class_dates = next_class_dates.scalars().all()  # получаем все возможные даты
 

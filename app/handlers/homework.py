@@ -114,7 +114,7 @@ async def add_homework_to_db(call: CallbackQuery, state: FSMContext):
                     admin.tg_id,
                     call.message.bot,
                     media,
-                    f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework.id}*",
+                    f"🔔 Добавлено домашнее задание.\n*{subject}*:\n\n{task}\n\nОт [{call.from_user.id}](tg://user?id={call.from_user.id}) *\nid задания - {homework.uid}*",
                     parse_mode="Markdown",
                 )
             else:
@@ -254,7 +254,7 @@ async def show_hw_by_date(message: Message, state: FSMContext):
         sent_message = await message.answer(
             f"⏳ Обновляю информацию...", reply_markup=await kb.get_start_keyboard(user)
         )
-        await update_homework_dates()
+        await update_homework_dates(user.group.uid)
         if homeworks is None or len(homeworks) == 0:
             await sent_message.edit_text(f"📭 <b>Заданий на этот день нет!</b>", parse_mode="html")
             await state.clear()
@@ -496,7 +496,7 @@ async def reset_deadline(message: Message, state: FSMContext):
     if homework:
         await reset_homework_deadline_by_id(hw_id)
         await message.answer("✅ Дата сдачи сброшена.", reply_markup=await kb.get_start_keyboard(user))
-        await update_homework_dates()
+        await update_homework_dates(user.group.uid)
         new_homework = await get_homework_by_id(hw_id)
         deadline = new_homework.to_date
         new_deadline_text = (
